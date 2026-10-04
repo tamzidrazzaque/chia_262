@@ -618,7 +618,7 @@ CLOCK_NS = 10.0                        # the synthesis clock period (sky130_vlsi
 def start_spec(aws, diff: str = "", spec_flags: str = "") -> ray.ObjectRef:
     """Start a SPEC run of the synthesis config with ``diff``; return its ref at once."""
     return spec_eval.chia_remote(aws, SPEC, SPEC_RECIPE, RunConfig.from_yaml(SPEC_RUN_CONFIG),
-                                 diff=diff, spec_flags=spec_flags)
+                                 diffs=[diff] if diff else None, spec_flags=spec_flags)
 
 
 def _spec_report(baseline: ray.ObjectRef, impl: ray.ObjectRef, base_slack, impl_slack) -> str:

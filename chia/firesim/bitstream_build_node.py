@@ -1,12 +1,4 @@
-"""Build an f2 bitstream with FireSim's own build code.
-
-Runs inside the chisel-build container on an ECAD instance (see
-``chia.firesim.specs.F2_ECAD``). The node applies the diff, writes the build
-configs, and runs the steps of ``firesim buildbitstream`` through FireSim's own
-functions (``_BUILD``). FireSim sends its build-host commands over ssh; here
-Chisel and the driver run in this container, and the Vivado step runs on the
-instance itself through ``nsenter``, as ``ubuntu`` in a login shell, as over ssh.
-"""
+"""Build an f2 bitstream with FireSim's own build code."""
 
 from __future__ import annotations
 
@@ -101,14 +93,16 @@ class BitstreamBuildNode:
         self.logger = logging.getLogger("BitstreamBuildNode")
 
     @ChiaFunction(resources={ECAD_RESOURCE: 1})
-    def build_bitstream(self, recipe: BuildRecipe, diff: str = "") -> EcadBuildResult:
-        """Build ``recipe`` with ``diff`` applied; return its AGFI and driver."""
+    def build_bitstream(self, recipe: BuildRecipe,
+                        diffs: "list[str] | None" = None) -> EcadBuildResult:
         log = []
         out = f"{FIRESIM}/sim/output/{recipe.platform}/{recipe.quintuplet()}"
         bundle = f"{out}/{DRIVER_TAR_NAME}"
         steps = [
-            ("git apply", f"cd {CHIPYARD} && git reset --hard HEAD && git clean -fd && "
-                          "git apply -" if diff else "true", diff),
+            ("git reset", f"cd {CHIPYARD} && git reset --hard HEAD && git clean -fd"
+                          if diffs else "true", ""),
+            *((f"git apply {i}", f"cd {CHIPYARD} && git apply -", diff)
+              for i, diff in enumerate(diffs or [], 1)),
             ("build dir", f"sudo chown $(id -u):$(id -g) {BUILD_DIR}", ""),
             ("build", f"source {CHIPYARD}/env.sh && cd {DEPLOY} && "
                       f"JAVA_HEAP_SIZE={recipe.java_heap_size} python - "

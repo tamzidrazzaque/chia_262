@@ -56,17 +56,18 @@ class SpecEvalResult:
 # On the head, with no CPU (it only waits) and no retry (a retry rebuilds everything).
 @ChiaFunction(num_cpus=0, max_retries=0, resources={"node:__internal_head__": 0.001})
 def spec_eval(aws, spec: str, recipe: BuildRecipe, run_config: RunConfig | None = None,
-              diff: str = "", bitstream: FSBitstream | None = None,
+              diffs: "list[str] | None" = None, bitstream: FSBitstream | None = None,
               workload: FireMarshalArtifact | None = None, spec_flags: str = "",
               cores: int = 1, upload_to: str | None = None,
               max_fpgas: int = 12, small_images: bool = False) -> SpecEvalResult:
-    """Run ``spec`` on ``recipe`` with ``diff``, and score it. The SPEC build and the
+    """Run ``spec`` on ``recipe`` with ``diffs``, and score it. The SPEC build and the
     bitstream build run at the same time.
 
     Args:
         aws: The AWS manager that launches the F2 machines.
         spec: e.g. ``"spec17-intspeed-test"``.
-        recipe, diff: The design and a chipyard change to build it with.
+        recipe, diffs: The design, and the chipyard changes to build it with (diffs
+            from the chipyard root, applied in order).
         run_config: FireSim runtime settings.
         bitstream, workload: Earlier results, so that they are not built.
         spec_flags, cores, small_images: As in ``spec_sw_build_loop.start_workload``.
@@ -84,7 +85,7 @@ def spec_eval(aws, spec: str, recipe: BuildRecipe, run_config: RunConfig | None 
         ecad = get(aws.launch.chia_remote(F2_ECAD, count=1))
         try:
             builder = BitstreamBuildNode()
-            build_ref = builder.build_bitstream.chia_remote(builder, recipe=recipe, diff=diff)
+            build_ref = builder.build_bitstream.chia_remote(builder, recipe=recipe, diffs=diffs)
             if workload_ref:
                 workload = _checked(get(workload_ref))
             build = get(build_ref)
