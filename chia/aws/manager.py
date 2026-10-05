@@ -69,7 +69,7 @@ class AWSManager:
 
     def launch(self, worker: AWSWorker, count: int = 1) -> Farm:
         """Bring up ``count`` instances of ``worker`` and join them to the cluster."""
-        node_type, machine = worker
+        node_type, machine = self._configured(worker)
         aws = self.aws_config
         machine = replace(machine, count=count, KeyName=aws.key_name,
                           ssh_user=aws.ssh_user, ssh_private_key=aws.ssh_private_key,
@@ -105,6 +105,15 @@ class AWSManager:
             raise
         logger.info(f"{len(ips)} '{node_type.name}' worker(s) joined")
         return farm
+
+    def _configured(self, worker: AWSWorker) -> AWSWorker:
+        """``worker`` with the changes of its entry in the cluster file's ``aws: workers:``."""
+        node_type, machine = worker
+        aws = self.cluster_config.aws_config
+        changes = dict(aws.workers.get(node_type.name, {})) if aws else {}
+        if "image" in changes:
+            node_type = replace(node_type, docker=replace(node_type.docker, image=changes.pop("image")))
+        return node_type, replace(machine, **changes)
 
     def teardown(self, farm: Farm) -> None:
         """Close the farm's tunnels and terminate its instances."""

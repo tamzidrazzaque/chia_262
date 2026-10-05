@@ -191,6 +191,7 @@ class AWSClusterConfig:
     ssh_private_key: str | None = None
     use_public_ip: bool = False
     s3_bucket: str = "firesim-chia-builds"
+    workers: dict[str, dict] = field(default_factory=dict)
 
 
 @dataclass
@@ -826,6 +827,7 @@ def build_config(raw: dict) -> ClusterConfig:
             ssh_private_key=aws_raw.get("ssh_private_key"),
             use_public_ip=aws_raw.get("use_public_ip", False),
             s3_bucket=aws_raw.get("s3_bucket", "firesim-chia-builds"),
+            workers=aws_raw.get("workers", {}),
         )
         logger.debug(f"  AWS config: region={aws_config.region}, key={aws_config.key_name}")
 
