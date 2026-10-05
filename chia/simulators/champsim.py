@@ -508,7 +508,10 @@ def _extract_custom_prefetch_stats(stdout: str) -> dict[str, str]:
 def _resolve_trace(trace: str) -> str:
     """Resolve a trace path or URI to a local filesystem path.
 
-    Supports local paths and ``s3://`` URIs.  ``gs://`` URIs raise
+    Supports local paths and ``s3://`` URIs.  S3 traces are cached by bucket
+    and object key, retaining the basename and compression suffix.  Legacy
+    key-only cache entries are ignored because their bucket is unknown.
+    ``gs://`` URIs raise
     :class:`NotImplementedError` (full TraceSource abstraction is future
     scope).
 
@@ -528,12 +531,12 @@ def _resolve_trace(trace: str) -> str:
         parsed = urlparse(trace)
         bucket = parsed.netloc
         key = parsed.path.lstrip("/")
-        # Include a hash of the full key to avoid basename collisions
-        # across different S3 prefixes.
-        key_hash = hashlib.sha256(key.encode()).hexdigest()[:12]
+        # Include both bucket and key to distinguish objects across buckets
+        # and prefixes.  Never reuse legacy key-only cache entries.
+        object_hash = hashlib.sha256(f"s3://{bucket}/{key}".encode()).hexdigest()[:12]
         basename = os.path.basename(key)
         local = os.path.join(
-            tempfile.gettempdir(), f"{key_hash}_{basename}",
+            tempfile.gettempdir(), f"{object_hash}_{basename}",
         )
         if not os.path.isfile(local):
             s3 = boto3.client("s3")
