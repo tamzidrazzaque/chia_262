@@ -199,11 +199,22 @@ with optional per-host overrides.
        ``nc -X 5 -x 127.0.0.1:1055 %h %p`` to dial through a tailscale
        userspace SOCKS5 proxy, or a jump-host command). Applied to ssh,
        rsync, and SSH tunnels alike.
+   * - ``strict_host_key_checking``
+     - ``false``
+     - Require an existing trusted ``known_hosts`` entry and use noninteractive
+       SSH authentication. Applies to SSH commands, rsync and tunnels. Set to
+       ``true`` for the dedicated-key lab setup; prepare host trust first.
+   * - ``forward_agent``
+     - ``true``
+     - Allow agent forwarding for SSH command sessions. Set to ``false`` when
+       workers authenticate with dedicated keys. SSH tunnel processes never
+       forward the agent.
    * - ``overrides``
      - ``{}``
      - Per-IP overrides, keyed by hostname/IP (or a ``@node_type:index``
        placeholder). Each entry may set ``ssh_user``, ``ssh_private_key``,
-       ``ssh_proxy_command``, ``tailnet: true`` /  ``manage_tailscale: true``
+       ``ssh_proxy_command``, ``strict_host_key_checking``, ``forward_agent``,
+       ``tailnet: true`` /  ``manage_tailscale: true``
        (see `Tailnet (tailscale) clusters`_), or a ``tunnel`` block (see
        `Cloud nodes`_). For provisioned cloud nodes CHIA populates these
        automatically — tailnet overrides when a ``tailnet:`` section is
@@ -969,3 +980,53 @@ Workers are torn down first (in parallel), then the head:
    in a node type's ``compatible_ips`` (so the head also hosts a worker) and that
    worker isn't containerized, CHIA skips ``ray stop`` on the worker so it doesn't
    kill the head's Ray process.
+
+Shared hosts with SSH-only connectivity
+--------------------------------------
+
+Set ``auth.strict_host_key_checking: true`` after establishing trusted host keys,
+and ``auth.forward_agent: false`` for workers using dedicated keys. When the head
+advertises ``127.200.0.1``, full and incremental setup use reverse forwards directly
+without changing host NAT or ``route_localnet`` settings. Worker GCS addresses
+also support a head port other than 6379.
+
+The Linux example ``examples/loopback_cluster/loopback_bind.c`` configures native
+listeners per process. Compile it for each host/container runtime:
+
+.. code-block:: bash
+
+   cc -shared -fPIC -Wall -Wextra -Werror \
+     examples/loopback_cluster/loopback_bind.c \
+     -o /path/to/runtime/loopback-bind.so -ldl -pthread
+
+Load the library through ``LD_PRELOAD`` before starting Python and set
+``CHIA_LOOPBACK_BIND_IP`` to an IPv4 loopback address. Optional
+``CHIA_LOOPBACK_PORT_MIN`` and ``CHIA_LOOPBACK_PORT_MAX`` constrain dynamically
+allocated ports to an SSH-forwarded range. ``chia.cluster.loopback.require_guard``
+checks the loaded library and actual bind behavior; ``driver_options`` supplies
+consistent options for ``ray.init``. Audit runtime listeners after startup.
+This configures cooperating processes and is not a sandbox for arbitrary code.
+Ray authentication and SSH host verification remain necessary.
+
+For servers using ``GatewayPorts=no``, the user-owned
+``examples/loopback_cluster/loopback_relay.py`` can connect a loopback alias to
+SSH's localhost reverse listener. Its JSON configuration is a list of mappings:
+
+.. code-block:: json
+
+   [{"listen_host": "127.0.0.2", "listen_port": 16379,
+     "target_host": "127.0.0.1", "target_port": 16379}]
+
+Run it with ``--config /path/to/mappings.json --ready /path/to/ready.json``;
+add ``--check`` to verify the owned process, configuration and live listeners.
+Both endpoints must be IPv4 loopback addresses. The relay does not change SSH
+policy, routing or firewalls; select ports that are free on the shared host.
+
+For an offline-prepared F2 host, set
+``CHIA_FIRESIM_PREPARED_SDK_REVISION`` to the exact 40-character Git revision of
+``/home/ubuntu/aws-fpga``. The FireSim manager verifies that revision and installed
+management tools, refuses active simulation drivers before copying slot files,
+and refuses conflicting FPGA modules. It avoids automatic SDK downloads and
+host package/service removal. ``CHIA_FIRESIM_SKIP_DEBUG_SERVERS=1`` separately
+skips optional JTAG server startup and cleanup. These policies are opt-in and
+leave FPGA programming enabled when the slot is idle.

@@ -89,6 +89,15 @@ fabric.api.run = run_on_host
 fabric.api.put = put_in_home
 fabric.api.get = get_from_home
 fabric.contrib.project.rsync_project = rsync_in_home
+if os.environ.get("CHIA_FIRESIM_SKIP_DEBUG_SERVERS") == "1":
+    import runtools.run_farm_deploy_managers as deploy_managers
+    from chia.firesim.runtime_policy import disable_optional_ec2_debug_servers
+    disable_optional_ec2_debug_servers(deploy_managers)
+if os.environ.get("CHIA_FIRESIM_PREPARED_SDK_REVISION"):
+    import runtools.run_farm_deploy_managers as deploy_managers
+    from chia.firesim.runtime_policy import use_prepared_ec2_sdk
+    use_prepared_ec2_sdk(deploy_managers, os.environ["CHIA_FIRESIM_PREPARED_SDK_REVISION"],
+                         fabric.api.run)
 sys.argv = [os.path.abspath("firesim"), sys.argv[1]]
 runpy.run_path(sys.argv[0], run_name="__main__")
 """
