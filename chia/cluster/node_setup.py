@@ -255,7 +255,9 @@ def add_nodes_to_cluster(
         # iptables DNAT on each new AWS host.
         dport_worker = f"{base_tc.head_worker_port_min}:{base_tc.head_worker_port_max}"
         dport_raylet = f"{base_tc.head_node_manager_port}:{base_tc.head_object_manager_port}"
-        for ip in new_tunneled_ips:
+        # A loopback head is served directly by reverse forwards/alias relays.
+        # Incremental setup must preserve the full setup's no-host-NAT policy.
+        for ip in (() if head_ip_resolved == _RELAY_IP else new_tunneled_ips):
             ssh = _make_ssh(config, ip)
             route_localnet_cmd = (
                 "sudo sysctl -w net.ipv4.conf.all.route_localnet=1 && "
@@ -411,7 +413,9 @@ def _make_ssh(config: ClusterConfig, ip: str) -> SSHClient:
                               and auth.ssh_private_key is not None))
     return SSHClient(ip, auth.ssh_user, auth.ssh_private_key,
                      identities_only=dedicated_key_only,
-                     proxy_command=auth.ssh_proxy_command)
+                     proxy_command=auth.ssh_proxy_command,
+                     strict_host_key_checking=auth.strict_host_key_checking,
+                     forward_agent=auth.forward_agent)
 
 
 def _rsync_file_mounts(ssh: SSHClient, config: ClusterConfig) -> None:
@@ -575,10 +579,8 @@ def build_worker_script(
         if "ray start" in cmd and "--address" in cmd:
             cmd = f"{cmd} --resources='{resources_json}'"
             if tailnet_alloc is not None:
-                cmd = cmd.replace(
-                    "--address=$RAY_HEAD_IP:6379",
-                    f"--address={tn.head_advertise_ip}:{tn.gcs_port}",
-                )
+                cmd = re.sub(r"--address=\$RAY_HEAD_IP:\d+",
+                             f"--address={tn.head_advertise_ip}:{tn.gcs_port}", cmd)
                 cmd += (
                     f" --node-ip-address={adv_ip}"
                     f" --node-manager-port={tailnet_alloc.node_manager_port}"
@@ -587,10 +589,8 @@ def build_worker_script(
                     f" --max-worker-port={tailnet_alloc.worker_port_max}"
                 )
             elif tunnel_config is not None:
-                cmd = cmd.replace(
-                    "--address=$RAY_HEAD_IP:6379",
-                    f"--address={tun_ip}:{tunnel_config.gcs_tunnel_port}",
-                )
+                cmd = re.sub(r"--address=\$RAY_HEAD_IP:\d+",
+                             f"--address={tun_ip}:{tunnel_config.gcs_tunnel_port}", cmd)
                 cmd += f" --node-ip-address={tun_ip}"
                 cmd += (
                     f" --node-manager-port={tunnel_config.ray_node_manager_port}"
@@ -752,7 +752,9 @@ def bring_up_cluster(config: ClusterConfig) -> TunnelManager | None:
         # so that object store transfers and actor RPCs work.
         dport_worker = f"{base_tc.head_worker_port_min}:{base_tc.head_worker_port_max}"
         dport_raylet = f"{base_tc.head_node_manager_port}:{base_tc.head_object_manager_port}"
-        for ip in tunneled_ips:
+        # When the head already advertises the relay loopback, the reverse
+        # listeners serve its addresses directly. No host NAT/sysctl is needed.
+        for ip in (() if head_ip_resolved == _RELAY_IP else tunneled_ips):
             ssh = _make_ssh(config, ip)
             # Enable route_localnet so the kernel doesn't silently drop
             # packets DNAT'd to 127.x.x.x (the relay loopback).

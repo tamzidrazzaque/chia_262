@@ -151,6 +151,8 @@ class SSHAuthConfig:
     # joins it to the tailnet itself (default for cloud machines when a
     # tailnet section exists; per-IP opt-in for on-prem hosts).
     manage_tailscale: bool = False
+    strict_host_key_checking: bool = False
+    forward_agent: bool = True
 
 
 @dataclass
@@ -225,6 +227,8 @@ class ClusterConfig:
     firesim_config: FireSimClusterConfig | None = None
     auth_overrides: dict[str, SSHAuthConfig] = field(default_factory=dict)
     ssh_proxy_command: str | None = None
+    ssh_strict_host_key_checking: bool = False
+    ssh_forward_agent: bool = True
     tailnet_config: TailnetConfig | None = None
     scoped_teardown: bool = True
 
@@ -233,7 +237,9 @@ class ClusterConfig:
         if ip in self.auth_overrides:
             return self.auth_overrides[ip]
         return SSHAuthConfig(ssh_user=self.ssh_user, ssh_private_key=self.ssh_private_key,
-                             ssh_proxy_command=self.ssh_proxy_command)
+                             ssh_proxy_command=self.ssh_proxy_command,
+                             strict_host_key_checking=self.ssh_strict_host_key_checking,
+                             forward_agent=self.ssh_forward_agent)
 
     def is_tunneled(self, ip: str) -> bool:
         """Return True if *ip* requires an SSH tunnel."""
@@ -768,6 +774,8 @@ def build_config(raw: dict) -> ClusterConfig:
             ssh_proxy_command=override_raw.get("ssh_proxy_command", global_proxy_command),
             tailnet=tailnet_flag,
             manage_tailscale=manage_flag,
+            strict_host_key_checking=override_raw.get("strict_host_key_checking", auth.get("strict_host_key_checking", False)),
+            forward_agent=override_raw.get("forward_agent", auth.get("forward_agent", True)),
         )
 
     # NOTE: tunnel_ip auto-assignment is handled per-worker in
@@ -868,6 +876,8 @@ def build_config(raw: dict) -> ClusterConfig:
                     ssh_user=auth.get("ssh_user", ""),
                     ssh_private_key=auth.get("ssh_private_key"),
                     manage_tailscale=tailnet_config.manage_all,
+                    strict_host_key_checking=auth.get("strict_host_key_checking", False),
+                    forward_agent=auth.get("forward_agent", True),
                 )
                 auth_overrides[ip] = override
             if override.tunnel is not None:
@@ -922,6 +932,8 @@ def build_config(raw: dict) -> ClusterConfig:
         firesim_config=firesim_config,
         auth_overrides=auth_overrides,
         ssh_proxy_command=global_proxy_command,
+        ssh_strict_host_key_checking=auth.get("strict_host_key_checking", False),
+        ssh_forward_agent=auth.get("forward_agent", True),
         tailnet_config=tailnet_config,
         scoped_teardown=raw.get("scoped_teardown", True),
     )

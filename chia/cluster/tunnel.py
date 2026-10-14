@@ -144,13 +144,17 @@ class TunnelManager:
 
         cmd = [
             "ssh", "-N",
-            "-o", "StrictHostKeyChecking=no",
-            "-o", "UserKnownHostsFile=/dev/null",
+            "-o", "StrictHostKeyChecking=yes" if ssh_auth.strict_host_key_checking else "StrictHostKeyChecking=no",
+            "-o", "ForwardAgent=no",
             "-o", "LogLevel=ERROR",
             "-o", "ServerAliveInterval=30",
             "-o", "ServerAliveCountMax=3",
             "-o", "ExitOnForwardFailure=yes",
         ]
+        if ssh_auth.strict_host_key_checking:
+            cmd += ["-o", "BatchMode=yes"]
+        else:
+            cmd += ["-o", "UserKnownHostsFile=/dev/null"]
         if ssh_auth.ssh_proxy_command:
             cmd += ["-o", f"ProxyCommand={ssh_auth.ssh_proxy_command}"]
         if ssh_auth.ssh_private_key:
@@ -163,7 +167,7 @@ class TunnelManager:
         # Reverse tunnel: remote worker reaches head GCS via <tunnel_ip>:<gcs_tunnel_port>.
         # We bind on tunnel_ip (e.g. 127.0.0.2) rather than 0.0.0.0 to avoid
         # exposing the GCS port to the remote host's network.
-        cmd += ["-R", f"{tun_ip}:{tunnel_config.gcs_tunnel_port}:127.0.0.1:{head_gcs_port}"]
+        cmd += ["-R", f"{tun_ip}:{tunnel_config.gcs_tunnel_port}:{head_ip or '127.0.0.1'}:{head_gcs_port}"]
 
         # Forward tunnels: head reaches remote Ray services via <tunnel_ip>:<port>.
         # The worker registers as tunnel_ip in the Ray cluster, so GCS on the

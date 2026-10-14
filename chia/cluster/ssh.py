@@ -16,7 +16,15 @@ class SSHError(Exception):
 class SSHClient:
     def __init__(self, ip: str, user: str, private_key: str | None = None,
                  connect_timeout: int = 30, identities_only: bool = False,
-                 proxy_command: str | None = None):
+                 proxy_command: str | None = None,
+                 strict_host_key_checking: bool = False, forward_agent: bool = True):
+        """Configure SSH and rsync transport.
+
+        Args:
+            strict_host_key_checking: Require existing trusted known_hosts entries.
+            forward_agent: Allow agent forwarding for SSH command sessions.
+                Disable this for dedicated-key lab workers.
+        """
         self.ip = ip
         self.user = user
         self.private_key = private_key
@@ -32,18 +40,23 @@ class SSHClient:
         # reach a host through a tailscale userspace-networking SOCKS5 proxy,
         # or a jump-host command). Applied to ssh and rsync alike.
         self.proxy_command = proxy_command
+        self.strict_host_key_checking = strict_host_key_checking
+        self.forward_agent = forward_agent
 
     def _ssh_base_args(self) -> list[str]:
         args = [
             "ssh",
-            "-A",
-            "-o", "StrictHostKeyChecking=no",
-            "-o", "UserKnownHostsFile=/dev/null",
+            "-A" if self.forward_agent else "-a",
+            "-o", "StrictHostKeyChecking=yes" if self.strict_host_key_checking else "StrictHostKeyChecking=no",
             "-o", f"ConnectTimeout={self.connect_timeout}",
             "-o", "ServerAliveInterval=60",
             "-o", "ServerAliveCountMax=10",
             "-o", "LogLevel=ERROR",
         ]
+        if not self.strict_host_key_checking:
+            args += ["-o", "UserKnownHostsFile=/dev/null"]
+        else:
+            args += ["-o", "BatchMode=yes"]
         if self.proxy_command:
             args += ["-o", f"ProxyCommand={self.proxy_command}"]
         if self.private_key:
@@ -54,7 +67,13 @@ class SSHClient:
         return args
 
     def _rsync_base_args(self) -> list[str]:
-        ssh_cmd = "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR"
+        ssh_cmd = "ssh -o LogLevel=ERROR"
+        if not self.forward_agent:
+            ssh_cmd += " -a"
+        if self.strict_host_key_checking:
+            ssh_cmd += " -o StrictHostKeyChecking=yes -o BatchMode=yes"
+        else:
+            ssh_cmd += " -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
         if self.proxy_command:
             # rsync splits the -e string on whitespace but keeps quoted
             # segments together, so the ProxyCommand value must be quoted.
