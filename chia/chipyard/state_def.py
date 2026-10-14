@@ -129,12 +129,13 @@ class ProgramBuildArtifact:
 
     Attributes:
         files: Collected outputs, keyed by task-dir-relative path; empty on
-            failure or if nothing matched ``outputs``. Shipped by value, so scope
+            collection failure or when no files were produced. Shipped by value, so scope
             ``outputs`` to what downstream nodes need.
-        success: True iff the build command exited 0.
+        success: True iff the build command exited 0 and requested outputs were collected.
         stdout: Captured stdout of the build command.
         stderr: Captured stderr (includes a timeout note on expiry).
-        returncode: Exit code of the build command; ``-1`` on timeout.
+        returncode: Exit code of the build command; ``-1`` on timeout or a collection
+            failure after a successful command.
         modes: Permission bits of ``files``, same keys.
     """
     files: dict[str, bytes]

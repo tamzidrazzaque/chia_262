@@ -68,7 +68,9 @@ class RiscvBuildNode:
             command: Build command — a ``list`` is exec'd; a ``str`` runs via a shell.
             work_dir: Base dir; a uuid task subdir is created under it per call.
             outputs: Path/glob patterns (relative to the task dir) to read back as
-                bytes; a directory pattern is walked recursively.
+                bytes; a directory pattern is walked recursively. Each requested
+                pattern must match after a successful command. Collection errors
+                return a failed artifact with the command's logs.
             cleanup_task_dir: Remove the task dir after collecting outputs.
 
         Returns:
@@ -78,7 +80,19 @@ class RiscvBuildNode:
         task_dir = self._setup(input_files, work_dir)
         self.logger.info(f"Running: {command!r} (cwd={task_dir})")
         stdout, stderr, returncode = self._run(command, cwd=task_dir)
-        files, modes = self._collect(task_dir, outputs or [])
+        try:
+            files, modes = self._collect(task_dir, outputs or [])
+            missing = [pattern for pattern in outputs or []
+                       if not any(Path(task_dir).glob(pattern))]
+            if returncode == 0 and missing:
+                raise FileNotFoundError(f"required output patterns did not match: {missing}")
+        except OSError as exc:
+            files, modes = {}, {}
+            stderr += f"\n[RiscvBuildNode] output collection failed: {exc}"
+            # Retain a compiler error if there was one; otherwise collection
+            # failure must prevent a successful artifact or downstream score.
+            if returncode == 0:
+                returncode = -1
         if returncode != 0:
             self.logger.warning(
                 f"build_program failed (rc={returncode}); stderr tail: {stderr[-500:]}"

@@ -8,6 +8,35 @@ the cluster tests here). Run: pytest chia/chipyard/test/test_build_program.py
 from chia.chipyard.riscv_build_node import RiscvBuildNode
 
 
+def test_missing_output_fails_even_when_command_succeeds(tmp_path):
+    art = RiscvBuildNode().build_program({}, "echo completed", str(tmp_path), ["missing.bin"])
+    assert not art.success and art.returncode == -1
+    assert "completed" in art.stdout
+    assert "required output patterns did not match" in art.stderr
+
+
+def test_collection_failure_preserves_logs_and_cleans_up(tmp_path, monkeypatch):
+    def unreadable(*args):
+        raise PermissionError("unreadable result")
+
+    monkeypatch.setattr(RiscvBuildNode, "_collect", unreadable)
+    art = RiscvBuildNode().build_program({}, "echo build-log; echo diagnostic >&2", str(tmp_path), ["out"])
+    assert not art.success and art.returncode == -1
+    assert "build-log" in art.stdout and "diagnostic" in art.stderr
+    assert "output collection failed: unreadable result" in art.stderr
+    assert not list(tmp_path.iterdir())
+
+
+def test_collection_failure_preserves_compiler_exit_code(tmp_path, monkeypatch):
+    def unreadable(*args):
+        raise OSError("result I/O error")
+
+    monkeypatch.setattr(RiscvBuildNode, "_collect", unreadable)
+    art = RiscvBuildNode().build_program({}, "exit 7", str(tmp_path), ["out"])
+    assert not art.success and art.returncode == 7
+    assert "output collection failed" in art.stderr
+
+
 def test_collects_outputs_from_nested_inputs(tmp_path):
     art = RiscvBuildNode().build_program(
         input_files={"src/a.txt": b"AAA", "src/b.txt": b"BBB"},
