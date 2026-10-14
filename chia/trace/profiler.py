@@ -207,6 +207,10 @@ def get_collector(namespace: Optional[str] = None):
     if _collector_override is not None:
         return _collector_override
     import ray as _ray
+    # get_actor auto-initializes Ray. A local ChiaFunction call must not
+    # start a cluster (and network listeners) merely to look for profiling.
+    if not _ray.is_initialized():
+        return None
     lookup_kwargs = {"namespace": namespace} if namespace else {}
     try:
         return _ray.get_actor(_COLLECTOR_ACTOR_NAME, **lookup_kwargs)
