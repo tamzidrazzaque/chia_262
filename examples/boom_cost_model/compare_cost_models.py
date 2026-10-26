@@ -39,9 +39,10 @@ FOCUS = (
 
 # Same -march for every tune, so a diff is the cost model and not a new ISA.
 MARCH = "rv64gc"
+MABI = "lp64d"
 OPT_LEVELS = ("-O2", "-O3")
-# GCC 13 accepts these. They are the models we can actually compile with
-# until a GCC 14+ toolchain that knows Xiangshan is on the path.
+# Extra tunes accepted by the original GCC 13 toolchain. Newer compilers may
+# also accept the FOCUS models; compile_kernels probes every selected name.
 LOCAL_TUNES = ("sifive-7-series", "thead-c906", "size")
 
 # Field order of struct riscv_tune_param in gcc/config/riscv/riscv.cc.
@@ -238,7 +239,17 @@ def compile_kernels(gcc: str, kernels: list[Path], out_dir: Path, tunes: list[st
             by_tune: dict[str, Path] = {}
             for tune in tunes:
                 dest = asm_dir / f"{kernel.stem}{opt}.{tune}.s"
-                cmd = [gcc, "-S", opt, f"-march={MARCH}", f"-mtune={tune}", kernel.name, "-o", str(dest)]
+                cmd = [
+                    gcc,
+                    "-S",
+                    opt,
+                    f"-march={MARCH}",
+                    f"-mabi={MABI}",
+                    f"-mtune={tune}",
+                    kernel.name,
+                    "-o",
+                    str(dest),
+                ]
                 proc = subprocess.run(cmd, cwd=kernel.parent, capture_output=True, text=True)
                 if proc.returncode != 0:
                     dest.unlink(missing_ok=True)
@@ -356,7 +367,10 @@ def render_report(payload: dict) -> str:
         lines.append("No riscv64 gcc was found. Set RISCV_GCC and rerun.")
     else:
         lines.append(f"Compiler: {cc['version']}")
-        lines.append(f"Command shape: riscv64-unknown-elf-gcc -S -O2 -march={MARCH} -mtune=<model>")
+        lines.append(
+            f"Command shape: <gcc> -S -O2 -march={MARCH} -mabi={MABI} "
+            "-mtune=<model>"
+        )
         supported = []
         for row in cc["results"]:
             if row["supported"] and row["tune"] not in supported:
@@ -365,9 +379,9 @@ def render_report(payload: dict) -> str:
         lines.append("Produced assembly for: " + (", ".join(supported) if supported else "(none)"))
         if missing:
             lines.append("Rejected by this compiler: " + ", ".join(missing))
-            lines.append("Those names are in current GCC source. This binary is older, so their")
-            lines.append("tables above are from the source checkout, and the assembly comparison")
-            lines.append("uses the models this binary accepts (including SiFive 7, C906, and size).")
+        lines.append("The tables above come from the separate GCC source checkout. Assembly is")
+        lines.append("generated only for names accepted by the selected compiler; a source")
+        lines.append("checkout may be newer than the binary and expose additional tune names.")
         lines.append("")
         lines.append(f"{'kernel':<16} {'opt':<6} {'tune':<24} {'vs rocket'}")
         for row in cc["results"]:
@@ -387,7 +401,7 @@ def render_report(payload: dict) -> str:
     lines.append("------------------------")
     lines.append("Small kernels, cost model only (same ISA):")
     for name in FOCUS:
-        lines.append(f"  -march={MARCH} -mtune={name}")
+        lines.append(f"  -march={MARCH} -mabi={MABI} -mtune={name}")
     lines.append("Whole-core defaults, including that core's extensions:")
     lines.append("  -mcpu=xiangshan-nanhu")
     lines.append("  -mcpu=xiangshan-kunminghu")

@@ -92,6 +92,11 @@ def main(experiment=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gcc", type=Path, required=True, help="GCC supporting all three tunes")
     parser.add_argument("--runtime-gcc", type=Path, required=True, help="Chipyard GCC with htif_nano.specs")
+    parser.add_argument(
+        "--runtime-specs",
+        default="htif_nano.specs",
+        help="GCC specs name or absolute path used to link the HTIF runtime",
+    )
     parser.add_argument("--simulator", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--opt", choices=("O2", "O3"), default="O2")
@@ -147,7 +152,7 @@ def main(experiment=None):
     run([args.runtime_gcc.resolve(), *common, "-O2", "-mtune=rocket", *defines,
          "-c", source / harness_name, "-o", harness])
     binary = out / "timing.riscv"
-    run([args.runtime_gcc.resolve(), *common, "-specs=htif_nano.specs", harness,
+    run([args.runtime_gcc.resolve(), *common, f"-specs={args.runtime_specs}", harness,
          *objects, "-o", binary])
     nm = Path(str(args.runtime_gcc.resolve()).removesuffix("gcc") + "nm")
     symbols = subprocess.check_output([nm, "-n", binary], text=True)

@@ -149,10 +149,12 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("spec", help="SPEC suite and input size, e.g. spec06-int-test or "
                                      "spec17-intspeed-train")
+    parser.add_argument("--spec-flags", default="",
+                        help="Flags passed to every target SPEC compile and link")
     args = parser.parse_args()
 
     ray.init(address="auto")
-    wl = get(start_workload(args.spec))
+    wl = get(start_workload(args.spec, spec_flags=args.spec_flags))
     if not wl.success:
         print("workload failed\n" + wl.stderr[-2000:]); return 1
     print(f"OK: workload {len(wl.archive)} bytes, descriptor {wl.json_name}, {len(jobs(args.spec))} jobs")

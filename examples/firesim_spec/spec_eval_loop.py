@@ -28,6 +28,14 @@ def main() -> int:
                         help="A recipe of config_build_recipes.yaml")
     parser.add_argument("--agfi", help="Skip the bitstream build: an AGFI built from the recipe")
     parser.add_argument("--driver", help="The driver bundle (driver-bundle.tar.gz) of --agfi")
+    parser.add_argument(
+        "--spec-flags",
+        default="",
+        help=(
+            "Flags appended to every SPEC compile and link, for example "
+            "'-march=rv64gc -mabi=lp64d -O3 -mtune=generic-ooo'"
+        ),
+    )
     args = parser.parse_args()
 
     ray.init(address="auto")
@@ -46,7 +54,8 @@ def main() -> int:
 
     result = get(spec_eval.chia_remote(aws, args.spec, recipe,
                                        RunConfig.from_yaml("config_runtime.yaml"),
-                                       bitstream=bitstream))
+                                       bitstream=bitstream,
+                                       spec_flags=args.spec_flags))
     print(f"bitstream: {result.bitstream.agfi}")
     for benchmark, seconds in sorted(result.seconds.items()):
         print(f"{benchmark}: {seconds:.0f} s, ratio {result.ratios.get(benchmark)}")
