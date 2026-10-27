@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -27,8 +29,13 @@ def run_tune(spec_dir: str, gcc_root: str, speckle: str, qemu: str, out: str,
     common = [sys.executable, str(script), "--spec-dir", spec_dir, "--gcc-root", gcc_root,
               "--speckle", speckle, "--qemu", qemu, "--out", out, "--tune", tune,
               "--benchmark", benchmark, "--size", size]
+    # The Ray worker keeps the loopback bind guard. The compiler and QEMU do not
+    # listen, so they run without the preload and see the normal toolchain.
+    env = os.environ.copy()
+    env.pop("LD_PRELOAD", None)
     for action in ("build", "validate"):
-        subprocess.run([*common, "--action", action], check=True, capture_output=True, text=True)
+        subprocess.run([*common, "--action", action], check=True, capture_output=True,
+                       text=True, env=env)
     log = Path(out) / f"{benchmark}-{size}-{tune}-validate.log"
     if not validated(log.read_text(), benchmark, size):
         raise RuntimeError(f"SPEC did not validate {benchmark} under {tune}; inspect {log}")
@@ -53,7 +60,10 @@ def main() -> None:
     if not re.fullmatch(r"[56]\d{2}\.[A-Za-z0-9_]+_[rs]", args.benchmark):
         parser.error("Expected a SPEC CPU2017 benchmark name")
     args.ray_temp.mkdir(mode=0o700, parents=True, exist_ok=True)
-    ray.init(num_cpus=1, include_dashboard=False, _node_ip_address="127.0.0.1",
+    # Ray rewrites 127.0.0.1 to the host LAN address. Docker jobs set
+    # CHIA_LOOPBACK_BIND_IP to another 127/8 address that stays loopback.
+    bind_ip = os.environ.get("CHIA_LOOPBACK_BIND_IP", "127.0.0.1")
+    ray.init(num_cpus=1, include_dashboard=False, _node_ip_address=bind_ip,
              _temp_dir=str(args.ray_temp.resolve()))
     try:
         results = []

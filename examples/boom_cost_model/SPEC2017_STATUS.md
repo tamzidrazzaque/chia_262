@@ -2,6 +2,20 @@
 
 This document records an internal research experiment, **not** an official SPEC result or a BOOM SPEC performance claim. No licensed SPEC media, inputs, sources, binaries, or disassembly are stored in this repository.
 
+## a3 continuation
+
+Checked on `a3.millennium.berkeley.edu` after a fresh SSH login. Docker group membership is effective. The private SPEC tree and GCC 15.1.0 binary (`e46d7107…`) are intact. `/scratch/trazzaque/SLICE` and the old Chipyard checkout were gone; pinned FireMarshal `21119e5c`, spec2017-workload `83e3311`, and speckle `e43e0a6` were cloned again under `/scratch/trazzaque/SLICE`. No Xilinx device or XDMA node is present, so no SPEC workload ran on BOOM.
+
+A Docker `--net=host` CHIA job is safe here only with the loopback bind guard and a non-`127.0.0.1` loopback alias (`127.88.0.1` on this run). Ray rewrites `127.0.0.1` to the LAN address. `chia up` was not started: there is no user SSH key, and `localhost` in `known_hosts` does not match the current sshd key. The guard was taken from `origin/main` commit `0df5972` and was not merged.
+
+That guarded Docker runtime rebuilt and validated `505.mcf_r` `test` for `rocket`, `generic-ooo`, and `xiangshan-nanhu`. SPEC reported `Success` for each. The recorded QEMU user-mode runtimes are not BOOM results. Logs: `/home/eecs/trazzaque/spec2017-research/results/a3-docker-mcf/`.
+
+A full `lspci -nn` on 2026-10-27 shows only Intel and Matrox devices. There is no Xilinx endpoint, no `/dev/xdma`, and no FPGA sysfs node. The old Rocket UART log's bus `0000:61:00.0` is not on this machine.
+
+FireMarshal `br-base` and `spec17-intrate-test-500` were built from the pinned commits. GCC 15 needed two portability flags in the Speckle configs, without changing benchmark source: `CXXPORTABILITY = -Wno-template-body` on `523.xalancbmk_r` in `riscv.cfg`, and `CPORTABILITY = -U_FORTIFY_SOURCE` on `502.gcc_r` in `host.cfg`. OpenSBI was built with `-std=gnu11`. Busybox `CONFIG_TC` was turned off because kernel 6.8 headers removed `TCA_CBQ_*`. `jlevel` was 4.
+
+The guest launch used QEMU 6.2 system mode (`qemu-system-riscv64 -machine virt -smp 4 -m 16384`), not BOOM. `500.perlbench_r` test, 4 copies, all ended `All tests successful` with empty stderr. Guest `/usr/bin/time` real times were 290.75, 287.23, 288.48, and 290.53 seconds. UART ended `COMMAND_EXIT_CODE="0"`. These are QEMU functional-simulation times, not BOOM cycles. `handle-results.py` did not finish because `pandas` is not installed; the raw copy outputs are the validation. Logs: `/scratch/trazzaque/SLICE/FireMarshal/runOutput/spec17-intrate-test-500-launch-2026-10-27--11-17-16-RKPPA41SZQLA7JE1/`. The detailed note is `/scratch/trazzaque/SLICE/cost-model-out/RESEARCH_REPORT.md`.
+
 ## Completed
 
 - CPU2017 1.1.9 installed privately from the lab ISO at `/nscratch/spec/2017/cpu2017-1.1.9.iso` (SHA-256 `9b67bdf77cf749b96520a4ee4f1acb3cc5aeb87c89f0dbf3f0bc7f718ed1de09`). The installation and logs are under `/home/eecs/trazzaque/spec2017-research/`, whose parent is mode 0700. The installer passed its checks.
@@ -36,9 +50,8 @@ Per-run `*-build.log`, `*-validate.log`, and JSON metadata, plus `*-asm-summary.
 
 ## What remains
 
-1. Access to `a3.millennium.berkeley.edu` from the prior session failed at SSH public-key authentication, so Docker group membership, `docker ps`, `docker info`, shared paths, and resources there were **not** verified. A new SSH login is also needed after group changes. Current `chia/cluster/docker.py` uses host networking; before any Docker-backed CHIA cluster, verify that every listening service is bound to `127.0.0.1`, or change the network/service configuration to meet the lab's rule. Do not assume `-p 127.0.0.1:...` constrains `--net=host`.
-2. The isolated Chipyard checkout is at `bcb612918bb964a0dad33a26a1921c161eb598d0`, nested Speckle at `e43e0a6c1a54da6fe74d9ca31f82f974f87327c0`, FireMarshal at `21119e5ce922ff9302f0bc9d2d7349c77f7ac064`. FireMarshal has **not** been built/launched. Try one `spec17-intrate-test-500.json` image first, inspect launch and post-run output, and do not blindly update submodules.
-3. The existing Small BOOM Verilator executable is a bare-metal HTIF simulator, not a Linux SPEC target. On-prem U250 hardware and XDMA were observed, but no matching BOOM bitstream/runtime was identified. Establish one Linux-capable BOOM FireSim configuration and reuse it for all tunes before claiming SPEC performance. Measure benchmark-only cycles and retired instructions with repetitions; compute IPC only if both counters exist. No SPEC BOOM cycles/IPC have yet been obtained.
-4. Prioritize mcf's divide path, deepsjeng's multiply path, and xz's expanded SHA-256 load/store path for profiles, GCC dumps, and same-BOOM measurement. Static instruction count alone is insufficient: serialized multiply/divide latency and memory pressure can reverse a code-size win.
+1. `chia/cluster/docker.py` still uses `--net=host`. On a3, Ray rewrites `127.0.0.1` to the LAN address. The working Docker job set `CHIA_LOOPBACK_BIND_IP` to another 127/8 address and preloaded the loopback `bind` guard from `origin/main` commit `0df5972` (not merged). `chia up` was not used.
+2. No SPEC workload has run on BOOM. a3 has no FPGA. The next machine needs a Linux-capable BOOM (FireSim bitstream or equivalent), the same benchmark input, and benchmark-only cycles plus retired instructions. IPC only if both counters exist. Repeat the three tunes on that one configuration. The QEMU guest above used stock Speckle `-march=rv64imafdc` with no `-mtune`; it is not the three-tune comparison.
+3. Prioritize mcf's divide path, deepsjeng's generic-ooo multiply path, and xz's SHA-256 stack spills for that BOOM measurement. Static instruction count alone is insufficient.
 
 Do not start AWS or incur cloud cost without explicit user approval. Keep test and reference inputs clearly distinguished and keep every tune's ISA, ABI, compiler version, input, BOOM configuration, and measurement boundaries identical.
