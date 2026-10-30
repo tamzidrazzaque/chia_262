@@ -17,8 +17,8 @@ if [ ! -d speckle ]; then
     git -C speckle submodule update --init --recursive
 fi
 
-# Add SPEC_FLAGS to the RISC-V compilers in speckle's config.
-[ -z "$SPEC_FLAGS" ] || sed -i -E "s#^([[:space:]]*(CC|CXX|FC)[[:space:]]*=.*)\$#\1 $SPEC_FLAGS#" speckle/riscv.cfg
+python3 prepare_speckle.py speckle
 
 echo "Building SPEC2017 Intrate with $1 inputs"
-cd speckle && ./gen_binaries.sh --compile --suite intrate --input "$1"
+(cd speckle && ./gen_binaries.sh --compile --suite intrate --input "$1")
+python3 prepare_speckle.py speckle --finish intrate "$1"

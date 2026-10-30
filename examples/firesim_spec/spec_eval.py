@@ -22,6 +22,7 @@ from pathlib import Path
 
 from ray import cloudpickle
 
+from chia.aws.manager import Farm
 from chia.aws.s3 import S3Node
 from chia.base.ChiaFunction import ChiaFunction, get
 from chia.chipyard.state_def import FireMarshalArtifact
@@ -59,7 +60,8 @@ def spec_eval(aws, spec: str, recipe: BuildRecipe, run_config: RunConfig | None 
               diffs: "list[str] | None" = None, bitstream: FSBitstream | None = None,
               workload: FireMarshalArtifact | None = None, spec_flags: str = "",
               cores: int = 1, upload_to: str | None = None,
-              max_fpgas: int = 12, small_images: bool = False) -> SpecEvalResult:
+              max_fpgas: int = 12, small_images: bool = False,
+              existing_farm: Farm | None = None, compiler_id: str = "") -> SpecEvalResult:
     """Run ``spec`` on ``recipe`` with ``diffs``, and score it. The SPEC build and the
     bitstream build run at the same time.
 
@@ -73,13 +75,26 @@ def spec_eval(aws, spec: str, recipe: BuildRecipe, run_config: RunConfig | None 
         spec_flags, cores, small_images: As in ``spec_sw_build_loop.start_workload``.
         upload_to: ``s3://bucket/prefix`` for the bitstream and workload that it builds.
         max_fpgas: F2 machines at most.
+        existing_farm: Already registered FPGA workers. They must have no manager;
+            this evaluation leaves their instances running. Requires a bitstream.
+        compiler_id: Identity included in the workload image cache key.
 
     Raises:
         RuntimeError: A build failed.
     """
+    if max_fpgas < 1:
+        raise ValueError("max_fpgas must be at least 1")
+    if existing_farm is not None:
+        if bitstream is None:
+            raise ValueError("an existing farm requires a prebuilt bitstream")
+        if existing_farm.manager is not None or not existing_farm.ips:
+            raise ValueError("an existing farm must have workers and no lifecycle manager")
+        if len(existing_farm.ips) > max_fpgas:
+            raise ValueError("existing farm exceeds max_fpgas")
     jobs = spec_build.jobs(spec, cores)
     workload_ref = None if workload else spec_build.start_workload(spec, cores, spec_flags,
-                                                                   small_images, upload_to or "")
+                                                                   small_images, upload_to or "",
+                                                                   compiler_id=compiler_id)
     built_bitstream = False
     if bitstream is None:
         ecad = get(aws.launch.chia_remote(F2_ECAD, count=1))
@@ -107,11 +122,12 @@ def spec_eval(aws, spec: str, recipe: BuildRecipe, run_config: RunConfig | None 
     if bitstream.driver_uri and not bitstream.driver_bytes:
         bucket, key = bitstream.driver_uri.removeprefix("s3://").split("/", 1)
         bitstream = replace(bitstream, driver_uri=None, driver_bytes=S3Node(bucket).get_bytes(key))
-    farm = get(aws.launch.chia_remote(F2_SIM, count=min(max_fpgas, len(jobs))))
+    farm = existing_farm or get(aws.launch.chia_remote(F2_SIM, count=min(max_fpgas, len(jobs))))
     try:
         results = FireSimManagerNode().run_workload(farm, workload, bitstream, run_config)
     finally:
-        farm.teardown()        # also when run_workload fails
+        if existing_farm is None:
+            farm.teardown()        # also when run_workload fails
     return SpecEvalResult(stored_bitstream, workload, results, *_score(results))
 
 
@@ -126,10 +142,20 @@ def _score(results: list[SimJobResult]) -> tuple[dict[str, float], dict[str, flo
     reftimes: dict[str, float] = {}
     times: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
     failed = set()
+    incomplete = False
     for result in results:
+        if not result.success or not result.outputs:
+            incomplete = True
+            continue
         for path, data in result.outputs.items():
             folder, _, file = path.rpartition("/")
-            if not folder.endswith("/output") or not (file == "reftimes.json" or _BENCHMARK.match(file)):
+            if folder != "output" and not folder.endswith("/output"):
+                continue
+            if file.endswith(".status") or file.endswith(".collection-status"):
+                if data.strip() != b"0":
+                    incomplete = True
+                continue
+            if not (file == "reftimes.json" or _BENCHMARK.match(file)):
                 continue
             if file == "reftimes.json":
                 reftimes.update(json.loads(data))
@@ -142,5 +168,6 @@ def _score(results: list[SimJobResult]) -> tuple[dict[str, float], dict[str, flo
                         times[_BENCHMARK.match(row["name"])[0]][row.get("copy") or "0"] += float(row["RealTime"])
     seconds = {b: max(t.values()) for b, t in times.items() if b not in failed}
     ratios = {b: len(times[b]) * reftimes[b] / s for b, s in seconds.items() if b in reftimes}
-    score = statistics.geometric_mean(ratios.values()) if reftimes and ratios.keys() == reftimes.keys() else None
+    score = (statistics.geometric_mean(ratios.values())
+             if not incomplete and reftimes and ratios.keys() == reftimes.keys() else None)
     return seconds, ratios, score

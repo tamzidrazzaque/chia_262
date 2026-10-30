@@ -16,6 +16,7 @@ import socket
 import subprocess
 import time
 from dataclasses import replace
+from pathlib import Path
 from urllib.request import Request, urlopen
 
 import ray
@@ -185,7 +186,9 @@ class FireSimManagerNode:
             log += f"=== {task} (rc={rc}) ===\n{out[-4000:]}\n"
             if rc != 0:
                 report("FPGA", host, detail=f"{task} rc={rc}")
-                return SimJobResult(name, success=False, log=log,
+                slot = Path("/home/ubuntu/sim_slot_0/uartlog")
+                uart = slot.read_text(errors="replace") if slot.exists() else ""
+                return SimJobResult(name, success=False, log=log, uartlog=uart,
                                     duration_seconds=time.monotonic() - t0)
 
         outputs = self._collect(name)
@@ -204,8 +207,12 @@ class FireSimManagerNode:
                                input=_MANAGER, capture_output=True, text=True,
                                timeout=self.timeout_seconds)
             return p.returncode, p.stdout + p.stderr
-        except subprocess.TimeoutExpired:
-            return -1, f"timeout after {self.timeout_seconds}s"
+        except subprocess.TimeoutExpired as exc:
+            def decoded(value):
+                return value.decode(errors="replace") if isinstance(value, bytes) else (value or "")
+            return -1, (decoded(exc.stdout) + decoded(exc.stderr)
+                        + f"\ntimeout after {self.timeout_seconds}s; detached driver may still be running; "
+                          "inspect the owned slot before retrying")
 
     @staticmethod
     def _collect(name: str) -> dict[str, bytes]:
