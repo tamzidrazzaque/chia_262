@@ -1,0 +1,58 @@
+{
+  "baseline-f2": {
+    "fsd": 1,
+    "flw": 37,
+    "fcvt.w.s": 18,
+    "fsub.s": 18,
+    "fsw": 18
+  },
+  "candidate-000-f2": {
+    "fsd": 1,
+    "flw": 37,
+    "fcvt.w.s": 18,
+    "fsub.s": 18,
+    "fsw": 18
+  },
+  "candidate-001-f2": {
+    "fsd": 1,
+    "flw": 37,
+    "fcvt.w.s": 18,
+    "fsub.s": 18,
+    "fsw": 18
+  },
+  "candidate-002-f2": {
+    "fsd": 1,
+    "flw": 37,
+    "fcvt.w.s": 18,
+    "fsub.s": 18,
+    "fsw": 18
+  },
+  "candidate-003-f2": {
+    "fsd": 1,
+    "flw": 37,
+    "fcvt.w.s": 18,
+    "fsub.s": 18,
+    "fsw": 18
+  },
+  "candidate-004-f2": {
+    "fsd": 1,
+    "flw": 37,
+    "fcvt.w.s": 18,
+    "fsub.s": 18,
+    "fsw": 18
+  },
+  "candidate-005-f2": {
+    "fsd": 1,
+    "flw": 37,
+    "fcvt.w.s": 18,
+    "fsub.s": 18,
+    "fsw": 18
+  },
+  "historical-fmv4": {
+    "fsd": 1,
+    "flw": 37,
+    "fcvt.w.s": 18,
+    "fsub.s": 18,
+    "fsw": 18
+  }
+}

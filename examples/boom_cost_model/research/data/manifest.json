@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "exporter": "examples.boom_cost_model.export_research",
+  "files": {
+    "spec-estimates.json": "718065a7a287223e22ec6fc5769b032e9e7a87f7c5f8d5e51e3e2f0332082ed2",
+    "fast-kernels.json": "5da8ec29295e92b57e4e62f7daf7b322afdc37c5b0a36e2e2a7db1062ed9d6ec",
+    "compiler-models.json": "7995aef821d151e5a55e938c211fa65d4dfa2111a51055b41a6b5129be198c85",
+    "coverage-counts.json": "2f5ad402c50a0dd70c332229e0d196861cd0acc1f9961a0bbc458d9cbf935b59",
+    "allocation-pressure.json": "a3adeec361cdf1f8f939dff9966d776ca23605eec575782927070cf522871f13",
+    "static-application.json": "141b998f5e96f76dd2580d737808dfbf7353c79b6a44fa93380f94ccc8452c78",
+    "cross-file-moves.json": "5f4843f6cfb74c5692b9695f976e64e3bdc4b35f971f4d96e66a807fecc33993",
+    "floating-opcodes.json": "b649a62caeb850906c28ee2db7f8b6f3bab4ed511d1b1da7cdd9988a838a896c",
+    "provenance.json": "38749b628657d5bdbd7d688c7608eecbd6552e0120821b5dc2a2a084c6eb40a3"
+  },
+  "excluded": [
+    "SPEC source/ISO/installation",
+    "binaries/root filesystems",
+    "licensed inputs/reference outputs",
+    "SPEC program assembly/IR/gcov notes/data",
+    "raw logs/Claude sessions",
+    "credentials/site configurations"
+  ],
+  "spec_publication_rules": "https://www.spec.org/cpu2017/Docs/runrules.html"
+}

@@ -1,0 +1,248 @@
+{
+  "baseline": {
+    "inputs": "train",
+    "FPGA_executed": false,
+    "flags_added": "--coverage -fprofile-dir=.",
+    "native_correctness_passed": true,
+    "limitation": "Instrumentation can alter optimization/allocation; counts describe this instrumented functional execution, not hardware latency.",
+    "functions": [
+      {
+        "name": "__brute_force_MOD_digits_2",
+        "execution_count": 34934090,
+        "blocks": 356,
+        "blocks_executed": 356
+      },
+      {
+        "name": "update.6",
+        "execution_count": 127460,
+        "blocks": 22,
+        "blocks_executed": 22
+      },
+      {
+        "name": "naked_pairs.3",
+        "execution_count": 44970,
+        "blocks": 236,
+        "blocks_executed": 236
+      },
+      {
+        "name": "hidden_pairs.2",
+        "execution_count": 44018,
+        "blocks": 293,
+        "blocks_executed": 293
+      },
+      {
+        "name": "__brute_force_MOD_rearrange",
+        "execution_count": 41647,
+        "blocks": 206,
+        "blocks_executed": 206
+      },
+      {
+        "name": "naked_triplets.1",
+        "execution_count": 33132,
+        "blocks": 348,
+        "blocks_executed": 348
+      },
+      {
+        "name": "hidden_triplets.0",
+        "execution_count": 32895,
+        "blocks": 549,
+        "blocks_executed": 546
+      },
+      {
+        "name": "specific.4",
+        "execution_count": 32759,
+        "blocks": 239,
+        "blocks_executed": 239
+      },
+      {
+        "name": "__brute_force_MOD_covered",
+        "execution_count": 24713,
+        "blocks": 147,
+        "blocks_executed": 144
+      },
+      {
+        "name": "knt_val.9",
+        "execution_count": 23401,
+        "blocks": 15,
+        "blocks_executed": 15
+      },
+      {
+        "name": "x_wing.5",
+        "execution_count": 22619,
+        "blocks": 211,
+        "blocks_executed": 209
+      },
+      {
+        "name": "__logic_MOD_new_solver",
+        "execution_count": 22088,
+        "blocks": 316,
+        "blocks_executed": 310
+      },
+      {
+        "name": "__brute_force_MOD_brute",
+        "execution_count": 22088,
+        "blocks": 175,
+        "blocks_executed": 141
+      },
+      {
+        "name": "__brute_force_MOD_reflected",
+        "execution_count": 4213,
+        "blocks": 63,
+        "blocks_executed": 61
+      },
+      {
+        "name": "one_nine.8",
+        "execution_count": 23,
+        "blocks": 9,
+        "blocks_executed": 8
+      },
+      {
+        "name": "eliminate.10",
+        "execution_count": 20,
+        "blocks": 24,
+        "blocks_executed": 17
+      },
+      {
+        "name": "MAIN__",
+        "execution_count": 1,
+        "blocks": 279,
+        "blocks_executed": 264
+      },
+      {
+        "name": "main",
+        "execution_count": 1,
+        "blocks": 3,
+        "blocks_executed": 3
+      },
+      {
+        "name": "read_raw_data.7",
+        "execution_count": 1,
+        "blocks": 37,
+        "blocks_executed": 29
+      }
+    ]
+  },
+  "candidate-003": {
+    "inputs": "train",
+    "FPGA_executed": false,
+    "flags_added": "--coverage -fprofile-dir=.",
+    "native_correctness_passed": true,
+    "limitation": "Instrumentation can alter optimization/allocation; counts describe this instrumented functional execution, not hardware latency.",
+    "functions": [
+      {
+        "name": "__brute_force_MOD_digits_2",
+        "execution_count": 34934090,
+        "blocks": 356,
+        "blocks_executed": 356
+      },
+      {
+        "name": "update.6",
+        "execution_count": 127460,
+        "blocks": 22,
+        "blocks_executed": 22
+      },
+      {
+        "name": "naked_pairs.3",
+        "execution_count": 44970,
+        "blocks": 236,
+        "blocks_executed": 236
+      },
+      {
+        "name": "hidden_pairs.2",
+        "execution_count": 44018,
+        "blocks": 293,
+        "blocks_executed": 293
+      },
+      {
+        "name": "__brute_force_MOD_rearrange",
+        "execution_count": 41647,
+        "blocks": 206,
+        "blocks_executed": 206
+      },
+      {
+        "name": "naked_triplets.1",
+        "execution_count": 33132,
+        "blocks": 348,
+        "blocks_executed": 348
+      },
+      {
+        "name": "hidden_triplets.0",
+        "execution_count": 32895,
+        "blocks": 549,
+        "blocks_executed": 546
+      },
+      {
+        "name": "specific.4",
+        "execution_count": 32759,
+        "blocks": 239,
+        "blocks_executed": 239
+      },
+      {
+        "name": "__brute_force_MOD_covered",
+        "execution_count": 24713,
+        "blocks": 147,
+        "blocks_executed": 144
+      },
+      {
+        "name": "knt_val.9",
+        "execution_count": 23401,
+        "blocks": 15,
+        "blocks_executed": 15
+      },
+      {
+        "name": "x_wing.5",
+        "execution_count": 22619,
+        "blocks": 211,
+        "blocks_executed": 209
+      },
+      {
+        "name": "__logic_MOD_new_solver",
+        "execution_count": 22088,
+        "blocks": 316,
+        "blocks_executed": 310
+      },
+      {
+        "name": "__brute_force_MOD_brute",
+        "execution_count": 22088,
+        "blocks": 175,
+        "blocks_executed": 141
+      },
+      {
+        "name": "__brute_force_MOD_reflected",
+        "execution_count": 4213,
+        "blocks": 63,
+        "blocks_executed": 61
+      },
+      {
+        "name": "one_nine.8",
+        "execution_count": 23,
+        "blocks": 9,
+        "blocks_executed": 8
+      },
+      {
+        "name": "eliminate.10",
+        "execution_count": 20,
+        "blocks": 24,
+        "blocks_executed": 17
+      },
+      {
+        "name": "MAIN__",
+        "execution_count": 1,
+        "blocks": 279,
+        "blocks_executed": 264
+      },
+      {
+        "name": "main",
+        "execution_count": 1,
+        "blocks": 3,
+        "blocks_executed": 3
+      },
+      {
+        "name": "read_raw_data.7",
+        "execution_count": 1,
+        "blocks": 37,
+        "blocks_executed": 29
+      }
+    ]
+  }
+}

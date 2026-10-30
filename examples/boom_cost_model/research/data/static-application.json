@@ -1,0 +1,838 @@
+{
+  "method": "Application symbols between first Fortran routine and first linked runtime callback in baseline; compare named functions. Stack loads/stores include save/restore, not exact spills. Counts are static.",
+  "application_symbols": [
+    "MAIN__",
+    "__brute_force_MOD_brute",
+    "__brute_force_MOD_covered",
+    "__brute_force_MOD_covered.constprop.0.isra.0",
+    "__brute_force_MOD_digits_2.constprop.1.isra.0",
+    "__brute_force_MOD_digits_2.constprop.2.isra.0",
+    "__brute_force_MOD_digits_2.constprop.3.isra.0",
+    "__brute_force_MOD_digits_2.constprop.4.isra.0",
+    "__brute_force_MOD_digits_2.constprop.5.isra.0",
+    "__brute_force_MOD_digits_2.constprop.6.isra.0",
+    "__brute_force_MOD_digits_2.constprop.7.isra.0",
+    "__brute_force_MOD_digits_2.isra.0",
+    "__brute_force_MOD_rearrange.isra.0",
+    "__logic_MOD_new_solver",
+    "_gfortran_set_convert",
+    "_gfortran_set_max_subrecord_length",
+    "_gfortran_set_options",
+    "_gfortran_set_record_marker",
+    "_gfortrani_backtrace_handler",
+    "_gfortrani_init_compile_options",
+    "eliminate.10",
+    "hidden_pairs.2",
+    "hidden_triplets.0",
+    "knt_val.9",
+    "naked_triplets.1",
+    "specific.4",
+    "update.6"
+  ],
+  "variants": {
+    "baseline-f2": {
+      "totals": {
+        "static_instructions": 40189,
+        "stack_loads": 5067,
+        "stack_stores": 4120,
+        "cross_file_moves": 0
+      },
+      "deltas": [],
+      "missing_symbols": []
+    },
+    "candidate-000-f2": {
+      "totals": {
+        "static_instructions": 39883,
+        "stack_loads": 4888,
+        "stack_stores": 3987,
+        "cross_file_moves": 0
+      },
+      "deltas": [
+        {
+          "function": "__brute_force_MOD_digits_2.isra.0",
+          "static_instructions": -61,
+          "stack_loads": -18,
+          "stack_stores": -21,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_brute",
+          "static_instructions": -10,
+          "stack_loads": -5,
+          "stack_stores": -6,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_covered",
+          "static_instructions": 2,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "MAIN__",
+          "static_instructions": 5,
+          "stack_loads": 2,
+          "stack_stores": 1,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "specific.4",
+          "static_instructions": -11,
+          "stack_loads": -16,
+          "stack_stores": -13,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "naked_triplets.1",
+          "static_instructions": 55,
+          "stack_loads": 24,
+          "stack_stores": 20,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.2.isra.0",
+          "static_instructions": -1,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__logic_MOD_new_solver",
+          "static_instructions": 35,
+          "stack_loads": -26,
+          "stack_stores": 38,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_covered.constprop.0.isra.0",
+          "static_instructions": -133,
+          "stack_loads": -64,
+          "stack_stores": -64,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.7.isra.0",
+          "static_instructions": -78,
+          "stack_loads": -37,
+          "stack_stores": -34,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.6.isra.0",
+          "static_instructions": -2,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.4.isra.0",
+          "static_instructions": -2,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.5.isra.0",
+          "static_instructions": -8,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "hidden_pairs.2",
+          "static_instructions": -10,
+          "stack_loads": -13,
+          "stack_stores": -9,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "hidden_triplets.0",
+          "static_instructions": -55,
+          "stack_loads": -14,
+          "stack_stores": -27,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_rearrange.isra.0",
+          "static_instructions": -32,
+          "stack_loads": -12,
+          "stack_stores": -18,
+          "cross_file_moves": 0
+        }
+      ],
+      "missing_symbols": []
+    },
+    "candidate-001-f2": {
+      "totals": {
+        "static_instructions": 40020,
+        "stack_loads": 4975,
+        "stack_stores": 4073,
+        "cross_file_moves": 0
+      },
+      "deltas": [
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.1.isra.0",
+          "static_instructions": -2,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.isra.0",
+          "static_instructions": -55,
+          "stack_loads": -15,
+          "stack_stores": -18,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_brute",
+          "static_instructions": -6,
+          "stack_loads": -1,
+          "stack_stores": 1,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_covered",
+          "static_instructions": 11,
+          "stack_loads": -2,
+          "stack_stores": 2,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "MAIN__",
+          "static_instructions": 0,
+          "stack_loads": 1,
+          "stack_stores": 2,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.3.isra.0",
+          "static_instructions": -1,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "specific.4",
+          "static_instructions": 5,
+          "stack_loads": -38,
+          "stack_stores": -4,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "naked_triplets.1",
+          "static_instructions": 119,
+          "stack_loads": 52,
+          "stack_stores": 47,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.2.isra.0",
+          "static_instructions": -4,
+          "stack_loads": 1,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__logic_MOD_new_solver",
+          "static_instructions": 19,
+          "stack_loads": 0,
+          "stack_stores": 33,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_covered.constprop.0.isra.0",
+          "static_instructions": -126,
+          "stack_loads": -66,
+          "stack_stores": -62,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.7.isra.0",
+          "static_instructions": -69,
+          "stack_loads": -33,
+          "stack_stores": -30,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.6.isra.0",
+          "static_instructions": -2,
+          "stack_loads": 1,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.4.isra.0",
+          "static_instructions": 0,
+          "stack_loads": 1,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.5.isra.0",
+          "static_instructions": -2,
+          "stack_loads": 1,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "hidden_pairs.2",
+          "static_instructions": -31,
+          "stack_loads": -4,
+          "stack_stores": -12,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "hidden_triplets.0",
+          "static_instructions": -2,
+          "stack_loads": 22,
+          "stack_stores": 9,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_rearrange.isra.0",
+          "static_instructions": -23,
+          "stack_loads": -12,
+          "stack_stores": -15,
+          "cross_file_moves": 0
+        }
+      ],
+      "missing_symbols": []
+    },
+    "candidate-002-f2": {
+      "totals": {
+        "static_instructions": 39775,
+        "stack_loads": 4858,
+        "stack_stores": 4068,
+        "cross_file_moves": 0
+      },
+      "deltas": [
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.1.isra.0",
+          "static_instructions": 1,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.isra.0",
+          "static_instructions": -61,
+          "stack_loads": -18,
+          "stack_stores": -19,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_brute",
+          "static_instructions": -5,
+          "stack_loads": 0,
+          "stack_stores": -3,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_covered",
+          "static_instructions": 15,
+          "stack_loads": 5,
+          "stack_stores": 4,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "MAIN__",
+          "static_instructions": -4,
+          "stack_loads": 0,
+          "stack_stores": 3,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.3.isra.0",
+          "static_instructions": 1,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "specific.4",
+          "static_instructions": -29,
+          "stack_loads": -22,
+          "stack_stores": -8,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "naked_triplets.1",
+          "static_instructions": 29,
+          "stack_loads": 16,
+          "stack_stores": 23,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.2.isra.0",
+          "static_instructions": -1,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__logic_MOD_new_solver",
+          "static_instructions": 3,
+          "stack_loads": -56,
+          "stack_stores": 68,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_covered.constprop.0.isra.0",
+          "static_instructions": -125,
+          "stack_loads": -61,
+          "stack_stores": -62,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.7.isra.0",
+          "static_instructions": -84,
+          "stack_loads": -42,
+          "stack_stores": -38,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.6.isra.0",
+          "static_instructions": -1,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.4.isra.0",
+          "static_instructions": -2,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.5.isra.0",
+          "static_instructions": -8,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "hidden_pairs.2",
+          "static_instructions": -76,
+          "stack_loads": -29,
+          "stack_stores": -24,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "hidden_triplets.0",
+          "static_instructions": -35,
+          "stack_loads": 11,
+          "stack_stores": 22,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_rearrange.isra.0",
+          "static_instructions": -32,
+          "stack_loads": -13,
+          "stack_stores": -18,
+          "cross_file_moves": 0
+        }
+      ],
+      "missing_symbols": []
+    },
+    "candidate-003-f2": {
+      "totals": {
+        "static_instructions": 39818,
+        "stack_loads": 4899,
+        "stack_stores": 4045,
+        "cross_file_moves": 0
+      },
+      "deltas": [
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.1.isra.0",
+          "static_instructions": 1,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.isra.0",
+          "static_instructions": -55,
+          "stack_loads": -22,
+          "stack_stores": -16,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_brute",
+          "static_instructions": -14,
+          "stack_loads": -4,
+          "stack_stores": -2,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_covered",
+          "static_instructions": 7,
+          "stack_loads": 5,
+          "stack_stores": 3,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "MAIN__",
+          "static_instructions": 6,
+          "stack_loads": 2,
+          "stack_stores": 2,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.3.isra.0",
+          "static_instructions": 2,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "specific.4",
+          "static_instructions": -30,
+          "stack_loads": -28,
+          "stack_stores": -14,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "naked_triplets.1",
+          "static_instructions": 28,
+          "stack_loads": 14,
+          "stack_stores": 14,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.2.isra.0",
+          "static_instructions": -1,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__logic_MOD_new_solver",
+          "static_instructions": 8,
+          "stack_loads": -21,
+          "stack_stores": 42,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_covered.constprop.0.isra.0",
+          "static_instructions": -126,
+          "stack_loads": -59,
+          "stack_stores": -61,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.7.isra.0",
+          "static_instructions": -60,
+          "stack_loads": -29,
+          "stack_stores": -29,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.6.isra.0",
+          "static_instructions": -2,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.4.isra.0",
+          "static_instructions": -3,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.5.isra.0",
+          "static_instructions": -5,
+          "stack_loads": 1,
+          "stack_stores": 1,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "hidden_pairs.2",
+          "static_instructions": -29,
+          "stack_loads": -16,
+          "stack_stores": -8,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "hidden_triplets.0",
+          "static_instructions": -66,
+          "stack_loads": -1,
+          "stack_stores": 3,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_rearrange.isra.0",
+          "static_instructions": -32,
+          "stack_loads": -10,
+          "stack_stores": -10,
+          "cross_file_moves": 0
+        }
+      ],
+      "missing_symbols": []
+    },
+    "candidate-004-f2": {
+      "totals": {
+        "static_instructions": 39822,
+        "stack_loads": 4867,
+        "stack_stores": 3988,
+        "cross_file_moves": 0
+      },
+      "deltas": [
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.1.isra.0",
+          "static_instructions": 1,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.isra.0",
+          "static_instructions": -58,
+          "stack_loads": -17,
+          "stack_stores": -18,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_brute",
+          "static_instructions": -10,
+          "stack_loads": -5,
+          "stack_stores": -6,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_covered",
+          "static_instructions": 13,
+          "stack_loads": 5,
+          "stack_stores": 4,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "MAIN__",
+          "static_instructions": -2,
+          "stack_loads": -1,
+          "stack_stores": -1,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.3.isra.0",
+          "static_instructions": 1,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "specific.4",
+          "static_instructions": -59,
+          "stack_loads": -38,
+          "stack_stores": -19,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "naked_triplets.1",
+          "static_instructions": 25,
+          "stack_loads": 16,
+          "stack_stores": 14,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.2.isra.0",
+          "static_instructions": -1,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__logic_MOD_new_solver",
+          "static_instructions": 33,
+          "stack_loads": -27,
+          "stack_stores": 37,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_covered.constprop.0.isra.0",
+          "static_instructions": -124,
+          "stack_loads": -59,
+          "stack_stores": -60,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.7.isra.0",
+          "static_instructions": -74,
+          "stack_loads": -38,
+          "stack_stores": -34,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.6.isra.0",
+          "static_instructions": -2,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.4.isra.0",
+          "static_instructions": -2,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.5.isra.0",
+          "static_instructions": -8,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "hidden_pairs.2",
+          "static_instructions": -12,
+          "stack_loads": -11,
+          "stack_stores": -8,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "hidden_triplets.0",
+          "static_instructions": -59,
+          "stack_loads": -8,
+          "stack_stores": -21,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_rearrange.isra.0",
+          "static_instructions": -29,
+          "stack_loads": -17,
+          "stack_stores": -20,
+          "cross_file_moves": 0
+        }
+      ],
+      "missing_symbols": []
+    },
+    "candidate-005-f2": {
+      "totals": {
+        "static_instructions": 39832,
+        "stack_loads": 4842,
+        "stack_stores": 3977,
+        "cross_file_moves": 0
+      },
+      "deltas": [
+        {
+          "function": "__brute_force_MOD_digits_2.isra.0",
+          "static_instructions": -52,
+          "stack_loads": -18,
+          "stack_stores": -21,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_brute",
+          "static_instructions": -8,
+          "stack_loads": -4,
+          "stack_stores": -5,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_covered",
+          "static_instructions": 2,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "MAIN__",
+          "static_instructions": 4,
+          "stack_loads": 1,
+          "stack_stores": 1,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "specific.4",
+          "static_instructions": -16,
+          "stack_loads": -33,
+          "stack_stores": -14,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "naked_triplets.1",
+          "static_instructions": 42,
+          "stack_loads": 23,
+          "stack_stores": 17,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.2.isra.0",
+          "static_instructions": -1,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__logic_MOD_new_solver",
+          "static_instructions": 4,
+          "stack_loads": -46,
+          "stack_stores": 37,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_covered.constprop.0.isra.0",
+          "static_instructions": -133,
+          "stack_loads": -64,
+          "stack_stores": -64,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.7.isra.0",
+          "static_instructions": -77,
+          "stack_loads": -37,
+          "stack_stores": -34,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.6.isra.0",
+          "static_instructions": -2,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.4.isra.0",
+          "static_instructions": -3,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_digits_2.constprop.5.isra.0",
+          "static_instructions": -8,
+          "stack_loads": 0,
+          "stack_stores": 0,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "hidden_pairs.2",
+          "static_instructions": -15,
+          "stack_loads": -4,
+          "stack_stores": -4,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "hidden_triplets.0",
+          "static_instructions": -67,
+          "stack_loads": -27,
+          "stack_stores": -40,
+          "cross_file_moves": 0
+        },
+        {
+          "function": "__brute_force_MOD_rearrange.isra.0",
+          "static_instructions": -27,
+          "stack_loads": -16,
+          "stack_stores": -16,
+          "cross_file_moves": 0
+        }
+      ],
+      "missing_symbols": []
+    }
+  }
+}

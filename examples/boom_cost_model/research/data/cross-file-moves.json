@@ -1,0 +1,45 @@
+{
+  "variants": {
+    "baseline-f2": {
+      "application_cross_file_moves": {},
+      "application_count": 0,
+      "whole_executable_count": 47
+    },
+    "candidate-000-f2": {
+      "application_cross_file_moves": {},
+      "application_count": 0,
+      "whole_executable_count": 47
+    },
+    "candidate-001-f2": {
+      "application_cross_file_moves": {},
+      "application_count": 0,
+      "whole_executable_count": 47
+    },
+    "candidate-002-f2": {
+      "application_cross_file_moves": {},
+      "application_count": 0,
+      "whole_executable_count": 47
+    },
+    "candidate-003-f2": {
+      "application_cross_file_moves": {},
+      "application_count": 0,
+      "whole_executable_count": 47
+    },
+    "candidate-004-f2": {
+      "application_cross_file_moves": {},
+      "application_count": 0,
+      "whole_executable_count": 47
+    },
+    "candidate-005-f2": {
+      "application_cross_file_moves": {},
+      "application_count": 0,
+      "whole_executable_count": 47
+    },
+    "historical-fmv4": {
+      "application_cross_file_moves": {},
+      "application_count": 0,
+      "whole_executable_count": 47
+    }
+  },
+  "interpretation": "Static target instruction audit only. Do not infer register-parking or the cause of the historical regression from scalar-cost correlations."
+}

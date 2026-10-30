@@ -1,0 +1,185 @@
+{
+  "method": "GCC IRA estimated pressure and allocator decision lines, not dynamic spill counts or hardware occupancy. Compile commands/source hashes saved per variant.",
+  "variants": {
+    "baseline": {
+      "hidden_triplets.0": {
+        "peak_GPR_pressure": 82,
+        "IRA_spilling_decision_lines": 1196
+      },
+      "naked_triplets.1": {
+        "peak_GPR_pressure": 88,
+        "IRA_spilling_decision_lines": 911
+      },
+      "update.6": {
+        "peak_GPR_pressure": 18,
+        "IRA_spilling_decision_lines": 0
+      },
+      "knt_val.9": {
+        "peak_GPR_pressure": 9,
+        "IRA_spilling_decision_lines": 0
+      },
+      "hidden_pairs.2": {
+        "peak_GPR_pressure": 83,
+        "IRA_spilling_decision_lines": 483
+      },
+      "specific.4": {
+        "peak_GPR_pressure": 75,
+        "IRA_spilling_decision_lines": 301
+      },
+      "__brute_force_MOD_rearrange.isra.0": {
+        "peak_GPR_pressure": 131,
+        "IRA_spilling_decision_lines": 64
+      },
+      "__brute_force_MOD_covered.constprop.0.isra.0": {
+        "peak_GPR_pressure": 84,
+        "IRA_spilling_decision_lines": 86
+      },
+      "__brute_force_MOD_digits_2.isra.0": {
+        "peak_GPR_pressure": 115,
+        "IRA_spilling_decision_lines": 521
+      },
+      "__brute_force_MOD_digits_2.constprop.7.isra.0": {
+        "peak_GPR_pressure": 100,
+        "IRA_spilling_decision_lines": 189
+      },
+      "__brute_force_MOD_digits_2.constprop.6.isra.0": {
+        "peak_GPR_pressure": 47,
+        "IRA_spilling_decision_lines": 18
+      },
+      "__brute_force_MOD_digits_2.constprop.5.isra.0": {
+        "peak_GPR_pressure": 44,
+        "IRA_spilling_decision_lines": 26
+      },
+      "__brute_force_MOD_digits_2.constprop.4.isra.0": {
+        "peak_GPR_pressure": 48,
+        "IRA_spilling_decision_lines": 18
+      },
+      "__brute_force_MOD_digits_2.constprop.3.isra.0": {
+        "peak_GPR_pressure": 50,
+        "IRA_spilling_decision_lines": 27
+      },
+      "__brute_force_MOD_digits_2.constprop.2.isra.0": {
+        "peak_GPR_pressure": 47,
+        "IRA_spilling_decision_lines": 18
+      },
+      "__brute_force_MOD_digits_2.constprop.1.isra.0": {
+        "peak_GPR_pressure": 50,
+        "IRA_spilling_decision_lines": 27
+      },
+      "__logic_MOD_new_solver": {
+        "peak_GPR_pressure": 137,
+        "IRA_spilling_decision_lines": 225
+      },
+      "__brute_force_MOD_covered": {
+        "peak_GPR_pressure": 80,
+        "IRA_spilling_decision_lines": 44
+      },
+      "__brute_force_MOD_brute": {
+        "peak_GPR_pressure": 61,
+        "IRA_spilling_decision_lines": 81
+      },
+      "eliminate.10": {
+        "peak_GPR_pressure": 19,
+        "IRA_spilling_decision_lines": 1
+      },
+      "MAIN__": {
+        "peak_GPR_pressure": 87,
+        "IRA_spilling_decision_lines": 157
+      },
+      "main": {
+        "peak_GPR_pressure": 3,
+        "IRA_spilling_decision_lines": 0
+      }
+    },
+    "candidate-003": {
+      "hidden_triplets.0": {
+        "peak_GPR_pressure": 82,
+        "IRA_spilling_decision_lines": 1020
+      },
+      "naked_triplets.1": {
+        "peak_GPR_pressure": 88,
+        "IRA_spilling_decision_lines": 1045
+      },
+      "update.6": {
+        "peak_GPR_pressure": 18,
+        "IRA_spilling_decision_lines": 0
+      },
+      "knt_val.9": {
+        "peak_GPR_pressure": 9,
+        "IRA_spilling_decision_lines": 0
+      },
+      "hidden_pairs.2": {
+        "peak_GPR_pressure": 82,
+        "IRA_spilling_decision_lines": 718
+      },
+      "specific.4": {
+        "peak_GPR_pressure": 74,
+        "IRA_spilling_decision_lines": 227
+      },
+      "__brute_force_MOD_rearrange.isra.0": {
+        "peak_GPR_pressure": 131,
+        "IRA_spilling_decision_lines": 71
+      },
+      "__brute_force_MOD_covered.constprop.0.isra.0": {
+        "peak_GPR_pressure": 81,
+        "IRA_spilling_decision_lines": 81
+      },
+      "__brute_force_MOD_digits_2.isra.0": {
+        "peak_GPR_pressure": 105,
+        "IRA_spilling_decision_lines": 663
+      },
+      "__brute_force_MOD_digits_2.constprop.7.isra.0": {
+        "peak_GPR_pressure": 99,
+        "IRA_spilling_decision_lines": 199
+      },
+      "__brute_force_MOD_digits_2.constprop.6.isra.0": {
+        "peak_GPR_pressure": 47,
+        "IRA_spilling_decision_lines": 12
+      },
+      "__brute_force_MOD_digits_2.constprop.5.isra.0": {
+        "peak_GPR_pressure": 44,
+        "IRA_spilling_decision_lines": 41
+      },
+      "__brute_force_MOD_digits_2.constprop.4.isra.0": {
+        "peak_GPR_pressure": 52,
+        "IRA_spilling_decision_lines": 7
+      },
+      "__brute_force_MOD_digits_2.constprop.3.isra.0": {
+        "peak_GPR_pressure": 50,
+        "IRA_spilling_decision_lines": 37
+      },
+      "__brute_force_MOD_digits_2.constprop.2.isra.0": {
+        "peak_GPR_pressure": 47,
+        "IRA_spilling_decision_lines": 12
+      },
+      "__brute_force_MOD_digits_2.constprop.1.isra.0": {
+        "peak_GPR_pressure": 50,
+        "IRA_spilling_decision_lines": 37
+      },
+      "__logic_MOD_new_solver": {
+        "peak_GPR_pressure": 136,
+        "IRA_spilling_decision_lines": 337
+      },
+      "__brute_force_MOD_covered": {
+        "peak_GPR_pressure": 81,
+        "IRA_spilling_decision_lines": 62
+      },
+      "__brute_force_MOD_brute": {
+        "peak_GPR_pressure": 61,
+        "IRA_spilling_decision_lines": 97
+      },
+      "eliminate.10": {
+        "peak_GPR_pressure": 19,
+        "IRA_spilling_decision_lines": 1
+      },
+      "MAIN__": {
+        "peak_GPR_pressure": 87,
+        "IRA_spilling_decision_lines": 158
+      },
+      "main": {
+        "peak_GPR_pressure": 3,
+        "IRA_spilling_decision_lines": 0
+      }
+    }
+  }
+}

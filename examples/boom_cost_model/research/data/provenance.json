@@ -1,0 +1,30 @@
+{
+  "compiler": {
+    "gcc_revision": "c891d8dc23e1a46ad9f3e757d09e57b500d40044",
+    "baseline_gcc_sha256": "28b629f64ed9797dc198621eb5cfcb63c0a48e17b95c639bada20f14038e77e4",
+    "model_flags": [
+      "-O3",
+      "-static",
+      "-march=rv64imafdc",
+      "-mabi=lp64d"
+    ],
+    "spec_fortran_additional_flags": [
+      "-fopenmp",
+      "-DSPEC_OPENMP"
+    ],
+    "threads": 1
+  },
+  "hardware": {
+    "AGFI": "agfi-0f4582f3f39b9a8a4",
+    "AFI": "afi-035720f4e6ea4fc4a",
+    "quintuplet": "f2-firesim-FireSim-WithDefaultFireSimBridges_WithFireSimTestChipConfigTweaks_chipyard.MegaBoomV3Config-WithAutoILA_FRFCFS16GBQuadRankLLC4MB_BaseF2Config",
+    "shell": "0x10212415",
+    "Chipyard_revision": "19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe",
+    "FireSim_revision": "b7927ea504c501194eaec3e993c415f2270170f8",
+    "driver_bundle_sha256": "916f56497a24a628a06c2954dff0e444a8e02143e735d4ea82052de0151701fb",
+    "matching_source_verified": true
+  },
+  "BOOM_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
+  "Speckle_revision": "07f845d381965900b5c1c1f11db8980d1b238f20",
+  "target": "MegaBOOM V3, public FRFCFS/LLC F2 image; no Rocket hardware measurements in this dataset"
+}

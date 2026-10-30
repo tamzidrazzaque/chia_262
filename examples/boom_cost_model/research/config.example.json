@@ -1,0 +1,39 @@
+{
+  "gcc_root": "/tmp/spec_build/boom-gcc",
+  "baseline_prefix": "/home/ray/conda/envs/riscv-tools/riscv-tools",
+  "hardware_manifest": "/private/verified-hardware.json",
+  "benchmarks": ["648.exchange2_s"],
+  "model": "<AUTHENTICATED_CLAUDE_CLI_MODEL>",
+  "iterations": 6,
+  "campaign_budget": 6,
+  "repeats": 3,
+  "confirm_repeats": 3,
+  "min_improvement": 0.01,
+  "final_ref": true,
+  "train_timeout_seconds": 5400,
+  "ref_timeout_seconds": 259200,
+  "qemu_timeout_seconds": 900,
+  "qemu_memory_mb": 2048,
+  "aws_profile": "<EXISTING_LOGIN_PROFILE>",
+  "aws_account": "<ACCOUNT_ID>",
+  "iam_user": "<IAM_USER>",
+  "region": "us-east-1",
+  "instance_id": "<EXISTING_F2_INSTANCE_ID>",
+  "ssh_alias": "<TRUSTED_F2_SSH_ALIAS>",
+  "security_group_ids": ["<APPROVED_SECURITY_GROUP_ID>"],
+  "approved_network_policy": {},
+  "fpga_workers": [
+    {
+      "instance_id": "<EXISTING_F2_INSTANCE_ID>",
+      "ssh_alias": "<TRUSTED_F2_SSH_ALIAS>",
+      "ray_address": "127.0.0.2"
+    },
+    {
+      "instance_id": "<SECOND_EXISTING_F2_INSTANCE_ID>",
+      "ssh_alias": "<SECOND_TRUSTED_F2_SSH_ALIAS>",
+      "ray_address": "127.0.0.3"
+    }
+  ],
+  "prior_runs": [],
+  "baseline_cache_dirs": []
+}
