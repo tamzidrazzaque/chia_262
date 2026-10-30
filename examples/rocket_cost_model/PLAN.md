@@ -116,6 +116,13 @@ with saved artifacts and a trustworthy success or rejection result.
 
 ### 3. Run a small scalar pilot
 
+Start with a small bare-metal RTL kernel campaign unless a matching Rocket
+FPGA image and driver are already verified. Full Linux/SPEC execution is a
+second stage; running SPEC to completion in RTL is not the initial milestone.
+The Linux screening harness cannot run unchanged in a bare-metal environment:
+provide a fixed HTIF startup/linker/runtime and target cycle-counter harness.
+Keep timer privileges, warmup, sample ordering and failure detection explicit.
+
 Use original integer kernels covering dependent arithmetic, independent chains,
 constant multiply versus shift/add, branch-heavy code, streaming loads/stores,
 and dependent pointer access. Vary dependency structure and working-set size;
@@ -135,7 +142,10 @@ code-generation sensitivity and an affordable training/holdout split.
 
 ### 4. Run the bounded adaptive campaign
 
-Proposed initial budget: six distinct candidate configurations, beginning with
+Proposed initial budget: up to six distinct candidate configurations, with a
+hard cap of twelve proposal attempts and a pilot-derived wall-time budget.
+Duplicate or invalid proposals consume attempts; stop at the first exhausted
+budget rather than searching indefinitely for six distinct binaries. Begin with
 isolated neighborhoods of multiply, branch and memory costs around Rocket's
 actual baseline. Choose numeric bounds after inspecting the pinned backend.
 If isolated changes provide useful evidence, use remaining candidates for
@@ -157,10 +167,13 @@ identities, code-change summaries and an explicit selection decision.
 
 ### 5. Confirm and compare
 
-For finalists use fresh counterbalanced ABBA/BAAB blocks where practical, with
-at least three independent samples per compiler per worker and additional
+For finalists use two fresh ABBA/BAAB blocks per worker, giving four independent
+samples per compiler per worker, and additional
 sampling if variability prevents a useful conclusion. Confirmation keys must
-not reuse exploratory observations. Report individual observations, effect size
+not reuse exploratory observations: include a campaign phase and independent
+block/sample identifier, or use an isolated confirmation cache namespace.
+Repeat index alone is insufficient because the inherited cache can otherwise
+reuse a search sample as confirmation. Report individual observations, effect size
 and uncertainty appropriate to the measurement design. Repeated guest samples
 are not independent machines. Evaluate held-out inputs/programs only after
 selection and preserve a separate final report.
@@ -173,6 +186,72 @@ CPU2017 experiments remain research estimates unless reporting rules are met.
 
 Deliverable: a reproducible Rocket result, including baseline-retained outcomes,
 and a clearly qualified comparison with the teammate's MegaBOOM results.
+
+## Feasibility check and runtime budget
+
+Checked locally on 2026-10-30:
+
+- The installed Chipyard toolchain supplies GCC 13.2.0 for RISC-V Linux and
+  bare-metal targets. The Linux compiler accepts Rocket tuning and explicit
+  `-fno-tree-loop-vectorize -fno-tree-slp-vectorize` flags. The reference kernel
+  harness cross-compiled to assembly with an ISA attribute containing no V.
+  Final linked executable/library validation remains part of implementation.
+- The inherited six-kernel host harness passed all 18 checksum/timing-format
+  checks in about 0.24 seconds including native compilation. This checks
+  functionality only; it estimates neither Rocket speed nor RTL wall time.
+  It includes scalar floating point; select integer kernels for the first pilot.
+- Shared speedup calculation accepted a correct comparison and rejected zero
+  times and mismatched workload sets. This is a small helper smoke check,
+  not end-to-end controller validation.
+- Local Chipyard includes a single-core `RocketConfig`, but the two existing
+  simulator executables are tethered multi-chip configurations. Neither is
+  accepted as the campaign target without manifest/build verification.
+- The Chipyard Python environment has pytest but lacks Ray/MCP and has
+  Pydantic 1.x. It cannot run the handoff controller unchanged. Create an isolated
+  compatible CHIA environment; do not alter the shared Chipyard environment.
+- Compiler rebuild helpers pin a specific baseline hash/source and Linux
+  target. Bare-metal work needs its own verified rebuild recipe, startup and
+  libraries. Parameterizing an experiment label alone is insufficient.
+
+The method is feasible, but the Rocket controller, verified execution target,
+compiler rebuild and environment are unfinished. No target timing has yet been
+measured here. The estimates below are planning allowances, not observed
+Rocket runtimes or deadlines.
+
+| Stage | Initial allowance | What determines it |
+| --- | --- | --- |
+| Environment, target verification and first RTL simulator build | Half a day to two days | Existing build compatibility, dependencies, build memory and target choice |
+| Initial reproducible GCC rebuild | Several hours; allow a day for setup/debugging | Host resources, baseline recipe and source availability |
+| Rocket controller/harness adaptation and tests | Two to five working days | Bare-metal integration, isolation of shared helpers and recovery paths |
+| Small kernel campaign once ready | Hours to overnight, subject to pilot | RTL throughput, kernel trip counts, number of builds and unique binaries |
+| SPEC campaign | Budget only after a Rocket FPGA pilot | Verified image/driver, per-input runtime, build cost and available workers |
+
+For one worker, let B be the wall time to execute and collect the entire training
+workload set once, P the corresponding held-out workload-set time, G the
+incremental compiler rebuild time per candidate, and W the workload build and
+functional-validation time per candidate. With three initial baseline samples,
+six distinct candidate samples, four fresh baseline and four fresh winner
+confirmation samples, the target-only upper allowance is **17 B + 8 P** for
+one finalist and four held-out samples per compiler. Without a promoted finalist,
+stop after the search: **9 B**, plus preparation. Multiple finalists or a
+separate equal-budget search comparison add their own explicit budget.
+
+For example, assuming B = 10 minutes and P = 30 minutes gives about 6 hours
+50 minutes of target execution; B = 30 minutes and P = 2 hours gives about
+24 hours 30 minutes. These are hypothetical inputs, not measurements. Add
+baseline preparation and up to six lots of G + W, proposal latency, boot/setup
+costs not already counted, and failed attempts. Preparation can overlap target
+execution, but adaptive proposals cannot all be prepared before feedback arrives.
+A conservative estimate sums preparation and execution; ideal overlap is only
+a lower bound. Include every attempt's preparation cost, even if code duplicates
+an earlier candidate. Add recovery slack, not unbounded automatic retries.
+
+Before a full campaign, time the unchanged rebuild and two candidate rebuilds,
+then run three baseline target samples and one candidate end to end. Record
+compile, validation, boot, target, collection and total wall time separately.
+Freeze a maximum wall-time budget from these measurements. Stop dispatching
+new work when that budget expires, then drain the active measurement. Never
+substitute MegaBOOM's documented guest seconds for Rocket host wall time.
 
 ## Progress and commit sequence
 
