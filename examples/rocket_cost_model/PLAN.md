@@ -258,7 +258,8 @@ substitute MegaBOOM's documented guest seconds for Rocket host wall time.
 - [x] Create a Rocket research branch from handoff commit `fd6bff3`.
 - [x] Record scope, loop, milestones and validation requirements.
 - [ ] Verify Rocket hardware/backend and compiler baseline.
-- [ ] Add target manifest/preflight and offline tests.
+- [x] Add target acceptance helpers and offline rejection tests.
+- [ ] Complete worker preflight and verify the matching driver/build evidence.
 - [ ] Add scalar compiler and real-application workload preparation.
 - [ ] Add bounded Rocket controller with measurement, resume and drain tests.
 - [ ] Complete pilot and freeze workload/search/confirmation budgets.
@@ -269,3 +270,5 @@ notes. Store site configuration, credentials, licensed artifacts and raw runs
 outside the checkout. The experiment owner starts long hardware controllers in
 their own tmux, following the handoff workflow. This plan does not start jobs or
 provision machines.
+
+Current implementation and execution blockers are tracked in `READINESS.md`.

@@ -191,11 +191,7 @@ class Experiment:
             raise ValueError("FireMarshal worker unavailable")
         self.hardware = json.loads(Path(config["hardware_manifest"]).read_text())
         hw = self.hardware
-        if not hw["matching_source_verified"] or "MegaBoom" not in hw["quintuplet"] or \
-                hw["AGFI"] != "agfi-0f4582f3f39b9a8a4" or hw["shell"] != "0x10212415" or \
-                hw["Chipyard_revision"] != "19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe" or \
-                hw["FireSim_revision"] != "b7927ea504c501194eaec3e993c415f2270170f8":
-            raise ValueError("this experiment requires the verified public FRFCFS/LLC MegaBOOM image")
+        self.validate_hardware(hw)
         driver = Path(hw["driver_bundle"]).read_bytes()
         if hashlib.sha256(driver).hexdigest() != hw["driver_bundle_sha256"]:
             raise ValueError("matching driver bundle hash changed")
@@ -209,6 +205,18 @@ class Experiment:
             raise ValueError("runtime configuration changed; use a new experiment directory")
         (directory / "config_runtime.yaml").write_bytes(runtime)
 
+    def validate_hardware(self, hw: dict) -> None:
+        """Require the original verified MegaBOOM target; subclasses own their gates."""
+        if not hw["matching_source_verified"] or "MegaBoom" not in hw["quintuplet"] or \
+                hw["AGFI"] != "agfi-0f4582f3f39b9a8a4" or hw["shell"] != "0x10212415" or \
+                hw["Chipyard_revision"] != "19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe" or \
+                hw["FireSim_revision"] != "b7927ea504c501194eaec3e993c415f2270170f8":
+            raise ValueError("this experiment requires the verified public FRFCFS/LLC MegaBOOM image")
+
+    def workload_flags(self) -> str:
+        """Return extra workload flags; the historical experiment keeps none."""
+        return ""
+
     def compiler(self, costs=None, scheduling=None) -> dict:
         """Inspect/rebuild exclusively on the selected compiler worker."""
         return get(compiler_stage.options(**self.affinity).chia_remote(
@@ -217,7 +225,7 @@ class Experiment:
     def workload(self, identity: dict, inputs: str, directory: Path):
         """Build through the pinned Speckle/FireMarshal stages and save evidence."""
         directory.mkdir(parents=True, exist_ok=True)
-        workload = get(start_workload("spec17-intspeed-" + inputs, cores=1, spec_flags="",
+        workload = get(start_workload("spec17-intspeed-" + inputs, cores=1, spec_flags=self.workload_flags(),
                                      small_images=self.config.get("small_images", False),
                                      benchmarks=self.config["benchmarks"],
                                      compiler_id=identity["compiler_id"],
@@ -225,7 +233,7 @@ class Experiment:
         save(directory / "build.json", {"spec": "spec17-intspeed-" + inputs,
              "compiler": identity, "success": workload.success, "descriptor": workload.json_name,
              "returncode": workload.returncode, "benchmarks": self.config["benchmarks"],
-             "cores": 1, "spec_flags": "", "FPGA_executed": False})
+             "cores": 1, "spec_flags": self.workload_flags(), "FPGA_executed": False})
         (directory / "build.stdout").write_text(workload.stdout)
         (directory / "build.stderr").write_text(workload.stderr)
         if workload.json_name:
