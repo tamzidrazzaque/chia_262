@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "purpose": "Discovery evidence only; not an accepted runtime hardware manifest",
+  "lookup_date_utc": "2026-10-31",
+  "catalog_url": "https://github.com/ucb-bar/chipyard/blob/157dd69e49b9866be2bf8db390ee78bc38cd4438/sims/firesim-staging/sample_config_hwdb.yaml",
+  "aws_lookup": "ec2 describe-fpga-images in us-east-1; metadata read only",
+  "candidates": [
+    {
+      "name": "firesim_rocket_singlecore_no_nic_l2_lbp",
+      "AGFI": "agfi-033a86c6e5d006fc8",
+      "AFI": "afi-065352b4754b46048",
+      "region": "us-east-1",
+      "state_at_lookup": "available",
+      "public": true,
+      "shell": "0x10212415",
+      "quintuplet": "f2-firesim-FireSim-WithDefaultFireSimBridges_WithFireSimHighPerfConfigTweaks_chipyard.RocketConfig-BaseF2Config",
+      "FireSim_revision": "b7927ea504c501194eaec3e993c415f2270170f8",
+      "driver_bundle": null,
+      "driver_bundle_sha256": null,
+      "matching_source_verified": false,
+      "hardware_execution_verified": false
+    },
+    {
+      "name": "firesim_rocket_quadcore_no_nic_l2_llc4mb_ddr3",
+      "AGFI": "agfi-0c5eedfce0e568971",
+      "AFI": "afi-08cbadc60414057da",
+      "region": "us-east-1",
+      "state_at_lookup": "available",
+      "public": true,
+      "shell": "0x10212415",
+      "quintuplet": "f2-firesim-FireSim-WithDefaultFireSimBridges_WithFireSimTestChipConfigTweaks_chipyard.QuadRocketConfig-WithAutoILA_FRFCFS16GBQuadRankLLC4MB_BaseF2Config",
+      "FireSim_revision": "b7927ea504c501194eaec3e993c415f2270170f8",
+      "driver_bundle": null,
+      "driver_bundle_sha256": null,
+      "matching_source_verified": false,
+      "hardware_execution_verified": false
+    }
+  ],
+  "candidate_source_tree": {
+    "Chipyard_revision": "19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe",
+    "FireSim_revision": "b7927ea504c501194eaec3e993c415f2270170f8",
+    "Rocket_revision": "55bcad0f59436de98ea510334121de8546b9e9d7",
+    "source_files": {
+      "generators/firechip/chip/src/main/scala/TargetConfigs.scala": {
+        "url": "https://raw.githubusercontent.com/ucb-bar/chipyard/19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe/generators/firechip/chip/src/main/scala/TargetConfigs.scala",
+        "sha256": "15b99aae16755df9bdf4084e024dafa38d8b0d4a2865f9b6b7d944d07fe6d4af"
+      },
+      "generators/chipyard/src/main/scala/config/RocketConfigs.scala": {
+        "url": "https://raw.githubusercontent.com/ucb-bar/chipyard/19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe/generators/chipyard/src/main/scala/config/RocketConfigs.scala",
+        "sha256": "3f983a3a510ae2a0b973adb2d51b0bec081669ef5d4ffb986fc05ffb08a879a7"
+      },
+      "sims/firesim-staging/sample_config_build_recipes.yaml": {
+        "url": "https://raw.githubusercontent.com/ucb-bar/chipyard/19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe/sims/firesim-staging/sample_config_build_recipes.yaml",
+        "sha256": "5ea57439596f77e47b562dae04154531f40652e1832161badf09ffcd61acfd29"
+      }
+    },
+    "note": "Submodule revision and configuration names agree. Exact image build provenance/generated artifacts and driver are not yet established."
+  }
+}

@@ -12,6 +12,10 @@ Research question: can bounded changes to GCC's scalar optimization costs and,
 in a separate stage, scheduling assumptions improve correct application
 execution on Rocket relative to the original compiler?
 
+Start with real scalar integer applications, using the handoff's SPEC/FireSim
+application path. Synthetic kernel campaigns are outside our initial scope.
+Offline helper tests remain useful for implementation correctness.
+
 Start with existing scalar integer code. Scalar floating-point code may be a
 later, separately reported workload class if supported by the selected target.
 Use a fixed target-supported ISA without V, a fixed ABI, compiler revision,
@@ -86,13 +90,12 @@ that a detached hardware job stopped; check the slot before any retry.
 Record Chipyard/Rocket revisions, exact configuration, relevant pipeline and
 cache parameters, supported ISA/ABI, compiler/backend revision, baseline flags,
 execution backend and runtime identity. For FPGA execution also pin the image,
-matching driver, shell and physical worker. For RTL execution pin simulator
-binary/configuration and invocation. Choose one backend for the first campaign;
+matching driver, shell and physical worker. The initial campaign uses F2 execution. Choose one verified target for the campaign;
 do not pool RTL and FPGA timing labels. Target cycles or guest time must use the
 same measurement protocol for baseline and candidate.
 
 Deliverable: a private verified manifest, a sanitized manifest schema/example,
-and one correct baseline run. Missing hardware facts block performance runs,
+and one correct application baseline run. Missing hardware facts block performance runs,
 not offline implementation. Do not launch the existing MegaBOOM controllers
 against Rocket.
 
@@ -114,21 +117,14 @@ connecting the controller to hardware.
 Deliverable: one baseline and one bounded candidate traverse the complete loop,
 with saved artifacts and a trustworthy success or rejection result.
 
-### 3. Run a small scalar pilot
+### 3. Run a real-application pilot
 
-Start with a small bare-metal RTL kernel campaign unless a matching Rocket
-FPGA image and driver are already verified. Full Linux/SPEC execution is a
-second stage; running SPEC to completion in RTL is not the initial milestone.
-The Linux screening harness cannot run unchanged in a bare-metal environment:
-provide a fixed HTIF startup/linker/runtime and target cycle-counter harness.
-Keep timer privileges, warmup, sample ordering and failure detection explicit.
-
-Use original integer kernels covering dependent arithmetic, independent chains,
-constant multiply versus shift/add, branch-heavy code, streaming loads/stores,
-and dependent pointer access. Vary dependency structure and working-set size;
-keep initialization and correctness checking outside the timed region. Treat
-probes as effective loop costs, not exact instruction latency measurements.
-Inspect assembly so a changed JSON value is not mistaken for changed code.
+Use an existing verified Rocket F2 image and matching driver, then run real
+application test inputs before training inputs. Prefer the public single-core
+candidate in `IMAGE_DISCOVERY.md`, subject to completing driver/source checks.
+Do not add a synthetic-kernel or bare-metal RTL campaign as a prerequisite.
+Measure baseline variability and inspect hot application code and compiler
+changes directly. Keep the compiler/ISA/ABI and workload runtime fixed.
 
 If licensed SPEC CPU2017 and the Rocket runtime are available, pilot Exchange2
 for continuity with the teammate, then admit a second application only after
@@ -189,6 +185,11 @@ and a clearly qualified comparison with the teammate's MegaBOOM results.
 
 ## Feasibility check and runtime budget
 
+Scope update: real applications on an existing Rocket F2 image are the first
+measurement path. The earlier host-kernel checks below are historical software
+checks, not a proposed experimental stage. See `IMAGE_DISCOVERY.md` for the
+public image found after this initial feasibility check.
+
 Checked locally on 2026-10-30:
 
 - The installed Chipyard toolchain supplies GCC 13.2.0 for RISC-V Linux and
@@ -220,10 +221,9 @@ Rocket runtimes or deadlines.
 
 | Stage | Initial allowance | What determines it |
 | --- | --- | --- |
-| Environment, target verification and first RTL simulator build | Half a day to two days | Existing build compatibility, dependencies, build memory and target choice |
+| Environment, matching Rocket driver and F2 target verification | Budget after driver provenance check | Existing image is available; driver/build compatibility remains unverified |
 | Initial reproducible GCC rebuild | Several hours; allow a day for setup/debugging | Host resources, baseline recipe and source availability |
-| Rocket controller/harness adaptation and tests | Two to five working days | Bare-metal integration, isolation of shared helpers and recovery paths |
-| Small kernel campaign once ready | Hours to overnight, subject to pilot | RTL throughput, kernel trip counts, number of builds and unique binaries |
+| Rocket application controller adaptation and tests | Two to five working days | FireSim/SPEC integration, target-specific checks and recovery paths |
 | SPEC campaign | Budget only after a Rocket FPGA pilot | Verified image/driver, per-input runtime, build cost and available workers |
 
 For one worker, let B be the wall time to execute and collect the entire training
@@ -259,7 +259,7 @@ substitute MegaBOOM's documented guest seconds for Rocket host wall time.
 - [x] Record scope, loop, milestones and validation requirements.
 - [ ] Verify Rocket hardware/backend and compiler baseline.
 - [ ] Add target manifest/preflight and offline tests.
-- [ ] Add scalar compiler/workload preparation and original kernels.
+- [ ] Add scalar compiler and real-application workload preparation.
 - [ ] Add bounded Rocket controller with measurement, resume and drain tests.
 - [ ] Complete pilot and freeze workload/search/confirmation budgets.
 - [ ] Run campaign, confirm finalists and publish sanitized results.
