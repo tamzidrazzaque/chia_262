@@ -1,3 +1,9 @@
+Current application scope: SPEC is paused. The real zstd pilot is described in
+`ZSTD.md`; its native and RISC-V QEMU round trips pass. One existing F2 has been
+started with the owner's authorization, and Docker/QEMU tools installed there.
+The earlier no-running-worker observation below is historical. Driver validation
+and a Linux workload image remain prerequisites for target timing.
+
 # Rocket application prerequisites
 
 Status: implementation checks pass; application execution is not ready.
