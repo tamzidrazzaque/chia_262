@@ -1,3 +1,8 @@
+See `SETUP_STATUS.md` for the current non-SPEC setup. Driver compilation,
+FPGA load/presence checking and the unchanged compiler rebuild have now passed;
+the earlier missing-tool/source observations below are historical. Full Linux
+guest/application validation remains pending.
+
 Current application scope: SPEC is paused. The real zstd pilot is described in
 `ZSTD.md`; its native and RISC-V QEMU round trips pass. One existing F2 has been
 started with the owner's authorization, and Docker/QEMU tools installed there.

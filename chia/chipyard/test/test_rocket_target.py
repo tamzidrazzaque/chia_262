@@ -10,7 +10,7 @@ from chia.chipyard import rocket_target as target
 def manifest(tmp_path):
     result = dict(AGFI=target.AGFI, AFI=target.AFI, quintuplet=target.QUINTUPLET,
                   shell="0x10212415", Chipyard_revision=target.CHIPYARD,
-                  FireSim_revision=target.FIRESIM, Rocket_revision=target.ROCKET,
+                  FireSim_revision=target.FIRESIM, Rocket_revision=target.ROCKET, SDK_revision=target.SDK,
                   matching_source_verified=True)
     for field in ("driver_bundle", "build_evidence"):
         path = tmp_path / field
@@ -29,7 +29,7 @@ def test_requires_pinned_provenance(tmp_path):
 
 
 @pytest.mark.parametrize("field", ["AGFI", "AFI", "quintuplet", "shell",
-                                  "Chipyard_revision", "FireSim_revision", "Rocket_revision"])
+                                  "Chipyard_revision", "FireSim_revision", "Rocket_revision", "SDK_revision"])
 def test_rejects_another_target(tmp_path, field):
     hw = manifest(tmp_path)
     hw[field] = "another target"

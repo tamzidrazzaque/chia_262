@@ -8,6 +8,7 @@ AFI = "afi-065352b4754b46048"
 CHIPYARD = "19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe"
 FIRESIM = "b7927ea504c501194eaec3e993c415f2270170f8"
 ROCKET = "55bcad0f59436de98ea510334121de8546b9e9d7"
+SDK = "80b34d3c25aff03353c0b4f2d304bb6067a5011d"
 QUINTUPLET = ("f2-firesim-FireSim-WithDefaultFireSimBridges_"
               "WithFireSimHighPerfConfigTweaks_chipyard.RocketConfig-BaseF2Config")
 SCALAR_FLAGS = "-mtune=rocket -fno-tree-loop-vectorize -fno-tree-slp-vectorize"
@@ -22,7 +23,7 @@ def validate_hardware(manifest: dict) -> None:
     """
     expected = {"AGFI": AGFI, "AFI": AFI, "quintuplet": QUINTUPLET,
                 "shell": "0x10212415", "Chipyard_revision": CHIPYARD,
-                "FireSim_revision": FIRESIM, "Rocket_revision": ROCKET}
+                "FireSim_revision": FIRESIM, "Rocket_revision": ROCKET, "SDK_revision": SDK}
     for name, value in expected.items():
         if manifest.get(name) != value:
             raise ValueError(f"Rocket target mismatch: {name}")

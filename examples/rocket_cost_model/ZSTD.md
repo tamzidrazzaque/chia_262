@@ -77,3 +77,18 @@ must be inspected after download. A matching driver/bridge build and Linux
 image are still required. Existing MegaBOOM SPEC stages cannot be used directly
 for this non-SPEC application: image composition, a zstd collector and a bounded
 Rocket campaign entry point remain implementation work. SPEC access is paused.
+
+## Setup commands added after the initial pilot
+
+- `prepare_zstd_image.py`: create the hash-bound application overlay.
+- `zstd_image_job.py`: build/reuse an explicitly provisioned Linux base and
+  compose a workload in a privileged FireMarshal worker.
+- `validate_zstd_guest.py`: full-guest QEMU boot, read-only result collection
+  and correctness validation.
+- `zstd_results.py`: reject malformed/incomplete results and keep full runtime,
+  worker, phase and repeat identities distinct.
+- `prepare_compiler.py`: native pinned GCC setup and unchanged-rebuild gate.
+- `bundle_driver.py`: driver/shared-library packaging and private source evidence,
+  producing an unverified manifest until provenance review.
+
+`SETUP_STATUS.md` tracks actual setup outcomes and limitations.
