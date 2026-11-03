@@ -29,7 +29,7 @@ def main():
     node = FireMarshalNode(firemarshal_dir=str(args.firemarshal_dir.resolve()),
                           image_store=str(args.image_store.resolve()), timeout_seconds=args.timeout)
     fragment = args.firemarshal_dir.resolve() / "rocket-zstd-tools.brfrag"
-    fragment.write_text("BR2_PACKAGE_BASH=y\nBR2_PACKAGE_COREUTILS=y\n")
+    fragment.write_text("BR2_PACKAGE_BASH=y\nBR2_PACKAGE_COREUTILS=y\nBR2_JLEVEL=4\n")
     base_name = "rocket-zstd-base-bash-coreutils-v1"
     base = node.build_base(base_name, options={"base": "br-base.json",
         "distro": {"name": "br", "opts": {"configs": [str(fragment)]}}})

@@ -16,6 +16,17 @@ from chia.chipyard.state_def import FireMarshalArtifact
 from examples.rocket_cost_model.zstd_results import validate
 
 
+def validate_archive(archive: bytes) -> None:
+    """Accept FireMarshal's flat sparse tar, including its root directory entry."""
+    with tarfile.open(fileobj=io.BytesIO(archive)) as stream:
+        for member in stream.getmembers():
+            if member.isdir() and member.name in (".", "./"):
+                continue
+            path = Path(member.name)
+            if path.is_absolute() or ".." in path.parts or len(path.parts) != 1 or not member.isfile():
+                raise ValueError("unexpected composed workload member")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image", type=Path, required=True, help="zstd_image_job output directory")
@@ -26,11 +37,7 @@ def main():
     if not 30 <= args.timeout <= 3600:
         parser.error("QEMU timeout must be 30..3600 seconds")
     archive = (args.image / "workload.tar.gz").read_bytes()
-    with tarfile.open(fileobj=io.BytesIO(archive)) as stream:
-        for member in stream.getmembers():
-            path = Path(member.name)
-            if path.is_absolute() or len(path.parts) != 1 or not member.isfile():
-                raise ValueError("unexpected composed workload member")
+    validate_archive(archive)
     args.output.mkdir(parents=True, exist_ok=False)
     args.output = args.output.resolve()
     unpacked = args.output / "unpacked"
@@ -42,7 +49,7 @@ def main():
         raise ValueError("expected one zstd guest job")
     job = jobs[0]
     for key in ("rootfs", "bootbinary"):
-        if len(Path(job[key]).parts) != 1:
+        if len(Path(job[key]).parts) != 1 or job[key] in (".", "..") or Path(job[key]).is_absolute():
             raise ValueError("unsafe guest image filename")
     rootfs = args.output / "qemu-rootfs.img"
     subprocess.run(["cp", "--sparse=always", str(unpacked / job["rootfs"]), str(rootfs)], check=True)

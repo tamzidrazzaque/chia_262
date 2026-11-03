@@ -47,6 +47,8 @@ class StatusBoard:
 def report(board: str, key: str, **fields) -> None:
     """Set ``fields`` on row ``key`` of ``board``; does not wait. Only :func:`watch`
     creates the board, so with no process watching this does nothing."""
+    if not ray.is_initialized():
+        return
     try:
         handle = ray.get_actor(_NAME)
     except ValueError:

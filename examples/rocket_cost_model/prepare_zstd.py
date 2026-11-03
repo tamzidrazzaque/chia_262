@@ -18,6 +18,12 @@ FLAGS = ["-O3", "-fno-tree-loop-vectorize", "-fno-tree-slp-vectorize"]
 TARGET_FLAGS = ["-march=rv64imafdc", "-mabi=lp64d", "-mtune=rocket"]
 
 
+def compile_flags(directory: Path, target: bool) -> list[str]:
+    """Keep absolute build paths out of emitted code and embedded assertions."""
+    return [*FLAGS, *(TARGET_FLAGS if target else []),
+            "-ffile-prefix-map=" + str(directory) + "=/zstd-src"]
+
+
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -62,10 +68,10 @@ def main():
             raise ValueError("empty application corpus")
         corpora[label] = corpus(exported, paths, output / "corpora" / (label + ".tar"))
     records = {}
-    for label, compiler, extra in [("native", "cc", []), ("rocket", str(args.gcc.resolve()), TARGET_FLAGS)]:
+    for label, compiler in [("native", "cc"), ("rocket", str(args.gcc.resolve()))]:
         directory = output / label
         shutil.copytree(exported, directory)
-        flags = [*FLAGS, *extra]
+        flags = compile_flags(directory, label == "rocket")
         command = ["make", "-C", str(directory / "programs"), f"-j{args.jobs}", "zstd",
                    "CC=" + compiler, "CFLAGS=" + " ".join(flags),
                    "LDFLAGS=" + ("-static" if label == "rocket" else ""),

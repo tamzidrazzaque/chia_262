@@ -59,3 +59,14 @@ def test_repeats_workers_and_campaign_phases_are_distinct():
 def test_cache_key_requires_full_runtime_identity():
     with pytest.raises(ValueError, match="incomplete software"):
         measurement_key({"binary_sha256": "a" * 64}, {"AGFI": "rocket"}, "a", "search", 0)
+
+
+def test_fpga_label_requires_single_scalar_riscv_guest():
+    outputs, data, binary = evidence()
+    with pytest.raises(ValueError, match="single scalar"):
+        validate(outputs, data, binary, True, "fpga")
+    outputs["output/cpuinfo.txt"] = b"processor : 0\nisa : rv64imafdc_zicsr\n"
+    assert validate(outputs, data, binary, True, "fpga")["FPGA_executed"]
+    outputs["output/cpuinfo.txt"] = b"processor : 0\nisa : rv64imafdcv_zicsr\n"
+    with pytest.raises(ValueError, match="single scalar"):
+        validate(outputs, data, binary, True, "fpga")

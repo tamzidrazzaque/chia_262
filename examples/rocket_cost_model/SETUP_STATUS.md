@@ -36,34 +36,50 @@ outside Git and are backed up separately.
   three static-link checks passed. Compiler source archive and backend hashes
   were checked. The rebuild is private at `/home/ray/rocket-gcc` in the worker's
   disposable build container.
+- Full application rebuild parity also passed after removing absolute build
+  paths with a fixed file-prefix map. Original and unchanged rebuilt zstd CLIs
+  are byte-identical; see `TARGET_NOTES.md`. Earlier noncanonical binaries are
+  diagnostic artifacts, not the campaign baseline.
 - The real zstd CLI builds and native/user-QEMU round trips pass; see `ZSTD.md`.
   Workload overlay preparation, full runtime/sample cache identities and strict
   output collection are implemented. Search and confirmation keys are separate.
 
-## Linux guest and next checks
+## Linux guest validation completed
 
-A custom FireMarshal Linux base is being built with Bash and coreutils explicitly
-enabled; its packages/build tools cannot simply be assumed present in br-base.
-The build uses four jobs and a two-hour timeout. The driver container has CPU
-and memory limits. Inspect the saved build status/logs before resuming, rather
-than starting a second copy.
+The custom FireMarshal Linux base built successfully with Bash and coreutils.
+The canonical zstd overlay was composed into `zstd-image-001`, with image naming
+bound to the application, input, runner, base image, boot binary and distro
+fragment hashes. The full Linux guest then booted under QEMU with networking
+disabled, completed compression/decompression with exact decoded bytes, collected
+all outputs successfully and powered down. QEMU timings are functional evidence
+only; they are not Rocket performance measurements.
 
-When the base succeeds:
+The guest artifacts currently reside in worker container `rocket-guest-build`:
 
-1. Persist the base image/boot binary outside the container and hash them.
-2. Compose the prepared zstd overlay in a disposable privileged worker.
-   `zstd_image_job.py` binds its generated name to the application, input, runner,
-   base image, boot binary and distro fragment identities. It preserves failures.
-3. Run `validate_zstd_guest.py` in that worker with networking disabled. Require
-   complete guest power-down, exact decoded bytes, matching identities and
-   successful collection. QEMU timings remain functional evidence only.
-4. Complete the Rocket manifest/source review and runtime preflight; the saved
-   discovery/build manifests deliberately retain `matching_source_verified=false`
-   until that review. Generic FireSim presence alone must not change it to true.
-5. Establish a correctly collected original-compiler Rocket application baseline
-   before implementing candidate selection or asserting any speedup.
+- `/home/ray/rocket-artifacts/zstd-image-001`
+- `/home/ray/rocket-artifacts/zstd-qemu-guest-001/correctness.json`
+- `/home/ray/rocket-images/rocket-zstd-base-bash-coreutils-v1`
 
-This setup has not started an adaptive tuning campaign. User-QEMU checks do not
-replace a full guest boot or FPGA application run. The existing SPEC-specific
-`fpga_stage` hard-codes the earlier campaign SDK and is not a suitable Rocket
-execution adapter without target-specific SDK verification.
+The pinned build snapshot is `rocket-pinned-build:source-19a07f6`. The original
+build container is `rocket-driver-build`. These private artifacts are not in Git;
+copy the guest/base outputs to persistent host storage before removing containers.
+
+## Resume here
+
+1. Persist the guest/base artifacts outside their container. The driver bundle
+   and compiler snapshot already have separate backups.
+2. Complete and retain the source/manifest review against public AWS metadata.
+   A locally reviewed manifest was prepared separately; the original unverified
+   manifest remains unchanged. Generic FireSim presence is not unique design
+   verification, and the original FPGA-builder source archive was not recovered.
+3. Stage a dedicated runtime container with the pinned sources and SDK, host PID
+   namespace, host networking and the owned host mount. Use the guarded
+   `run_zstd_local_fpga.py` adapter. Its first full FPGA application run has
+   **not yet been executed**; this adapter remains integration-unvalidated.
+4. Collect an original-compiler Rocket application baseline before any candidate
+   selection or speedup claim. `build_candidate.py` can build bounded proposals,
+   but does not implement or run an adaptive search.
+
+The existing SPEC-specific `fpga_stage` hard-codes the earlier campaign SDK and
+must not be used as the Rocket execution adapter. SPEC remains paused. This
+checkpoint includes no FPGA application timings and no adaptive tuning campaign.

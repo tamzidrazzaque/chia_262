@@ -44,6 +44,13 @@ def validate(outputs: dict[str, bytes], input_sha256: str, binary_sha256: str,
         if path.is_absolute() or ".." in path.parts or path.name in files:
             raise ValueError("unsafe or ambiguous output path")
         files[path.name] = data
+    if backend == "fpga":
+        cpuinfo = files.get("cpuinfo.txt", b"").decode()
+        processors = re.findall(r"(?m)^processor\s*:\s*([0-9]+)\s*$", cpuinfo)
+        isas = re.findall(r"(?m)^isa\s*:\s*(rv64[a-z0-9_]+)\s*$", cpuinfo)
+        if processors != ["0"] or not isas or any("v" in isa[4:].split("_")[0] or
+                any(ext.startswith("v") for ext in isa.split("_")[1:]) for isa in isas):
+            raise ValueError("guest does not report a single scalar RV64 core")
     for status in ("job.status", "collection.status"):
         if files.get(status, b"").strip() != b"0":
             raise ValueError("application or collection failed")

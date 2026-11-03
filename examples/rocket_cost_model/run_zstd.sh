@@ -16,6 +16,9 @@ fi
 trap 'status=$?; printf "%s\n" "$status" > "$output/job.status"' EXIT
 sha256sum "$binary" "$input" > "$output/inputs.sha256"
 "$binary" --version > "$output/version.txt"
+uname -a > "$output/kernel.txt"
+cat /proc/cpuinfo > "$output/cpuinfo.txt"
+cat /proc/meminfo > "$output/meminfo.txt"
 # Warm filesystem and executable pages outside the measurement.
 "$binary" -q -3 -f "$input" -o "$output/warmup.zst"
 "$binary" -q -d -f "$output/warmup.zst" -o "$output/warmup.tar"

@@ -107,14 +107,16 @@ runpy.run_path(sys.argv[0], run_name="__main__")
 class FireSimManagerNode:
     """Runs ``firesim infrasetup`` and ``firesim runworkload`` on the local FPGA."""
 
-    def __init__(self, timeout_seconds: int | None = None):
+    def __init__(self, timeout_seconds: int | None = None, watch_status: bool = True):
         """
         Args:
             timeout_seconds: Wall-clock limit per manager step; None for no limit.
+            watch_status: Enable the Ray status board; disable for local setup runs.
         """
         self.timeout_seconds = timeout_seconds
         self.logger = logging.getLogger("FireSimManagerNode")
-        watch("FPGA")          # the process that creates the node prints the FPGA table
+        if watch_status:
+            watch("FPGA")          # the process that creates the node prints the FPGA table
 
     def run_workload(self, farm: Farm, workload: FireMarshalArtifact,
                      bitstream: FSBitstream, config: RunConfig | None = None,
