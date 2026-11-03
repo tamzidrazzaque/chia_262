@@ -1,5 +1,8 @@
 # Non-SPEC setup status
 
+For agents resuming this branch, start with [the handoff](../../research/ROCKET_HANDOFF.md)
+and [the execution runbook](../../research/ROCKET_RUNBOOK.md).
+
 This file records setup evidence, not benchmark speedups. SPEC is paused.
 Private binaries, generated bridge files, raw logs and compiler snapshots stay
 outside Git and are backed up separately.
