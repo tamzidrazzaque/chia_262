@@ -3,34 +3,57 @@
 This directory preserves the measured MegaBOOM experiments and the reusable
 Chia pipeline for a collaborator starting Rocket work. Start with this file,
 then `data/manifest.json`, `../USAGE.md` and `../EXPERIMENT_PLAN.md`.
-**The experiment owner always launches/resumes controllers in their own tmux.**
-Do not start controllers, provision instances or modify shared-host networking
-as part of reading, testing or setting up this handoff.
+The experiment owner controls launch authorization. The current owner has
+explicitly authorized continuous MegaBOOM loops until stopped; a collaborator
+must obtain authorization for their own cluster. Reading this handoff does not
+authorize provisioning or modifying shared-host networking.
 
-## Current result
+## Current result (November 3)
 
-The October 29–30 order-balanced check completed correctly on both F2s. Each
-worker measured original GCC twice and coordinated candidate 3 twice:
+The follow-up data is in `data/progress-20261103.json`, alongside the older
+`spec-estimates.json` covering the first two scalar searches (all ten trials)
+and the coordinated/paired studies. The follow-up export includes eight completed
+campaigns, full cost/move/policy settings, 32 compiler identities and 82 saved
+successful timing observations (49 fresh measurements and 33 validated reuses). Cached observations are explicitly marked and
+must not be counted as additional independent measurements.
 
-| Compiler | Worker 0 samples (guest seconds) | Worker 1 samples |
-| --- | --- | --- |
-| Original | 82.11, 82.11 | 82.11, 82.11 |
-| Candidate 3 | 81.79, 81.79 | 81.79, 81.79 |
+* Best confirmed Exchange2 train runtime: **77.68 s versus 82.11 s original**,
+  a **5.70% speedup**, with three train confirmation keys per compared compiler.
+  The newer winner has **not** been validated on reference inputs.
+* An earlier compiler, `11f4c099...`, independently measured **889.39 s versus
+  919.62 s on reference inputs**, a **3.40% speedup**. Each physical worker ran
+  both compilers once, with opposite orders. This is limited repeat evidence,
+  not statistical significance or an official SPEC metric. Reference results
+  were excluded from proposal generation.
+* Joint-cost follow-up: control 77.68 s, multiply4/branch8 78.11 s,
+  multiply4/store8 78.02 s, load-cost10 77.39 s. The 0.375% screening gain failed
+  the 0.5% incremental promotion rule, so the confirmed control was retained.
+* Leela screening: original 304.58 s; four candidate times 328.76, 327.49,
+  313.27 and 313.40 s. All were correct; none improved on the original.
+* Planner and feedback now explicitly use **Claude Opus5.5 / xhigh** through
+  the authenticated Claude CLI. Historical seeds and trials retain their real
+  provenance. Structural seed ablations are not retroactively attributed to Opus.
 
-The observed Exchange2 **train** speedup is 1.00391246×, approximately 0.39%.
-It repeats at the timer's 0.01-second resolution on both workers. This is a
-small measured gain on one input set, not a substantial optimization or a
-reference/generalization result. It remains below the campaign's 1% selection
-threshold. Two samples per compiler per worker do not establish a statistical
-confidence interval. The completed campaign retains the original compiler.
+All numerical SPEC results are **non-compliant research estimates**: partial
+suite, selected train/reference inputs, FPGA simulation and custom timing.
+They are not SPEC reportable scores. Licensed source, inputs, outputs, binaries,
+assembly, raw logs, authentication material and site configuration are excluded.
 
-All eight paired runs passed native SPEC output comparison, simulation
-completion and collection statuses. The first scalar campaign completed its
-five-candidate train search but its original reference phase timed out; it is
-not marked complete. The second scalar campaign and the coordinated campaign
-completed. The paired check is a separate diagnostic, not a fourth adaptive
-search. Raw benchmark timing observations number 75; original-kernel timing
-observations number 648. Cache/worker/repetition fields remain explicit.
+The loop rotates experiment families, preserves the confirmed anchor, rejects
+unchanged executables before FPGA work, revalidates full measurement-cache keys
+and native outputs, and begins feedback after the control plus another finished
+profile. See `../AUTOPILOT.md` for stop/drain behavior, explicit model policy and
+staged preparation reuse. The next cache investigation uses a separately
+qualified workload; see `../CACHE_STUDY.md`. A baseline-compiler capacity sweep
+is QEMU-functional; no cache diagnostic hardware speedup is claimed here.
+
+## Historical result through October 30
+
+The original paired check reproduced 82.11 versus81.79 s on both workers,
+about0.39% train speedup, below its1% threshold. The older dataset and static
+analysis remain useful evidence about why generic microkernel rankings and
+small isolated scalar cost changes were insufficient. Later confirmed gains
+above supersede that historical status.
 
 ## What has been tried
 
@@ -92,8 +115,7 @@ these are not exact spills or dynamically weighted counts. IRA estimates high
 GPR pressure: `new_solver` 137→136, `rearrange` 131→131, `digits_2.isra.0`
 115→105. Allocator "Spilling" log-line counts include retries and are not
 executed spill counts. Pressure-aware scheduling, live-range choices and
-unrolling are better-motivated next experiments; no such new model has yet
-been validated on hardware. Use hot-block evidence and small causal ablations
+unrolling are better-motivated next experiments; later follow-up campaigns tested these interventions on hardware (see above). Use hot-block evidence and small causal ablations
 before expanding a search or making a latency/port-bottleneck claim.
 
 ## Reuse for Rocket

@@ -10,7 +10,8 @@
     "static-application.json": "141b998f5e96f76dd2580d737808dfbf7353c79b6a44fa93380f94ccc8452c78",
     "cross-file-moves.json": "5f4843f6cfb74c5692b9695f976e64e3bdc4b35f971f4d96e66a807fecc33993",
     "floating-opcodes.json": "b649a62caeb850906c28ee2db7f8b6f3bab4ed511d1b1da7cdd9988a838a896c",
-    "provenance.json": "38749b628657d5bdbd7d688c7608eecbd6552e0120821b5dc2a2a084c6eb40a3"
+    "provenance.json": "38749b628657d5bdbd7d688c7608eecbd6552e0120821b5dc2a2a084c6eb40a3",
+    "progress-20261103.json": "f9053f24ac7651a13d2aba3e2b1accef5c40919d8fcb124c4694842bd9c7c905"
   },
   "excluded": [
     "SPEC source/ISO/installation",

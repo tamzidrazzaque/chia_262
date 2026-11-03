@@ -47,6 +47,25 @@ def test_published_data_hashes_and_privacy():
         assert not re.search(r'/scratch/|/home/|\bi-[0-9a-f]{8,}|\barn:aws:|\b(?:AKIA|ASIA)[A-Z0-9]{16}', value)
 
 
+def test_cached_export_requires_completed_origin_and_exact_timing_bytes(tmp_path):
+    source, cached = tmp_path/'source', tmp_path/'cached'
+    for p in [source, cached]:
+        p.mkdir()
+        (p/'correctness.json').write_text('{"success": true}')
+        output = p/'collected/job/output'; output.mkdir(parents=True)
+        (output/'benchmark.csv').write_text('name,RealTime\nbenchmark,82.11\n')
+    (source/'completion.json').write_text('{"success": true}')
+    (cached/'measurement.json').write_text(json.dumps({'reused':True,
+        'independent_measurement':False,'source':str(source)}))
+    assert verified_sample(cached)['guest_seconds'] == 82.11
+    (source/'completion.json').write_text('{"success": false}')
+    assert verified_sample(cached) is None
+    (source/'completion.json').write_text('{"success": true}')
+    (cached/'collected/job/output/benchmark.csv').write_text('name,RealTime\nbenchmark,80.00\n')
+    with pytest.raises(ValueError, match='timing bytes'):
+        verified_sample(cached)
+
+
 def test_paired_export_preserves_controls_repeats_and_worker_identity():
     data = json.loads((DATA / "spec-estimates.json").read_text())
     paired = next(c for c in data["campaigns"] if c["id"] == "paired")

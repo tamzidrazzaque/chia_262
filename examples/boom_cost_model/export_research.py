@@ -39,12 +39,28 @@ def proposal_data(record):
             "train_speedup": record.get("speedup"), "estimate": True}
 
 
-def verified_sample(directory):
+def verified_sample(directory, seen=()):
     """Export only saved successful simulation/native comparisons and one time."""
     correctness = directory / "correctness.json"
     completion = directory / "completion.json"
-    if not completion.exists() or not read(correctness).get("success") or not read(completion).get("success"):
+    directory = directory.resolve()
+    if directory in seen or len(seen) >= 8 or not correctness.exists() or not read(correctness).get('success'):
         return None
+    origin = None
+    if completion.exists():
+        if not read(completion).get('success'):
+            return None
+    else:
+        measurement = directory / 'measurement.json'
+        metadata = read(measurement) if measurement.exists() else {}
+        if metadata.get('reused') is not True or metadata.get('independent_measurement') is not False:
+            return None
+        source = Path(metadata.get('source', ''))
+        if not source.is_absolute():
+            return None
+        origin = verified_sample(source, (*seen, directory))
+        if origin is None:
+            return None
     files = list((directory / "collected").glob("**/output/*.csv"))
     if len(files) != 1:
         raise ValueError("expected one collected SPEC time CSV")
@@ -55,6 +71,8 @@ def verified_sample(directory):
     seconds = float(rows[0]["RealTime"])
     if not math.isfinite(seconds) or seconds <= 0:
         raise ValueError("invalid collected time")
+    if origin is not None and origin['csv_sha256'] != hashlib.sha256(files[0].read_bytes()).hexdigest():
+        raise ValueError('cached timing bytes differ from completed source')
     return {"benchmark": files[0].stem, "guest_seconds": seconds,
             "native_correctness_passed": True, "simulation_completed": True,
             "csv_sha256": hashlib.sha256(files[0].read_bytes()).hexdigest(),
