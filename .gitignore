@@ -46,3 +46,6 @@ docs/_build/
 # User-specific outputs and scratch
 *-log
 out/
+
+# Local vector-target feasibility build outputs
+examples/rocket_cost_model/.vector-validation/
