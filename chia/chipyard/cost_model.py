@@ -116,8 +116,67 @@ def _verify_snapshot(directory: Path) -> dict:
     return record
 
 
+def verify_policy_defaults(prefix: str, baseline_prefix: str, policy: dict) -> dict:
+    """Check actual compiler options, unchanged Rocket defaults and overrides."""
+    boom_model.validate_policy(policy)
+    keys = ["-fsched-pressure", "-fira-loop-pressure", "--param=sched-pressure-algorithm",
+            "--param=max-completely-peeled-insns", "--param=unroll-jam-max-unroll"]
+    extras = boom_model.EXTRA_POLICY_DEFAULTS.get(policy['growth_budget'], {})
+    extra_options = {
+        'param_max_inline_insns_auto': ('--param=max-inline-insns-auto', '37'),
+        'param_inline_unit_growth': ('--param=inline-unit-growth', '17'),
+        'flag_unroll_loops': ('-funroll-loops', '[disabled]'),
+        'param_max_unrolled_insns': ('--param=max-unrolled-insns', '140'),
+        'param_max_average_unrolled_insns': ('--param=max-average-unrolled-insns', '50')}
+    if extras:
+        keys += [option for option, _ in extra_options.values()]
+
+    def query(directory, extra=()):
+        found = {}
+        driver = str(Path(directory) / "bin" / (TARGET + "gcc"))
+        for category in ("optimizers", "params"):
+            output = subprocess.check_output([driver, *FLAGS, *extra, "-Q", "--help=" + category,
+                "-x", "c", "-c", "/dev/null", "-o", "/dev/null"], text=True)
+            for line in output.splitlines():
+                fields = line.split()
+                if len(fields) < 2:
+                    continue
+                for key in keys:
+                    if fields[0] == key or fields[0].startswith(key + "="):
+                        found[key] = fields[-1]
+        if found.keys() != set(keys):
+            raise RuntimeError("compiler policy options are missing from query")
+        return found
+
+    baseline = query(baseline_prefix)
+    expected = dict(baseline)
+    if policy["pressure_algorithm"]:
+        expected.update({"-fsched-pressure": "[enabled]",
+                         "--param=sched-pressure-algorithm": str(policy["pressure_algorithm"])})
+    if policy["ira_loop_pressure"]:
+        expected["-fira-loop-pressure"] = "[enabled]"
+    growth = boom_model.GROWTH_PRESETS[policy["growth_budget"]]
+    if growth is not None:
+        expected.update({"--param=max-completely-peeled-insns": str(growth[0]), "--param=unroll-jam-max-unroll": str(growth[1])})
+    for name, value in extras.items():
+        expected[extra_options[name][0]] = '[enabled]' if name == 'flag_unroll_loops' else str(value)
+    actual, rocket = query(prefix), query(prefix, ["-mtune=rocket"])
+    overrides = ["-fno-sched-pressure", "-fno-ira-loop-pressure", "--param=sched-pressure-algorithm=1",
+                 "--param=max-completely-peeled-insns=123", "--param=unroll-jam-max-unroll=3"]
+    explicit_expected = dict(zip(keys[:5], ["[disabled]", "[disabled]", "1", "123", "3"]))
+    if extras:
+        for name,(option,value) in extra_options.items():
+            overrides.append('-fno-unroll-loops' if name == 'flag_unroll_loops' else option+'='+value)
+            explicit_expected[option] = value
+    explicit = query(prefix, overrides)
+    if actual != expected or rocket != baseline or explicit != explicit_expected:
+        raise RuntimeError("effective BOOM policy, Rocket defaults, or explicit option precedence differs")
+    return {"boom": actual, "rocket": rocket, "explicit": explicit, "verified": True}
+
+
 def build_compiler(root: str, baseline_prefix: str, values: dict, jobs: int = 4,
-                   scheduling: dict | None = None, tuning: str = "rocket", move_profile: dict | None = None) -> dict:
+                   scheduling: dict | None = None, tuning: str = "rocket", move_profile: dict | None = None,
+                   policy: dict | None = None) -> dict:
     """Rebuild pinned GCC frontends, leaving the installed baseline untouched.
 
     ``root`` must contain source/, source.json and an already configured build/.
@@ -128,6 +187,9 @@ def build_compiler(root: str, baseline_prefix: str, values: dict, jobs: int = 4,
     validate_costs(values)
     if tuning not in ("rocket", "boom"):
         raise ValueError("tuning must be rocket or boom")
+    if policy is not None and tuning != "boom":
+        raise ValueError("pressure/growth policy is BOOM-only")
+    policy = boom_model.normalize_policy(policy)
     if move_profile is not None:
         if tuning != "boom":
             raise ValueError("directional move profile is BOOM-only")
@@ -155,6 +217,9 @@ def build_compiler(root: str, baseline_prefix: str, values: dict, jobs: int = 4,
                          "issue_rate": (scheduling or {}).get("issue_rate", 4)})
     if move_profile is not None:
         identity.append({"move_profile": move_profile, "version": boom_model.MOVE_PROFILE_VERSION})
+    if policy is not None:
+        identity.append({"policy": policy, "version": boom_model.POLICY_VERSION,
+                         "source_sha256": hashlib.sha256(boom_model.policy_fragment(policy).encode()).hexdigest()})
     key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
     destination = base / "compilers" / key
     with (base / "build.lock").open("w") as lock:
@@ -174,7 +239,7 @@ def build_compiler(root: str, baseline_prefix: str, values: dict, jobs: int = 4,
             originals[name] = data.decode()
         sources = {**originals, "riscv.cc": changed}
         if tuning == "boom":
-            sources = boom_model.render_sources(originals, values, (scheduling or {}).get("issue_rate", 4), move_profile)
+            sources = boom_model.render_sources(originals, values, (scheduling or {}).get("issue_rate", 4), move_profile, policy)
         for name, text in sources.items():
             target = backend_dir / name
             if not target.exists() or target.read_text() != text:
@@ -219,6 +284,10 @@ def build_compiler(root: str, baseline_prefix: str, values: dict, jobs: int = 4,
         if move_profile is not None:
             record["move_profile"] = move_profile
             record["move_profile_version"] = boom_model.MOVE_PROFILE_VERSION
+        if policy is not None:
+            record["optimization_policy"] = policy
+            record["optimization_policy_version"] = boom_model.POLICY_VERSION
+            record["policy_options_verified"] = verify_policy_defaults(str(destination), baseline_prefix, policy)
         if tuning == "boom":
             record.update(tuning="boom", model_version=boom_model.MODEL_VERSION,
                           model_assumptions=boom_model.ASSUMPTIONS,

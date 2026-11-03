@@ -22,6 +22,7 @@ def main():
     parser.add_argument("--costs-json", type=Path, help="Bounded scalar costs; defaults to source-seeded model")
     parser.add_argument("--issue-rate", type=int, default=4)
     parser.add_argument("--move-profile", type=Path, help="BOOM directional register and spill cost profile")
+    parser.add_argument("--policy", type=Path, help="BOOM pressure/growth target defaults")
     args = parser.parse_args()
     os.umask(0o077)
     args.run_dir.mkdir(parents=True, exist_ok=True)
@@ -37,7 +38,8 @@ def main():
                 config["gcc_root"], config["baseline_prefix"],
                 json.loads(args.costs_json.read_text()) if args.costs_json else SEED_COSTS,
                 None if args.issue_rate == 4 else {"issue_rate": args.issue_rate}, "boom",
-                json.loads(args.move_profile.read_text()) if args.move_profile else None))
+                json.loads(args.move_profile.read_text()) if args.move_profile else None,
+                json.loads(args.policy.read_text()) if args.policy else None))
         save(args.run_dir / "compiler.json", result)
         print(json.dumps({k: result[k] for k in ("compiler_id", "prefix", "tuning", "model_version")}, indent=2))
     finally:

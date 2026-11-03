@@ -24,6 +24,15 @@ cloudpickle.register_pickle_by_value(sys.modules[__name__])
 RECIPE_VERSION = "monotonic-clock-v2"
 
 
+def suite_spec(suite):
+    if suite == 'cache':
+        from examples.boom_cost_model.cache_probes import RECIPE_VERSION as recipe, validate_cache_probes
+        return 'cache_probe.c', 'cache-probe', recipe, validate_cache_probes
+    if suite != 'latency':
+        raise ValueError('unknown probe suite')
+    return 'latency_probe.c', 'latency-probe', RECIPE_VERSION, validate_probes
+
+
 def probe_checksums() -> dict:
     """Compute independent expected unsigned-64 results without target execution."""
     mask = (1 << 64) - 1
@@ -63,10 +72,13 @@ def validate_probes(outputs: dict, success: bool, hardware: bool = False) -> lis
 
 
 @ChiaFunction(resources={"firemarshal": 1}, max_retries=0)
-def compose_probe(name, program, base):
+def compose_probe(name, program, base, suite='latency'):
     if not program.success or not base.success:
         raise RuntimeError("probe compilation or FireMarshal base failed")
-    command = ('(mkdir -p /output; /root/probes/latency-probe > /output/probes.jsonl; '
+    if suite not in ('latency', 'cache'):
+        raise ValueError('unknown probe suite')
+    executable = {'latency': 'latency-probe', 'cache': 'cache-probe'}[suite]
+    command = ('(mkdir -p /output; /root/probes/' + executable + ' > /output/probes.jsonl; '
                'rc=$?; echo "$rc" > /output/job.status; exit "$rc")')
     return FireMarshalNode().compose("br-base", program.files, name,
         config={"jobs": [{"name": "latency-probes", "command": command, "outputs": ["/output"]}]},
@@ -77,6 +89,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--run-dir", type=Path, required=True)
+    parser.add_argument('--suite', choices=('latency', 'cache'), default='latency')
     args = parser.parse_args()
     os.umask(0o077)
     args.run_dir.mkdir(parents=True, exist_ok=True)
@@ -91,18 +104,19 @@ def main():
         identity = get(compiler_stage.options(**affinity).chia_remote(config["gcc_root"], config["baseline_prefix"]))
         if identity["drivers"]["gcc"]["sha256"] != BASELINE_GCC_SHA256:
             raise ValueError("baseline compiler changed")
-        source = Path(__file__).with_name("latency_probe.c").read_bytes()
-        name = "boom-latency-probes-" + hashlib.sha256(
-            source + BASELINE_GCC_SHA256.encode() + RECIPE_VERSION.encode()).hexdigest()[:12]
+        filename, executable, recipe, validator = suite_spec(args.suite)
+        source = Path(__file__).with_name(filename).read_bytes()
+        name = 'boom-' + args.suite + '-probes-' + hashlib.sha256(
+            source + BASELINE_GCC_SHA256.encode() + recipe.encode()).hexdigest()[:12]
         cc = str(Path(config["baseline_prefix"]) / "bin" / (TARGET + "gcc"))
-        command = "mkdir -p root/probes && " + shlex.join([cc, *FLAGS, "probe.c", "-o", "root/probes/latency-probe"])
+        command = "mkdir -p root/probes && " + shlex.join([cc, *FLAGS, "probe.c", "-o", 'root/probes/' + executable])
         builder = RiscvBuildNode()
         program = builder.build_program.options(**affinity).chia_remote(builder,
             input_files={"probe.c": source}, command=["bash", "-c", command],
             work_dir="/tmp/spec_build", outputs=["root"])
         fm = FireMarshalNode()
         base = fm.build_base.options(resources={"firemarshal": 1}).chia_remote(fm, name="br-base")
-        workload = get(compose_probe.chia_remote(name, program, base))
+        workload = get(compose_probe.chia_remote(name, program, base, args.suite))
         compiled = get(program)
         (args.run_dir / "compiler.stdout").write_text(compiled.stdout)
         (args.run_dir / "compiler.stderr").write_text(compiled.stderr)
@@ -112,7 +126,7 @@ def main():
         save(args.run_dir / "build.json", {"success": True, "descriptor": workload.json_name,
             "compiler": identity, "flags": FLAGS, "source_sha256": hashlib.sha256(source).hexdigest(),
             "archive_sha256": hashlib.sha256(workload.archive).hexdigest(),
-            "recipe_version": RECIPE_VERSION,
+            "recipe_version": recipe, 'suite': args.suite,
             "FPGA_executed": False, "timing_interpretation": "QEMU timings are functional diagnostics only"})
         jobs = get(qemu_stage.chia_remote(workload.json_name, 900))
         if len(jobs) != 1:
@@ -127,7 +141,7 @@ def main():
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes(data)
         try:
-            records = validate_probes(job["outputs"], job["success"])
+            records = validator(job["outputs"], job["success"])
         except ValueError:
             save(args.run_dir / "correctness.json", {"success": False, "FPGA_executed": False})
             raise

@@ -36,6 +36,66 @@ def replace_once(text, old, new):
 
 MOVE_FIELDS = {"gpr_to_fpr", "fpr_to_gpr", "gpr_load", "gpr_store", "fpr_load", "fpr_store"}
 MOVE_PROFILE_VERSION = "directional-register-and-spill-costs-v1"
+POLICY_VERSION = "pressure-growth-defaults-v1"
+GROWTH_PRESETS = {"default": None, "compact": (64, 1), "tight": (32, 1),
+                  "relaxed": (128, 1), "peel_only": (64, 4), "jam_only": (200, 1),
+                  "inline": (64, 1), "unroll": (64, 1), "inline_unroll": (64, 1)}
+# Larger code-generation interventions retain the confirmed pressure/peel policy.
+# These are experimental target defaults, not calibrated hardware latencies.
+INLINE_DEFAULTS = {"param_max_inline_insns_auto": 180, "param_inline_unit_growth": 80}
+UNROLL_DEFAULTS = {"flag_unroll_loops": 1, "param_max_unrolled_insns": 256,
+                   "param_max_average_unrolled_insns": 128}
+EXTRA_POLICY_DEFAULTS = {"inline": INLINE_DEFAULTS, "unroll": UNROLL_DEFAULTS,
+                         "inline_unroll": {**INLINE_DEFAULTS, **UNROLL_DEFAULTS}}
+
+
+def validate_policy(policy):
+    """Bound the BOOM-only scheduling/allocation and loop-growth experiment."""
+    fields = {"pressure_algorithm", "ira_loop_pressure", "growth_budget"}
+    if not isinstance(policy, dict) or policy.keys() != fields:
+        raise ValueError("policy requires pressure_algorithm, ira_loop_pressure, growth_budget")
+    if type(policy["pressure_algorithm"]) is not int or policy["pressure_algorithm"] not in (0, 1, 2):
+        raise ValueError("pressure_algorithm must be 0, 1 or 2")
+    if type(policy["ira_loop_pressure"]) is not bool:
+        raise ValueError("ira_loop_pressure must be boolean")
+    if not isinstance(policy["growth_budget"], str) or policy["growth_budget"] not in GROWTH_PRESETS:
+        raise ValueError("growth_budget must be a bounded named preset")
+    return policy
+
+
+def normalize_policy(policy):
+    """An identity policy reuses the exact historical compiler snapshot."""
+    if policy is None:
+        return None
+    validate_policy(policy)
+    if policy == {"pressure_algorithm": 0, "ira_loop_pressure": False, "growth_budget": "default"}:
+        return None
+    return policy
+
+
+def policy_fragment(policy):
+    """Set experimental target defaults while preserving explicit user options."""
+    policy = normalize_policy(policy)
+    if policy is None:
+        return ""
+    settings = []
+    if policy["pressure_algorithm"]:
+        settings += [("flag_sched_pressure", 1), ("param_sched_pressure_algorithm", policy["pressure_algorithm"])]
+    if policy["ira_loop_pressure"]:
+        settings += [("flag_ira_loop_pressure", 1)]
+    growth = GROWTH_PRESETS[policy["growth_budget"]]
+    if growth is not None:
+        settings += [("param_max_completely_peeled_insns", growth[0]), ("param_unroll_jam_max_unroll", growth[1])]
+    settings += list(EXTRA_POLICY_DEFAULTS.get(policy['growth_budget'], {}).items())
+    return ("\n  /* Experimental BOOM pressure/growth defaults; explicit options win.  */\n"
+            "  if (tune_param == &boom_tune_info)\n    {\n"
+            + "".join(f"      SET_OPTION_IF_UNSET (&global_options, &global_options_set, {key}, {value});\n"
+                      for key, value in settings) + "    }\n")
+
+
+def render_policy(cc, policy):
+    anchor = "  tune_param = optimize_size ? &optimize_size_tune_info : cpu->tune_param;\n"
+    return replace_once(cc, anchor, anchor + policy_fragment(policy))
 
 
 def validate_move_profile(profile):
@@ -64,7 +124,7 @@ def render_move_profile(cc, profile):
     return replace_once(cc, start, hook + start)
 
 
-def render_sources(originals: dict, costs: dict, issue_rate: int = 4, move_profile=None) -> dict:
+def render_sources(originals: dict, costs: dict, issue_rate: int = 4, move_profile=None, policy=None) -> dict:
     """Add a separate tune table and scheduling automaton; keep Rocket intact."""
     from chia.chipyard.cost_model import render_costs, render_scheduling, validate_scheduling
     validate_scheduling({"issue_rate": issue_rate})
@@ -78,6 +138,8 @@ def render_sources(originals: dict, costs: dict, issue_rate: int = 4, move_profi
                       boom + "\n\n/* A table describing all the processors GCC knows about.  */")
     if move_profile is not None:
         cc = render_move_profile(cc, move_profile)
+    if normalize_policy(policy) is not None:
+        cc = render_policy(cc, policy)
     cores = replace_once(originals["riscv-cores.def"], '\n#undef RISCV_TUNE',
                          '\nRISCV_TUNE("boom", boom, boom_tune_info)\n\n#undef RISCV_TUNE')
     opts = replace_once(originals["riscv-opts.h"], "  generic,\n  sifive_7\n",

@@ -26,11 +26,13 @@ cloudpickle.register_pickle_by_value(sys.modules["chia.firesim.manager_node"])
 
 @ChiaFunction(resources={"riscv_build": 1}, max_retries=0)
 def compiler_stage(root: str, prefix: str, costs: dict | None = None,
-                   scheduling: dict | None = None, tuning: str = "rocket", move_profile: dict | None = None) -> dict:
+                   scheduling: dict | None = None, tuning: str = "rocket", move_profile: dict | None = None,
+                   policy: dict | None = None) -> dict:
     """Inspect the baseline or build a candidate on the selected compiler node."""
     if costs is None:
         return cost_model.compiler_identity(prefix)
-    record = cost_model.build_compiler(root, prefix, costs, scheduling=scheduling, tuning=tuning, move_profile=move_profile)
+    record = cost_model.build_compiler(root, prefix, costs, scheduling=scheduling, tuning=tuning,
+                                       move_profile=move_profile, policy=policy)
     if costs == cost_model.BASE_COSTS and scheduling is None and tuning == "rocket":
         record["reproducibility"] = cost_model.check_unmodified_rebuild(record["prefix"], prefix,
                                                                       record["prefix"] + "/smoke")

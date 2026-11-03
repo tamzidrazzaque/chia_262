@@ -17,7 +17,7 @@ from chia.chipyard.cost_model import BASELINE_GCC_SHA256, FLAGS
 from chia.chipyard.state_def import FireMarshalArtifact
 from chia.cluster.loopback import driver_options, require_guard
 from examples.boom_cost_model.optimize import Experiment, save, verified_workers
-from examples.boom_cost_model.prepare_probes import validate_probes, RECIPE_VERSION
+from examples.boom_cost_model.prepare_probes import suite_spec
 from examples.boom_cost_model.tasks import fpga_stage
 
 
@@ -32,8 +32,10 @@ def main():
     config = json.loads(args.config.read_text())
     metadata = json.loads((args.probe_run_dir / "build.json").read_text())
     archive = (args.probe_run_dir / "workload.tar.gz").read_bytes()
-    source = Path(__file__).with_name("latency_probe.c").read_bytes()
-    if (metadata.get("recipe_version") != RECIPE_VERSION or
+    suite = metadata.get('suite', 'latency')
+    filename, _, recipe, validator = suite_spec(suite)
+    source = Path(__file__).with_name(filename).read_bytes()
+    if (metadata.get("recipe_version") != recipe or
             metadata["compiler"]["drivers"]["gcc"]["sha256"] != BASELINE_GCC_SHA256 or
             metadata["flags"] != FLAGS or metadata["source_sha256"] != hashlib.sha256(source).hexdigest() or
             metadata["archive_sha256"] != hashlib.sha256(archive).hexdigest() or
@@ -71,14 +73,14 @@ def main():
                     target.write_bytes(data)
                 if result.node_id != worker["node_id"] or result.ip != worker["current_ip"]:
                     raise ValueError("probe result came from another worker")
-                records = validate_probes(result.outputs, result.success, hardware=True)
+                records = validator(result.outputs, result.success, hardware=True)
                 slot = subprocess.check_output(["ssh", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes",
                     worker["ssh_alias"], "sudo -n fpga-describe-local-image -S 0 -H"], text=True, timeout=30)
                 (dest / "fpga-slot-after.log").write_text(slot)
                 if experiment.hardware["AGFI"] not in slot.split() or "loaded" not in slot.split() or experiment.hardware["shell"] not in slot:
                     raise ValueError("probe measured a different FPGA image")
                 save(dest / "correctness.json", {"success": True, "records": records, "FPGA_executed": True,
-                     "interpretation": "Dependency/throughput comparisons include loop overhead; not SPEC scores"})
+                     'suite': suite, "interpretation": "Diagnostics include loop/timer overhead; not SPEC scores or compiler improvements"})
             except Exception as exc:
                 failures.append(str(exc))
                 save(dest / "failure.json", {"traceback": traceback.format_exc()})

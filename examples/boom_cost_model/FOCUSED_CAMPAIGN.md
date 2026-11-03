@@ -1,5 +1,9 @@
 # Coordinated BOOM cost-model campaign
 
+The opt-in pressure/loop-growth round uses `campaign_kind: "pressure"`; see
+[PRESSURE_CAMPAIGN.md](PRESSURE_CAMPAIGN.md) for its fixed incumbent costs,
+factorial seeds, measured-feedback policies and train-confirmation behavior.
+
 `focused_campaign.py` targets real SPEC2017 Exchange2 train execution on the two
 existing, verified MegaBOOM F2 workers. It expands the compiler model beyond
 scalar-table perturbations: BOOM-specific hooks independently price GPR→FP,
