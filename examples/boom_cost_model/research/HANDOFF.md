@@ -12,9 +12,9 @@ authorize provisioning or modifying shared-host networking.
 
 The follow-up data is in `data/progress-20261103.json`, alongside the older
 `spec-estimates.json` covering the first two scalar searches (all ten trials)
-and the coordinated/paired studies. The follow-up export includes eight completed
-campaigns, full cost/move/policy settings, 32 compiler identities and 82 saved
-successful timing observations (49 fresh measurements and 33 validated reuses). Cached observations are explicitly marked and
+and the coordinated/paired studies. The follow-up export includes nine completed
+campaigns, full cost/move/policy settings, 34 compiler identities and 86 saved
+successful timing observations, with validated reuses explicitly labeled. Cached observations are explicitly marked and
 must not be counted as additional independent measurements.
 
 * Best confirmed Exchange2 train runtime: **77.68 s versus 82.11 s original**,
@@ -29,7 +29,8 @@ must not be counted as additional independent measurements.
   multiply4/store8 78.02 s, load-cost10 77.39 s. The 0.375% screening gain failed
   the 0.5% incremental promotion rule, so the confirmed control was retained.
 * Leela screening: original 304.58 s; four candidate times 328.76, 327.49,
-  313.27 and 313.40 s. All were correct; none improved on the original.
+  313.27 and 313.40 s. A later integer-idiom round measured328.76,306.58,324.21
+  and307.73 s, also all correct and slower than304.58 s original.
 * Planner and feedback now explicitly use **Claude Opus5.5 / xhigh** through
   the authenticated Claude CLI. Historical seeds and trials retain their real
   provenance. Structural seed ablations are not retroactively attributed to Opus.
@@ -44,8 +45,11 @@ unchanged executables before FPGA work, revalidates full measurement-cache keys
 and native outputs, and begins feedback after the control plus another finished
 profile. See `../AUTOPILOT.md` for stop/drain behavior, explicit model policy and
 staged preparation reuse. The next cache investigation uses a separately
-qualified workload; see `../CACHE_STUDY.md`. A baseline-compiler capacity sweep
-is QEMU-functional; no cache diagnostic hardware speedup is claimed here.
+qualified workload; see `../CACHE_STUDY.md`. The first capacity diagnostic failed on FPGA because its smallest stream case
+was shorter than the guest timer resolution. The corrected batched-clock version
+passed48 QEMU cases and is queued; no cache diagnostic hardware speedup is claimed.
+Optional diagnostic failures can now be explicitly quarantined so ordinary
+experiments continue through their full checks.
 
 ## Historical result through October 30
 

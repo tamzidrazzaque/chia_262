@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 import re
 
@@ -75,13 +76,25 @@ def export(run_root, compiler_root, output):
             raise ValueError('invalid compiler identity')
         value = read(compiler_root/'boom-gcc/compilers'/identity/'cost-model.json')
         models[identity] = {k:v for k,v in value.items() if k in allowed}
-    data = {'snapshot_date': '2026-11-03', 'estimate': True, 'SPEC_reportable_score': False,
+    cache_study = {'status': 'corrected diagnostic prepared; hardware sensitivity not yet established',
+        'working_set_KiB': [8,16,32,64,256,1024,4096,16384],
+        'kernels': ['randomized dependent pointer chase','sequential line stream'],
+        'purpose': 'Diagnostic workload qualification, not a compiler score or an application speedup.'}
+    old_probe = run_root/'cache-study-20261103/f2/result.json'
+    if old_probe.exists() and not read(old_probe).get('success'):
+        cache_study['first_hardware_attempt'] = {'success':False, 'accepted_score':False,
+            'failure':'8 KiB streaming sample reported zero elapsed nanoseconds; guest exited nonzero.',
+            'corrective_action':'Calibrate timed batches to at least 1 ms and quarantine optional diagnostic failures.'}
+    prepared = run_root/'cache-study-20261103/prepared-v2/correctness.json'
+    if prepared.exists():
+        correct = read(prepared)
+        cache_study['corrected_QEMU'] = {'success':bool(correct.get('success')),
+            'cases':len(correct.get('records',[])), 'FPGA_executed':False}
+    data = {'snapshot_date': datetime.now(timezone.utc).date().isoformat(),
+        'estimate': True, 'SPEC_reportable_score': False,
         'interpretation': 'Non-compliant partial-suite FPGA research estimates; train and held-out inputs are distinct. Reused observations are not independent measurements.',
         'campaigns': campaigns, 'samples': samples, 'heldout_validation': references, 'compiler_models': models,
-        'cache_study': {'status': 'prepared; hardware sensitivity not yet established',
-            'working_set_KiB': [8,16,32,64,256,1024,4096,16384],
-            'kernels': ['randomized dependent pointer chase','sequential line stream'],
-            'purpose': 'Diagnostic workload qualification, not a compiler score or an application speedup.'}}
+        'cache_study': cache_study}
     output.mkdir(parents=True, exist_ok=True)
     filename = 'progress-20261103.json'
     encoded = (json.dumps(data, indent=2, allow_nan=False)+'\n').encode()

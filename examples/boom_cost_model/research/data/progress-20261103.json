@@ -1,5 +1,5 @@
 {
-  "snapshot_date": "2026-11-03",
+  "snapshot_date": "2026-11-04",
   "estimate": true,
   "SPEC_reportable_score": false,
   "interpretation": "Non-compliant partial-suite FPGA research estimates; train and held-out inputs are distinct. Reused observations are not independent measurements.",
@@ -2267,6 +2267,227 @@
       "reference_checked": false,
       "minimum_incremental_improvement": 0.005,
       "result_sha256": "94d7d0660214f46b727efe8391abf3c77eab564275c5b5ca29d83d7f004b6e80"
+    },
+    {
+      "id": "followup-08",
+      "family": "integer-idioms",
+      "benchmarks": [
+        "641.leela_s"
+      ],
+      "model": "claude-opus-5-5",
+      "effort": "xhigh",
+      "complete": true,
+      "history": [
+        {
+          "index": 1,
+          "success": true,
+          "compiler_id": "372e162461e29459cfc70c9ee8f4a0592dbeae381ceabf1ab44a2f8dd2f108ca",
+          "costs": {
+            "fp_add": [
+              4,
+              4
+            ],
+            "fp_mul": [
+              4,
+              4
+            ],
+            "fp_div": [
+              20,
+              20
+            ],
+            "int_mul": [
+              3,
+              3
+            ],
+            "int_div": [
+              24,
+              24
+            ],
+            "branch_cost": 4,
+            "memory_cost": 7,
+            "fmv_cost": 16
+          },
+          "move_profile": {
+            "gpr_to_fpr": 16,
+            "fpr_to_gpr": 16,
+            "gpr_load": 8,
+            "gpr_store": 6,
+            "fpr_load": 10,
+            "fpr_store": 8
+          },
+          "train_guest_seconds": {
+            "641.leela_s": 306.58
+          },
+          "train_speedup": 0.9934764172483528,
+          "estimate": true,
+          "policy": {
+            "pressure_algorithm": 2,
+            "ira_loop_pressure": true,
+            "growth_budget": "unroll"
+          },
+          "skipped_duplicate_code": false,
+          "failed_or_rejected": false
+        },
+        {
+          "index": 0,
+          "success": true,
+          "compiler_id": "24ec0f539ff634c8c123c544bc0464b2de7e03432a08c20249bf5d5ad299826b",
+          "costs": {
+            "fp_add": [
+              4,
+              4
+            ],
+            "fp_mul": [
+              4,
+              4
+            ],
+            "fp_div": [
+              20,
+              20
+            ],
+            "int_mul": [
+              3,
+              3
+            ],
+            "int_div": [
+              6,
+              6
+            ],
+            "branch_cost": 4,
+            "memory_cost": 7,
+            "fmv_cost": 16
+          },
+          "move_profile": {
+            "gpr_to_fpr": 16,
+            "fpr_to_gpr": 16,
+            "gpr_load": 8,
+            "gpr_store": 6,
+            "fpr_load": 10,
+            "fpr_store": 8
+          },
+          "train_guest_seconds": {
+            "641.leela_s": 328.76
+          },
+          "train_speedup": 0.9264509064363061,
+          "estimate": true,
+          "policy": {
+            "pressure_algorithm": 2,
+            "ira_loop_pressure": true,
+            "growth_budget": "unroll"
+          },
+          "skipped_duplicate_code": false,
+          "failed_or_rejected": false
+        },
+        {
+          "index": 3,
+          "success": true,
+          "compiler_id": "ff4c8670a1d4cd690c6e90459ea7ad63fe077f14ba17db001530f83a60f9d29a",
+          "costs": {
+            "fp_add": [
+              4,
+              4
+            ],
+            "fp_mul": [
+              4,
+              4
+            ],
+            "fp_div": [
+              20,
+              20
+            ],
+            "int_mul": [
+              3,
+              3
+            ],
+            "int_div": [
+              12,
+              12
+            ],
+            "branch_cost": 4,
+            "memory_cost": 7,
+            "fmv_cost": 16
+          },
+          "move_profile": {
+            "gpr_to_fpr": 16,
+            "fpr_to_gpr": 16,
+            "gpr_load": 8,
+            "gpr_store": 6,
+            "fpr_load": 10,
+            "fpr_store": 8
+          },
+          "train_guest_seconds": {
+            "641.leela_s": 307.73
+          },
+          "train_speedup": 0.9897637539401423,
+          "estimate": true,
+          "policy": {
+            "pressure_algorithm": 2,
+            "ira_loop_pressure": true,
+            "growth_budget": "unroll"
+          },
+          "skipped_duplicate_code": false,
+          "failed_or_rejected": false
+        },
+        {
+          "index": 2,
+          "success": true,
+          "compiler_id": "c5002fb26d1445594ad83809223accbf5b616e45f354114726ed7b630eac0c82",
+          "costs": {
+            "fp_add": [
+              4,
+              4
+            ],
+            "fp_mul": [
+              4,
+              4
+            ],
+            "fp_div": [
+              20,
+              20
+            ],
+            "int_mul": [
+              4,
+              4
+            ],
+            "int_div": [
+              6,
+              6
+            ],
+            "branch_cost": 4,
+            "memory_cost": 7,
+            "fmv_cost": 16
+          },
+          "move_profile": {
+            "gpr_to_fpr": 16,
+            "fpr_to_gpr": 16,
+            "gpr_load": 8,
+            "gpr_store": 6,
+            "fpr_load": 10,
+            "fpr_store": 8
+          },
+          "train_guest_seconds": {
+            "641.leela_s": 324.21
+          },
+          "train_speedup": 0.9394528237870516,
+          "estimate": true,
+          "policy": {
+            "pressure_algorithm": 2,
+            "ira_loop_pressure": true,
+            "growth_budget": "unroll"
+          },
+          "skipped_duplicate_code": false,
+          "failed_or_rejected": false
+        }
+      ],
+      "baseline_retained": true,
+      "incumbent_retained": null,
+      "train_confirmation_checked": null,
+      "confirmation_failed": null,
+      "confirmed_train_speedup": null,
+      "confirmed_incremental_speedup": null,
+      "reference_checked": false,
+      "minimum_incremental_improvement": 0.005,
+      "result_sha256": "b11f1044b74408749ccd0f9354f63c5019ca07ce5f0b07591fd02ab20243f941"
     }
   ],
   "samples": [
@@ -3909,6 +4130,90 @@
       "source_artifact": "worker-1/candidate-003-f2/train/0/spec17-intspeed-train-cc60df1a-648.exchange2_s/correctness.json"
     },
     {
+      "benchmark": "641.leela_s",
+      "guest_seconds": 328.76,
+      "native_correctness_passed": true,
+      "simulation_completed": true,
+      "csv_sha256": "8fcaeb099ad47a3ff0c1604812c84b78492784b7fec11914fc08c6fb89f8575e",
+      "correctness_sha256": "a08eef404c835bc807bfdedef9bc73c4f505bd61c012b1e018a2fd775d535a0b",
+      "campaign": "followup-08",
+      "inputs": "train",
+      "role": "candidate",
+      "candidate_index": 0,
+      "compiler_id": "24ec0f539ff634c8c123c544bc0464b2de7e03432a08c20249bf5d5ad299826b",
+      "worker": "worker-0",
+      "repeat": 0,
+      "paired_slot": null,
+      "reused": false,
+      "cache_metadata_present": true,
+      "measurement_key": "e6ebd083f088fcd84442f3f6d30c4dd75badfa239b0716fa10711f570ac34f40",
+      "estimate": true,
+      "source_artifact": "worker-0/candidate-000-f2/train/0/spec17-intspeed-train-37dea0b3-641.leela_s/correctness.json"
+    },
+    {
+      "benchmark": "641.leela_s",
+      "guest_seconds": 324.21,
+      "native_correctness_passed": true,
+      "simulation_completed": true,
+      "csv_sha256": "acf5704a6afb3af2f24e2e6203fa01a121730bd70e0efc8bcc3138e7a3aba2c0",
+      "correctness_sha256": "f3a20503e8cad1bf492e2255f503eddcdce78a9993b385d2b7327cf561b982ed",
+      "campaign": "followup-08",
+      "inputs": "train",
+      "role": "candidate",
+      "candidate_index": 2,
+      "compiler_id": "c5002fb26d1445594ad83809223accbf5b616e45f354114726ed7b630eac0c82",
+      "worker": "worker-0",
+      "repeat": 0,
+      "paired_slot": null,
+      "reused": false,
+      "cache_metadata_present": true,
+      "measurement_key": "9e4acfde251b18e58c10ee701173cd43b91435e3061abb9a40e16a291c751799",
+      "estimate": true,
+      "source_artifact": "worker-0/candidate-002-f2/train/0/spec17-intspeed-train-bd709f4d-641.leela_s/correctness.json"
+    },
+    {
+      "benchmark": "641.leela_s",
+      "guest_seconds": 306.58,
+      "native_correctness_passed": true,
+      "simulation_completed": true,
+      "csv_sha256": "7419868ef8ade69de12c0860d0a2f4568a6244d66fa2635868f7cc39ffac4a7d",
+      "correctness_sha256": "c5a9bd1487a5bb68007f21d577f666a9df20d6f52f38686d5c638fdad10a89c8",
+      "campaign": "followup-08",
+      "inputs": "train",
+      "role": "candidate",
+      "candidate_index": 1,
+      "compiler_id": "372e162461e29459cfc70c9ee8f4a0592dbeae381ceabf1ab44a2f8dd2f108ca",
+      "worker": "worker-1",
+      "repeat": 0,
+      "paired_slot": null,
+      "reused": false,
+      "cache_metadata_present": true,
+      "measurement_key": "f9820a72e3072fb6c8d1ff9c506c0f2112e97a260eb6a8994ff874dd1d0c7c10",
+      "estimate": true,
+      "source_artifact": "worker-1/candidate-001-f2/train/0/spec17-intspeed-train-7765eed9-641.leela_s/correctness.json"
+    },
+    {
+      "benchmark": "641.leela_s",
+      "guest_seconds": 307.73,
+      "native_correctness_passed": true,
+      "simulation_completed": true,
+      "csv_sha256": "c612eb2fc3f370badc53f39be3e4ab930e7d152ec4ef3e5a9295cf107e625103",
+      "correctness_sha256": "ff8ac96db210649452b3110a484c0aac71050ebdc07d110807d917d03f136001",
+      "campaign": "followup-08",
+      "inputs": "train",
+      "role": "candidate",
+      "candidate_index": 3,
+      "compiler_id": "ff4c8670a1d4cd690c6e90459ea7ad63fe077f14ba17db001530f83a60f9d29a",
+      "worker": "worker-1",
+      "repeat": 0,
+      "paired_slot": null,
+      "reused": false,
+      "cache_metadata_present": true,
+      "measurement_key": "dc8cbb1bdc2f0bf89574bf5cfd8a6f8c4a0ffbe1a24bec654fd8e68e33a165de",
+      "estimate": true,
+      "source_artifact": "worker-1/candidate-003-f2/train/0/spec17-intspeed-train-57856bde-641.leela_s/correctness.json"
+    },
+    {
       "benchmark": "648.exchange2_s",
       "guest_seconds": 919.62,
       "native_correctness_passed": true,
@@ -4405,6 +4710,56 @@
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
       "source_hashes": {
         "riscv.cc": "d7c02a8d50cbe1ffc4c287e20c7a5026744553488e6741122cb761a6e8f41620",
+        "riscv-cores.def": "e1b893fe5c09c4d3564845fa9bf1d2d9304ab92cf5ed5109aabf78eba2988cb7",
+        "riscv-opts.h": "5f308a3297be8c159cbc4cd4918547adba501d6759a02ab04469ae3b6a883c18",
+        "riscv.md": "04227efa6bb2fb729fb6fd2a7c3f8c1fac69cc5e8f4b0f46ea489eb16e949f46",
+        "boom.md": "3d39d5b372bf3bb15985b1509021bbd1379af6cfa710da3446a5618d9f3d5d23"
+      }
+    },
+    "372e162461e29459cfc70c9ee8f4a0592dbeae381ceabf1ab44a2f8dd2f108ca": {
+      "compiler_id": "372e162461e29459cfc70c9ee8f4a0592dbeae381ceabf1ab44a2f8dd2f108ca",
+      "gcc_revision": "c891d8dc23e1a46ad9f3e757d09e57b500d40044",
+      "baseline_gcc_sha256": "28b629f64ed9797dc198621eb5cfcb63c0a48e17b95c639bada20f14038e77e4",
+      "costs": {
+        "fp_add": [
+          4,
+          4
+        ],
+        "fp_mul": [
+          4,
+          4
+        ],
+        "fp_div": [
+          20,
+          20
+        ],
+        "int_mul": [
+          3,
+          3
+        ],
+        "int_div": [
+          24,
+          24
+        ],
+        "branch_cost": 4,
+        "memory_cost": 7,
+        "fmv_cost": 16
+      },
+      "diff_sha256": "6c042d65b030a742955977747749584ab3c92620d00a7e80f0a37b1b71fd5574",
+      "move_profile": {
+        "gpr_to_fpr": 16,
+        "fpr_to_gpr": 16,
+        "gpr_load": 8,
+        "gpr_store": 6,
+        "fpr_load": 10,
+        "fpr_store": 8
+      },
+      "move_profile_version": "directional-register-and-spill-costs-v1",
+      "tuning": "boom",
+      "model_version": "megaboom-v3-experimental-v1",
+      "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
+      "source_hashes": {
+        "riscv.cc": "4220750486f0ea5198c3e2176471af20968acb4bb8416b6363e34ec4e55a5230",
         "riscv-cores.def": "e1b893fe5c09c4d3564845fa9bf1d2d9304ab92cf5ed5109aabf78eba2988cb7",
         "riscv-opts.h": "5f308a3297be8c159cbc4cd4918547adba501d6759a02ab04469ae3b6a883c18",
         "riscv.md": "04227efa6bb2fb729fb6fd2a7c3f8c1fac69cc5e8f4b0f46ea489eb16e949f46",
@@ -5660,10 +6015,60 @@
         "riscv.md": "04227efa6bb2fb729fb6fd2a7c3f8c1fac69cc5e8f4b0f46ea489eb16e949f46",
         "boom.md": "3d39d5b372bf3bb15985b1509021bbd1379af6cfa710da3446a5618d9f3d5d23"
       }
+    },
+    "ff4c8670a1d4cd690c6e90459ea7ad63fe077f14ba17db001530f83a60f9d29a": {
+      "compiler_id": "ff4c8670a1d4cd690c6e90459ea7ad63fe077f14ba17db001530f83a60f9d29a",
+      "gcc_revision": "c891d8dc23e1a46ad9f3e757d09e57b500d40044",
+      "baseline_gcc_sha256": "28b629f64ed9797dc198621eb5cfcb63c0a48e17b95c639bada20f14038e77e4",
+      "costs": {
+        "fp_add": [
+          4,
+          4
+        ],
+        "fp_mul": [
+          4,
+          4
+        ],
+        "fp_div": [
+          20,
+          20
+        ],
+        "int_mul": [
+          3,
+          3
+        ],
+        "int_div": [
+          12,
+          12
+        ],
+        "branch_cost": 4,
+        "memory_cost": 7,
+        "fmv_cost": 16
+      },
+      "diff_sha256": "509a6b7df65610d32cb3a93c3f0418e1279a1f76135058cbb38fb9ec47974811",
+      "move_profile": {
+        "gpr_to_fpr": 16,
+        "fpr_to_gpr": 16,
+        "gpr_load": 8,
+        "gpr_store": 6,
+        "fpr_load": 10,
+        "fpr_store": 8
+      },
+      "move_profile_version": "directional-register-and-spill-costs-v1",
+      "tuning": "boom",
+      "model_version": "megaboom-v3-experimental-v1",
+      "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
+      "source_hashes": {
+        "riscv.cc": "6cfcde0fc401b0a4f5733e2860d54ff30743e7144c3dd7ff5c2f601c148e1e46",
+        "riscv-cores.def": "e1b893fe5c09c4d3564845fa9bf1d2d9304ab92cf5ed5109aabf78eba2988cb7",
+        "riscv-opts.h": "5f308a3297be8c159cbc4cd4918547adba501d6759a02ab04469ae3b6a883c18",
+        "riscv.md": "04227efa6bb2fb729fb6fd2a7c3f8c1fac69cc5e8f4b0f46ea489eb16e949f46",
+        "boom.md": "3d39d5b372bf3bb15985b1509021bbd1379af6cfa710da3446a5618d9f3d5d23"
+      }
     }
   },
   "cache_study": {
-    "status": "prepared; hardware sensitivity not yet established",
+    "status": "corrected diagnostic prepared; hardware sensitivity not yet established",
     "working_set_KiB": [
       8,
       16,
@@ -5678,6 +6083,17 @@
       "randomized dependent pointer chase",
       "sequential line stream"
     ],
-    "purpose": "Diagnostic workload qualification, not a compiler score or an application speedup."
+    "purpose": "Diagnostic workload qualification, not a compiler score or an application speedup.",
+    "first_hardware_attempt": {
+      "success": false,
+      "accepted_score": false,
+      "failure": "8 KiB streaming sample reported zero elapsed nanoseconds; guest exited nonzero.",
+      "corrective_action": "Calibrate timed batches to at least 1 ms and quarantine optional diagnostic failures."
+    },
+    "corrected_QEMU": {
+      "success": true,
+      "cases": 48,
+      "FPGA_executed": false
+    }
   }
 }
