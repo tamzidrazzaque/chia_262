@@ -2,9 +2,9 @@
 
 The immediate deliverable is a correctness-checked improvement on this fixed
 MegaBOOM configuration, with held-out evidence and complete compiler identities.
-The current confirmed Exchange2 train improvement is 5.70%. A newer branch-cost12
-candidate screened at 76.82 s versus77.68 s incumbent and82.11 s original:
-approximately6.89% speedup over original, still pending repeat confirmation.
+The current confirmed Exchange2 train improvement is 5.70%. A newer branch-cost-12
+candidate screened at 76.82 s versus 77.68 s incumbent and 82.11 s original:
+approximately 6.89% speedup over original, still pending repeat confirmation.
 These are partial-suite research estimates, not official SPEC scores.
 
 1. Finish the active confirmation without interruption. Original and incumbent
@@ -23,7 +23,7 @@ These are partial-suite research estimates, not official SPEC scores.
    confirmed results, including an intervening winner; do not silently reuse
    speculative compiler bytes built with different scalar costs.
 4. Follow with a short interaction campaign combining structural settings,
-   branch-cost choices and spill-load heuristics. The measured branch12 point
+   branch-cost choices (including 16 and 24) and spill-load heuristics. The measured branch-cost-12 point
    motivates a nonmonotonic interaction test; the model must explain a change
    in generated code and keep every unlisted compiler field fixed.
 5. Prioritize held-out validation of the best distinct compiler over further
@@ -40,7 +40,7 @@ The corrected cache diagnostic ran on the otherwise idle worker while the
 active controller confirmed on the other worker. Its immutable config pins
 confirmation to worker1, all screening is finished, and final_ref is false;
 read-only idle and full hardware/cloud guards precede the separate job. Remove
-the redundant two-worker diagnostic barrier. This diagnostic passed48 checks
+the redundant two-worker diagnostic barrier. This diagnostic passed 48 checks
 on one F2, but it is not an application or compiler speedup:
 
 | Working set | Pointer chase, guest ns/load | Stream, guest ns/load |
@@ -51,7 +51,7 @@ on one F2, but it is not an application or compiler speedup:
 | 16 MiB | 144.78 | 21.29 |
 
 These are medians of three calibrated batches. The capacity transition near
-the32KiB L1 is visible; TLB, cache and memory-parallelism effects are not isolated
+the 32 KiB L1 is visible; TLB, cache and memory-parallelism effects are not isolated
 by this test. Use a compiler-sensitive locality workload before crediting a
 cache-oriented compiler change. No raw SPEC outputs enter the public data.
 

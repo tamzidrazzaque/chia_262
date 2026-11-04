@@ -125,7 +125,8 @@ def test_structural_interactions_keep_unlisted_fields_frozen():
     cfg=config();cfg.update(deepcopy(autopilot.FAMILIES['structural-interactions']))
     cfg['policy_axes']['growth_budget'].append(cfg['anchor_proposal']['policy']['growth_budget'])
     api=AdaptiveProposals(cfg)
-    value=api.project({'branch_cost':12,'gpr_load':10,'growth_budget':'unroll_large'},'Test an interaction.')
+    value=api.project({'branch_cost':24,'gpr_load':10,'growth_budget':'unroll_large'},'Test an interaction beyond the promising12 point.')
+    assert value['costs']['branch_cost']==24
     assert value['costs']['int_mul']==api.anchor['costs']['int_mul']
     assert value['policy']['pressure_algorithm']==api.anchor['policy']['pressure_algorithm']
     with pytest.raises(ValueError,match='unknown adaptive knob'):
