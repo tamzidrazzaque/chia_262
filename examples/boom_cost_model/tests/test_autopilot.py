@@ -121,6 +121,26 @@ def test_adaptive_axes_preserve_all_frozen_fields_and_integer_types():
     with pytest.raises(ValueError, match='policy axis'): AdaptiveProposals(cfg)
 
 
+def test_structural_interactions_keep_unlisted_fields_frozen():
+    cfg=config();cfg.update(deepcopy(autopilot.FAMILIES['structural-interactions']))
+    cfg['policy_axes']['growth_budget'].append(cfg['anchor_proposal']['policy']['growth_budget'])
+    api=AdaptiveProposals(cfg)
+    value=api.project({'branch_cost':12,'gpr_load':10,'growth_budget':'unroll_large'},'Test an interaction.')
+    assert value['costs']['int_mul']==api.anchor['costs']['int_mul']
+    assert value['policy']['pressure_algorithm']==api.anchor['policy']['pressure_algorithm']
+    with pytest.raises(ValueError,match='unknown adaptive knob'):
+        api.project({'int_mul':8},'Frozen scalar cost.')
+
+
+def test_reference_cache_admits_original_controls_and_excludes_selected_results(tmp_path):
+    src=tmp_path/'prior';src.mkdir()
+    for key,label in [('a'*64,'original'),('b'*64,'selected')]:
+        autopilot.write(src/(key+'.json'),{'key':key,'source':str(tmp_path/'previous'/label/'ref/0/job')})
+    dest=tmp_path/'cache'
+    focused_campaign.import_baseline_cache(dest,[src],allowed_labels=('baseline-f2','baseline-heldout','original'))
+    assert sorted(p.name for p in dest.glob('*.json'))==['a'*64+'.json']
+
+
 def test_round_override_is_explicit_bounded_and_only_for_that_round():
     settings={'round_overrides':{'0':{'target':'648.exchange2_s','family':'structural-frontier'}}}
     assert autopilot.choose_domain([],settings)==('648.exchange2_s','structural-frontier')

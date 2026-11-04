@@ -51,6 +51,11 @@ FAMILIES = {
             'inline_selective','inline_selective_large','inline_small_large',
             'inline_selective_xlarge','inline_small_small']},
         "hypothesis": "Test a broad instruction-footprint/ILP frontier: smaller, double and quadruple ordinary-unroll budgets; moderate automatic inlining; their interaction; and a smaller-inline counterpoint. Preserve all scalar costs, pressure policy, peel/jam settings, ISA/ABI and hardware. Inlining180/growth80 previously regressed; moderate80/growth30 is a different intervention. Cache capacity and static code size do not prove a cache bottleneck."},
+    "structural-interactions": {
+        "cost_axes": {"branch_cost":[2,4,8,12], "gpr_load":[6,8,10]},
+        "policy_axes": {"growth_budget":['unroll','unroll_small','unroll_large','unroll_xlarge',
+            'inline_selective','inline_selective_large','inline_small_large']},
+        "hypothesis": "Use the latest confirmed structural winner as anchor. Test branch avoidance and spill-load heuristics jointly with loop/inlining footprint. The branch-cost12 screening point suggests nonmonotonic interactions; do not assume bigger or smaller costs always help. Select informative contrasts from measured train evidence; freeze every other field."},
 }
 MICROARCH = {
     "BOOM_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -605,7 +610,9 @@ def supervise(initial, root, poll=30, settings=None, resume_run=None):
                     validation.mkdir(parents=True,exist_ok=True)
                     execute([
                         ('reference', [sys.executable,'-u','-m','examples.boom_cost_model.reference_check',
-                            '--source',str(source),'--run-dir',str(validation)]),
+                            '--source',str(source),'--run-dir',str(validation),
+                            *[arg for p in (settings or {}).get('reference_cache_dirs',[])
+                                for arg in ('--baseline-cache',str(p))]]),
                         ('prepare-next', [sys.executable,'-u','-m','examples.boom_cost_model.focused_campaign',
                             '--config',str(directory / 'config.json'),'--run-dir',str(run),'--prepare-only'])],
                         directory,'reference-and-next-preparation',index)

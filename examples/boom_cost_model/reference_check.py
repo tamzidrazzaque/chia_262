@@ -22,7 +22,7 @@ from examples.boom_cost_model.focused_campaign import import_baseline_cache, mea
 from examples.boom_cost_model.optimize import Experiment, save, verified_workers
 
 
-def run(source, root):
+def run(source, root, baseline_cache_dirs=()):
     """Recheck test artifacts, then compare original and selected compiler per worker."""
     config = json.loads((source / 'config.json').read_text())
     report = json.loads((source / 'result.json').read_text())
@@ -31,6 +31,8 @@ def run(source, root):
         raise ValueError('reference check requires a complete, selected validated compiler')
     specification = {'source':str(source), 'result_sha256':hashlib.sha256((source / 'result.json').read_bytes()).hexdigest(),
         'compiler_id':selected['compiler']['compiler_id'], 'inputs':'ref', 'benchmarks':config['benchmarks']}
+    if baseline_cache_dirs:
+        specification['extra_baseline_cache_dirs'] = [str(p) for p in baseline_cache_dirs]
     if (root / 'check.json').exists() and json.loads((root / 'check.json').read_text()) != specification:
         raise ValueError('reference-check specification changed')
     save(root / 'check.json',specification)
@@ -57,7 +59,9 @@ def run(source, root):
         ex = Experiment(config,root / f'worker-{index}')
         ex.workers = [workers[index]]
         import_baseline_cache(ex.directory / 'measurement-cache',
-            config.get('baseline_cache_dirs', []) + [str(p) for p in source.glob('worker-*/measurement-cache')])
+            config.get('baseline_cache_dirs', []) + [str(p) for p in source.glob('worker-*/measurement-cache')]
+            + [str(p) for p in baseline_cache_dirs],
+            allowed_labels=('baseline-f2','baseline-heldout','original'))
         samples = {}
         # Order balancing preserves paired controls on EACH physical worker.
         order = ('original','selected') if index == 0 else ('selected','original')
@@ -89,6 +93,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source',type=Path,required=True)
     parser.add_argument('--run-dir',type=Path,required=True)
+    parser.add_argument('--baseline-cache',type=Path,action='append',default=[],
+        help='Extra validated original-compiler cache; full keys/raw/native checks still apply')
     args = parser.parse_args()
     os.umask(0o077)
     args.run_dir.mkdir(parents=True,exist_ok=True)
@@ -97,7 +103,7 @@ def main():
         require_guard()
         ray.init(**driver_options(os.environ['RAY_ADDRESS']))
         try:
-            run(args.source.resolve(),args.run_dir.resolve())
+            run(args.source.resolve(),args.run_dir.resolve(),args.baseline_cache)
         except Exception:
             save(args.run_dir / 'failure.json',{'traceback':traceback.format_exc()})
             raise
