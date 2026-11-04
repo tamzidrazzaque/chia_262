@@ -1,0 +1,115 @@
+{
+  "success": true,
+  "FPGA_executed": true,
+  "physical_workers": 1,
+  "samples_passed": 48,
+  "recipe": "cache-working-set-v2-batched-clock",
+  "records": [
+    {
+      "kernel": "chase",
+      "working_set_KiB": 8,
+      "median_guest_ns_per_load": 5.7830810546875,
+      "samples": 3
+    },
+    {
+      "kernel": "chase",
+      "working_set_KiB": 16,
+      "median_guest_ns_per_load": 5.89752197265625,
+      "samples": 3
+    },
+    {
+      "kernel": "chase",
+      "working_set_KiB": 32,
+      "median_guest_ns_per_load": 6.09588623046875,
+      "samples": 3
+    },
+    {
+      "kernel": "chase",
+      "working_set_KiB": 64,
+      "median_guest_ns_per_load": 25.57373046875,
+      "samples": 3
+    },
+    {
+      "kernel": "chase",
+      "working_set_KiB": 256,
+      "median_guest_ns_per_load": 34.60693359375,
+      "samples": 3
+    },
+    {
+      "kernel": "chase",
+      "working_set_KiB": 1024,
+      "median_guest_ns_per_load": 71.77734375,
+      "samples": 3
+    },
+    {
+      "kernel": "chase",
+      "working_set_KiB": 4096,
+      "median_guest_ns_per_load": 95.428466796875,
+      "samples": 3
+    },
+    {
+      "kernel": "chase",
+      "working_set_KiB": 16384,
+      "median_guest_ns_per_load": 144.78302001953125,
+      "samples": 3
+    },
+    {
+      "kernel": "stream",
+      "working_set_KiB": 8,
+      "median_guest_ns_per_load": 1.110076904296875,
+      "samples": 3
+    },
+    {
+      "kernel": "stream",
+      "working_set_KiB": 16,
+      "median_guest_ns_per_load": 1.03759765625,
+      "samples": 3
+    },
+    {
+      "kernel": "stream",
+      "working_set_KiB": 32,
+      "median_guest_ns_per_load": 1.02996826171875,
+      "samples": 3
+    },
+    {
+      "kernel": "stream",
+      "working_set_KiB": 64,
+      "median_guest_ns_per_load": 7.476806640625,
+      "samples": 3
+    },
+    {
+      "kernel": "stream",
+      "working_set_KiB": 256,
+      "median_guest_ns_per_load": 9.185791015625,
+      "samples": 3
+    },
+    {
+      "kernel": "stream",
+      "working_set_KiB": 1024,
+      "median_guest_ns_per_load": 16.815185546875,
+      "samples": 3
+    },
+    {
+      "kernel": "stream",
+      "working_set_KiB": 4096,
+      "median_guest_ns_per_load": 20.6756591796875,
+      "samples": 3
+    },
+    {
+      "kernel": "stream",
+      "working_set_KiB": 16384,
+      "median_guest_ns_per_load": 21.29364013671875,
+      "samples": 3
+    }
+  ],
+  "interpretation": "Original diagnostic, not SPEC or compiler speedup. Capacity/TLB/MLP effects are not separated; ratios are not direct cache-miss counters.",
+  "source_sha256": "11340aa0efd659b629f96910b3c8598b26f45aac189c25456b14c842e6c7b704",
+  "baseline_gcc_sha256": "28b629f64ed9797dc198621eb5cfcb63c0a48e17b95c639bada20f14038e77e4",
+  "flags": [
+    "-O3",
+    "-static",
+    "-march=rv64imafdc",
+    "-mabi=lp64d"
+  ],
+  "hardware_provenance": "provenance.json"
+}
