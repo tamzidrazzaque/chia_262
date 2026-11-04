@@ -1,5 +1,11 @@
 # Rocket scalar compiler cost-model plan
 
+> **Vector-campaign note:** This file is the inherited scalar Rocket reference.
+> The active Rocket plus Saturn campaign, including the five experiment roles
+> and the separate roles 1-3 compiler loop and roles 4-5 private-source loop,
+> is defined in [VECTOR_PLAN.md](VECTOR_PLAN.md). Do not use this scalar plan as
+> the vector experiment specification.
+
 ## Goal and scope
 
 Adapt the measured compiler-tuning technique from
