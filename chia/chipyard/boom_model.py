@@ -48,6 +48,26 @@ UNROLL_DEFAULTS = {"flag_unroll_loops": 1, "param_max_unrolled_insns": 256,
 EXTRA_POLICY_DEFAULTS = {"inline": INLINE_DEFAULTS, "unroll": UNROLL_DEFAULTS,
                          "inline_unroll": {**INLINE_DEFAULTS, **UNROLL_DEFAULTS}}
 
+# A wider structural experiment around the confirmed ordinary-unroll policy.
+# Limits are GCC instruction-cost budgets, not literal unroll factors or bytes.
+STRUCTURAL_DEFAULTS = {
+    'unroll_small': (128, 64, None, None),
+    'unroll_large': (512, 256, None, None),
+    'unroll_xlarge': (1024, 512, None, None),
+    'inline_selective': (256, 128, 80, 30),
+    'inline_selective_large': (512, 256, 80, 30),
+    'inline_small_large': (512, 256, 20, 10),
+    'inline_selective_xlarge': (1024, 512, 80, 30),
+    'inline_small_small': (128, 64, 20, 10),
+}
+for _name, (_maximum, _average, _inline, _growth) in STRUCTURAL_DEFAULTS.items():
+    GROWTH_PRESETS[_name] = (64, 1)
+    EXTRA_POLICY_DEFAULTS[_name] = {'flag_unroll_loops': 1,
+        'param_max_unrolled_insns': _maximum, 'param_max_average_unrolled_insns': _average}
+    if _inline is not None:
+        EXTRA_POLICY_DEFAULTS[_name].update(param_max_inline_insns_auto=_inline,
+            param_inline_unit_growth=_growth)
+
 
 def validate_policy(policy):
     """Bound the BOOM-only scheduling/allocation and loop-growth experiment."""

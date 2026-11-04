@@ -45,6 +45,12 @@ FAMILIES = {
             "gpr_load":[6,8,10],"gpr_store":[6,8,10]},
         "policy_axes": {"pressure_algorithm":[0,2],"ira_loop_pressure":[False,True]},
         "hypothesis": "Explore interactions around the confirmed unroll winner and the faster, unconfirmed int_mul4 screening point. Preserve the actual confirmed control; do not silently promote the screening profile. Use controlled comparisons for branch selection and allocation costs, keeping growth/ISA/flags/libraries/hardware fixed."},
+    "structural-frontier": {
+        "cost_axes": {},
+        "policy_axes": {"growth_budget": ['unroll_small','unroll_large','unroll_xlarge',
+            'inline_selective','inline_selective_large','inline_small_large',
+            'inline_selective_xlarge','inline_small_small']},
+        "hypothesis": "Test a broad instruction-footprint/ILP frontier: smaller, double and quadruple ordinary-unroll budgets; moderate automatic inlining; their interaction; and a smaller-inline counterpoint. Preserve all scalar costs, pressure policy, peel/jam settings, ISA/ABI and hardware. Inlining180/growth80 previously regressed; moderate80/growth30 is a different intervention. Cache capacity and static code size do not prove a cache bottleneck."},
 }
 MICROARCH = {
     "BOOM_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -126,6 +132,14 @@ def review(source):
 
 def choose_domain(reviews, settings=None):
     """Rotate targets and hypothesis families; never pursue one family endlessly."""
+    overrides = (settings or {}).get('round_overrides', {})
+    if not isinstance(overrides, dict) or any(not isinstance(k,str) or not k.isdecimal() or
+            not isinstance(v,dict) or v.keys() != {'target','family'} or
+            v['target'] not in TARGETS or v['family'] not in FAMILIES for k,v in overrides.items()):
+        raise ValueError('invalid explicit round domain override')
+    selected = overrides.get(str(len(reviews)))
+    if selected:
+        return selected['target'], selected['family']
     if settings and settings.get('deadline_mode'):
         index = sum(bool(r.get('deadline_mode')) for r in reviews)
         targets = settings.get('target_schedule', ['648.exchange2_s','648.exchange2_s','641.leela_s'])
@@ -263,9 +277,11 @@ def plan(base, reviews, directory, settings=None):
             'source patches, flags, ISA/ABI changes or RVV. Source-derived capacities are not measured occupancy. '
             'Do not invent cycle bottlenecks or register parking. Scores from other targets/policies do not transfer. '
             'A generic microkernel proxy failed validation. Propose alternatives instead of endlessly refining one idea.'}
-    if family == 'codegen-growth':
+    if family in ('codegen-growth','structural-frontier'):
         seeds = []
-        for name in FAMILIES[family]['policy_axes']['growth_budget']:
+        choices = FAMILIES[family]['policy_axes']['growth_budget']
+        # Reserve two structural points for evidence-guided CLI feedback.
+        for name in choices[:6] if family == 'structural-frontier' else choices:
             value = deepcopy(anchor)
             value['policy']['growth_budget'] = name
             value['rationale'] = FAMILIES[family]['hypothesis']+' Intervention: '+name+'. Compare the isolated changes and their interaction against the unchanged control.'
@@ -274,9 +290,12 @@ def plan(base, reviews, directory, settings=None):
         if not seeds:
             fallback = {**(settings or {}), 'deadline_mode':True,
                 'family_schedule':['integer-idioms','branch-growth','allocation-memory']}
+            fallback['round_overrides'] = {k:v for k,v in fallback.get('round_overrides',{}).items()
+                if k != str(len(reviews))}
             return plan(base,reviews,directory,fallback)
         proposal = {'hypothesis':cfg['hypothesis'],'seeds':seeds}
-        cfg.update(campaign_budget=len(seeds)+1,iterations=len(seeds)+1)
+        budget = len(seeds) + (2 if family == 'structural-frontier' else 1)
+        cfg.update(campaign_budget=budget,iterations=budget)
     else:
         for attempt in range(3):
             try:

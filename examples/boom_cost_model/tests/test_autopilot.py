@@ -121,6 +121,30 @@ def test_adaptive_axes_preserve_all_frozen_fields_and_integer_types():
     with pytest.raises(ValueError, match='policy axis'): AdaptiveProposals(cfg)
 
 
+def test_round_override_is_explicit_bounded_and_only_for_that_round():
+    settings={'round_overrides':{'0':{'target':'648.exchange2_s','family':'structural-frontier'}}}
+    assert autopilot.choose_domain([],settings)==('648.exchange2_s','structural-frontier')
+    for invalid in [{'target':'unknown','family':'structural-frontier'},
+            {'target':'648.exchange2_s','family':'arbitrary source'},
+            {'target':'648.exchange2_s','family':'structural-frontier','extra':True}]:
+        with pytest.raises(ValueError,match='override'):
+            autopilot.choose_domain([],{'round_overrides':{'0':invalid}})
+
+
+def test_structural_round_has_six_ablations_control_and_feedback(tmp_path,monkeypatch):
+    directory=source(tmp_path);review=autopilot.review(directory);cfg=config()
+    monkeypatch.setattr(autopilot,'confirmed_anchor',lambda *_:(None,review['selected']))
+    monkeypatch.setattr(autopilot.pressure_proposals,'request_json',lambda *_:pytest.fail('structured seeds must not be attributed to Claude'))
+    planned=autopilot.plan(cfg,[review],tmp_path/'next',{'deadline_mode':True,
+        'round_overrides':{'1':{'target':'648.exchange2_s','family':'structural-frontier'}}})
+    seeds=AdaptiveProposals(planned).seed_profiles()
+    assert len(seeds)==7 and planned['campaign_budget']==8
+    assert planned['prepare_seed_count']==7
+    assert seeds[0]==review['selected']['proposal']
+    assert all(p['costs']==seeds[0]['costs'] and p['move_profile']==seeds[0]['move_profile'] for p in seeds)
+    assert len(planned['policy_axes']['growth_budget'])==9
+
+
 def test_delta_projection_changes_only_allowed_axes_and_copies_anchor():
     api = AdaptiveProposals(config())
     value=api.project({'branch_cost':4,'growth_budget':'relaxed'},'Test the branch/growth interaction.')

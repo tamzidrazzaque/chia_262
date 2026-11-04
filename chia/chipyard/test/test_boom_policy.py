@@ -8,6 +8,23 @@ from chia.chipyard.cost_model import verify_policy_defaults
 from examples.boom_cost_model import pressure_proposals
 
 
+@pytest.mark.parametrize('name,maximum,average,inline,growth', [
+    ('unroll_small',128,64,None,None), ('unroll_large',512,256,None,None),
+    ('unroll_xlarge',1024,512,None,None), ('inline_selective',256,128,80,30),
+    ('inline_selective_large',512,256,80,30), ('inline_small_large',512,256,20,10)])
+def test_structural_defaults_are_bounded_boom_only_and_explicit_options_win(name,maximum,average,inline,growth):
+    fragment=policy_fragment({'pressure_algorithm':2,'ira_loop_pressure':True,'growth_budget':name})
+    assert 'if (tune_param == &boom_tune_info)' in fragment
+    assert f'param_max_unrolled_insns, {maximum}' in fragment
+    assert f'param_max_average_unrolled_insns, {average}' in fragment
+    if inline is not None:
+        assert f'param_max_inline_insns_auto, {inline}' in fragment
+        assert f'param_inline_unit_growth, {growth}' in fragment
+    else:
+        assert 'param_max_inline_insns_auto' not in fragment
+    assert all('SET_OPTION_IF_UNSET' in line for line in fragment.splitlines() if 'param_' in line or 'flag_' in line)
+
+
 def test_identity_policy_preserves_existing_snapshot_and_sources():
     identity = pressure_proposals.seed_profiles()[0]["policy"]
     assert normalize_policy(None) is None
