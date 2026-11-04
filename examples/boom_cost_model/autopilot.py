@@ -368,12 +368,19 @@ def pending_cache_probe(settings):
     spec = (settings or {}).get('cache_probe')
     if spec is None:
         return None
-    if not isinstance(spec, dict) or spec.keys() != {'config', 'prepared_directory', 'result_directory'} or any(
-            not isinstance(v, str) or not v for v in spec.values()):
+    required = {'config', 'prepared_directory', 'result_directory'}
+    if not isinstance(spec, dict) or not required <= spec.keys() or spec.keys() - required - {'failure_policy'} or any(
+            not isinstance(spec[k], str) or not spec[k] for k in required) or spec.get('failure_policy','stop') not in ('stop','quarantine'):
         raise ValueError('cache_probe requires config, prepared_directory and result_directory')
     destination = Path(spec['result_directory'])
+    if (destination / 'quarantined.json').exists():
+        if spec.get('failure_policy') == 'quarantine':
+            return None
+        raise RuntimeError('cache diagnostic quarantined; inspect it before continuing')
     if (destination / 'result.json').exists():
         if not read(destination / 'result.json').get('success'):
+            if spec.get('failure_policy') == 'quarantine':
+                return None
             raise RuntimeError('cache diagnostic failed; inspect it before continuing')
         return None
     prepared = Path(spec['prepared_directory'])
@@ -382,6 +389,20 @@ def pending_cache_probe(settings):
     if not read(prepared / 'correctness.json').get('success') or read(prepared / 'build.json').get('suite') != 'cache':
         raise ValueError('cache diagnostic requires a successful prepared cache suite')
     return spec
+
+
+def check_cache_probe_completion(spec, error=None):
+    """Reject diagnostic scores; optionally quarantine this job and keep the core loop usable."""
+    destination = Path(spec['result_directory'])
+    result = destination / 'result.json'
+    if error is None and result.exists() and read(result).get('success'):
+        return True
+    if spec.get('failure_policy') != 'quarantine':
+        raise RuntimeError('cache diagnostic did not complete correctly')
+    write(destination / 'quarantined.json', {'success': False, 'accepted_hardware_score': False,
+        'reason': str(error or 'diagnostic completion/correctness gate failed'),
+        'next_action': 'Preserve failure; ordinary workload dispatch must repeat idle/cloud/hardware checks.'})
+    return False
 
 
 def supervise(initial, root, poll=30, settings=None, resume_run=None):
@@ -516,14 +537,19 @@ def supervise(initial, root, poll=30, settings=None, resume_run=None):
                 if stopped():
                     break
                 destination = Path(diagnostic['result_directory'])
-                execute([('cache-probe', [sys.executable, '-u', '-m',
-                    'examples.boom_cost_model.run_probes', '--config', diagnostic['config'],
-                    '--probe-run-dir', diagnostic['prepared_directory'], '--run-dir', str(destination)])],
-                    root, 'cache-diagnostic', len(state['reviews']))
+                error = None
+                try:
+                    execute([('cache-probe', [sys.executable, '-u', '-m',
+                        'examples.boom_cost_model.run_probes', '--config', diagnostic['config'],
+                        '--probe-run-dir', diagnostic['prepared_directory'], '--run-dir', str(destination)])],
+                        root, 'cache-diagnostic', len(state['reviews']))
+                except RuntimeError as exc:
+                    error = exc
                 if stopped():
                     break
-                if not (destination / 'result.json').exists() or not read(destination / 'result.json').get('success'):
-                    raise RuntimeError('cache diagnostic did not complete correctly')
+                if not check_cache_probe_completion(diagnostic, error):
+                    publish('cache-diagnostic-quarantined', diagnostic=str(destination),
+                        inspect_drivers_before_resume=True)
             index = len(state['reviews'])
             if shutil.disk_usage(root).free < 20 * 1024**3:
                 raise RuntimeError('less than 20 GiB free at '+str(root)+'; preserve results and resolve space before dispatch')

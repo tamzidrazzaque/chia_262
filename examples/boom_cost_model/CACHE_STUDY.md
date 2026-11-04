@@ -17,8 +17,11 @@ to describe this image.
 `cache_probe.c` is original, redistributable code. It traverses working sets
 of 8, 16, 32, 64, 256, 1024, 4096 and 16384 KiB, with one 64-byte node per line.
 It compares a shuffled single-cycle dependent pointer chain and sequential
-streaming. Every page is touched before timing; each sample makes two complete
-traversals, with three samples per case. Fixed volatile loads intentionally
+streaming. Every page is touched before timing; each kernel call makes two
+complete traversals. Calibration doubles the calls per timed batch until it
+takes at least 1 ms, bounded at 33,554,432 loads. Three measured samples use
+that batch size. Compare elapsed time **per load**, using the recorded counts.
+Fixed volatile loads intentionally
 keep this a hardware diagnostic. Independent arithmetic checksums, complete
 case coverage, guest exit and collection gates are required. QEMU validates
 functionality; its timings are not hardware performance evidence.
@@ -37,14 +40,25 @@ drained campaigns, then resumes normal experiments automatically:
 {"cache_probe": {
   "config": "/path/to/private-config.json",
   "prepared_directory": "/path/to/cache-prepared",
-  "result_directory": "/path/to/cache-results"
+  "result_directory": "/path/to/cache-results",
+  "failure_policy": "quarantine"
 }}
 ```
 
 It waits for QEMU correctness without holding ordinary experiments, verifies
 both workers are idle before dispatch, and uses the existing full image,
 driver, AWS, SSH and output-validation gates. It never interrupts live FPGA
-work. A failed diagnostic requires investigation before continuation.
+work. With `failure_policy: quarantine`, a failed optional diagnostic is
+preserved and rejected, then ordinary experiments may continue after their
+idle/cloud/hardware checks. It is not retried automatically or accepted as a
+score. Without that explicit policy, diagnostic failure stops the supervisor.
+
+The first FPGA version failed on both workers at the resident 8 KiB stream:
+256 loads took zero reported nanoseconds. Checksums were correct and simulation
+passed, but the guest exited nonzero as required by the timing gate. QEMU had
+not reproduced that clock granularity. Recipe v2 uses calibrated batching and
+has a regression test that quantizes the clock to 4 microseconds. The old
+failure remains evidence; no cache-performance claim is based on it.
 
 Compare time per load across capacities, separately for each worker and access
 pattern. Cache and TLB/page effects can coexist. A latency knee is supporting

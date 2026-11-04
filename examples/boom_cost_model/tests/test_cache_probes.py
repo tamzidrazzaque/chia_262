@@ -26,6 +26,29 @@ def test_actual_c_traversals_match_independent_reference(output):
     assert max(SIZES_KIB) * 1024 > 4 * 1024**2
 
 
+def test_guest_timer_quantization_is_amortized(tmp_path):
+    cc = shutil.which('cc')
+    if not cc:
+        pytest.skip('C compiler unavailable')
+    binary = tmp_path/'quantized-probe'
+    source = Path(__file__).parents[1]/'cache_probe.c'
+    subprocess.run([cc, '-O3', '-std=c11', '-Wall', '-Wextra', '-Werror',
+        '-DCACHE_TEST_TICK_NS=4000', str(source), '-o', str(binary)], check=True)
+    raw = subprocess.check_output([str(binary)], timeout=30)
+    rows = validate_cache_probes({'output/job.status':b'0','output/probes.jsonl':raw}, True, hardware=True)
+    assert all(r['elapsed_ns'] > 0 and r['elapsed_ns'] % 4000 == 0 for r in rows)
+    assert any(r['batch_calls'] > 1 for r in rows if r['working_set_bytes'] == 8192)
+
+
+@pytest.mark.parametrize('calls', [0, True, 3, 262144])
+def test_batch_count_is_bounded_and_analytically_checked(output, calls):
+    rows = [json.loads(l) for l in output.splitlines()]
+    rows[0]['batch_calls'] = calls
+    files = {'output/job.status':b'0','output/probes.jsonl':json.dumps(rows[0]).encode()}
+    with pytest.raises(ValueError, match='batch'):
+        validate_cache_probes(files, True)
+
+
 @pytest.mark.parametrize('failure', ['guest', 'status', 'missing', 'duplicate', 'checksum', 'timer'])
 def test_collection_and_wrong_results_fail_closed(output, failure):
     rows = [json.loads(l) for l in output.splitlines()]

@@ -46,6 +46,55 @@ def test_cache_probe_cannot_substitute_another_suite(tmp_path):
         autopilot.pending_cache_probe({'cache_probe': spec})
 
 
+def test_optional_cache_failure_is_rejected_and_quarantined_once(tmp_path):
+    spec = {'config': 'config.json', 'prepared_directory': str(tmp_path/'prepared'),
+            'result_directory': str(tmp_path/'results'), 'failure_policy':'quarantine'}
+    assert not autopilot.check_cache_probe_completion(spec, RuntimeError('guest timer too short'))
+    report = json.loads((tmp_path/'results/quarantined.json').read_text())
+    assert report['success'] is False and report['accepted_hardware_score'] is False
+    assert autopilot.pending_cache_probe({'cache_probe':spec}) is None
+    assert not (tmp_path/'results/result.json').exists()
+    with pytest.raises(RuntimeError, match='quarantined'):
+        autopilot.pending_cache_probe({'cache_probe':{k:v for k,v in spec.items() if k!='failure_policy'}})
+
+
+def test_default_cache_failure_still_fails_closed(tmp_path):
+    spec={'result_directory':str(tmp_path/'results')}
+    with pytest.raises(RuntimeError, match='did not complete'):
+        autopilot.check_cache_probe_completion(spec, RuntimeError('hardware preflight failed'))
+
+
+def test_quarantined_diagnostic_rechecks_dispatch_before_next_campaign(tmp_path, monkeypatch):
+    directory = source(tmp_path)
+    root = tmp_path/'supervisor'; root.mkdir()
+    spec = {'config': str(directory/'config.json'), 'prepared_directory': str(tmp_path/'prepared'),
+            'result_directory': str(tmp_path/'diagnostic'), 'failure_policy':'quarantine'}
+    autopilot.write(tmp_path/'prepared/correctness.json', {'success':True})
+    autopilot.write(tmp_path/'prepared/build.json', {'suite':'cache'})
+    dispatches, launches = [], []
+    monkeypatch.setattr(autopilot.signal, 'signal', lambda *_:None)
+    monkeypatch.setattr(autopilot, 'dispatch_ready', lambda cfg:dispatches.append(cfg))
+    monkeypatch.setattr(autopilot, 'plan', lambda *_:config())
+    monkeypatch.setattr(autopilot, 'reuse_prepared', lambda *_:None)
+    monkeypatch.setattr(autopilot, 'reference_due', lambda *_:False)
+    class Process:
+        pid = 123
+        def __init__(self, command, **kwargs):
+            is_probe = 'examples.boom_cost_model.run_probes' in command
+            self.code = 1 if is_probe else 0
+            launches.append(command)
+            assert len(dispatches) == len(launches)
+            if not is_probe:
+                assert (tmp_path/'diagnostic/quarantined.json').exists()
+                (root/'STOP').touch()
+        def poll(self): return self.code
+        def wait(self): return self.code
+    monkeypatch.setattr(autopilot.subprocess, 'Popen', Process)
+    autopilot.supervise(directory, root, poll=0, settings={'cache_probe':spec})
+    assert len(launches) == 2
+    assert autopilot.read(root/'state.json')['phase'] == 'stopped'
+
+
 def source(tmp_path):
     directory = tmp_path / 'previous'
     directory.mkdir()

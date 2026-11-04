@@ -3,7 +3,7 @@
 import json
 
 SIZES_KIB = (8, 16, 32, 64, 256, 1024, 4096, 16384)
-RECIPE_VERSION = "cache-working-set-v1"
+RECIPE_VERSION = "cache-working-set-v2-batched-clock"
 
 
 def validate_cache_probes(outputs, success, hardware=False):
@@ -21,8 +21,12 @@ def validate_cache_probes(outputs, success, hardware=False):
             raise ValueError('missing, unexpected or duplicate cache probe case')
         seen.add(key)
         count = key[1] // 64
+        calls = record.get('batch_calls')
+        if type(calls) is not int or not 1 <= calls <= 131072 or calls & (calls - 1) or \
+                2 * count * calls > 33554432:
+            raise ValueError('invalid cache probe batch size')
         if record.get('correct') is not True or record.get('line_bytes') != 64 or \
-                record.get('loads') != 2 * count or record.get('checksum') != count * (count - 1) or \
+                record.get('loads') != 2 * count * calls or record.get('checksum') != count * (count - 1) * calls or \
                 type(record.get('elapsed_ns')) is not int or record['elapsed_ns'] <= 0:
             raise ValueError('cache probe checksum, completion or timer failed')
     if seen != expected:
