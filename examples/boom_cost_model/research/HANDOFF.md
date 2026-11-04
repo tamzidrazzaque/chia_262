@@ -12,8 +12,8 @@ authorize provisioning or modifying shared-host networking.
 
 The follow-up data is in `data/progress-20261103.json`, alongside the older
 `spec-estimates.json` covering the first two scalar searches (all ten trials)
-and the coordinated/paired studies. The follow-up export includes 13 completed
-campaigns, full cost/move/policy settings, 50 compiler identities and 127 saved
+and the coordinated/paired studies. The follow-up export includes 15 completed
+campaigns, full cost/move/policy settings, 56 compiler identities and 139 saved
 successful timing observations, with validated reuses explicitly labeled. Cached observations are explicitly marked and
 must not be counted as additional independent measurements.
 
@@ -31,7 +31,7 @@ must not be counted as additional independent measurements.
 * The winner raises branch cost from 4 to 12 while preserving the earlier
   ordinary-unroll and pressure-aware scheduling/allocation settings and other
   costs. This is a combined compiler-policy result, not an isolated cache win.
-  Follow-up rounds 10–12 tested larger/smaller unrolling, inlining, interactions
+  Follow-up rounds 10–14 tested larger/smaller unrolling, inlining, interactions
   and allocation/memory choices; none improved the confirmed 76.82 s anchor.
 * An earlier compiler, `11f4c099...`, measured **889.39 s versus
   919.62 s on reference inputs**, a **3.40% speedup**. Each physical worker ran
@@ -66,6 +66,14 @@ cache, TLB and memory-parallelism effects are not isolated. No cache-oriented
 compiler speedup is claimed.
 Optional diagnostic failures can now be explicitly quarantined so ordinary
 experiments continue through their full checks.
+
+The next portfolio tests three different decisions: integer multiply
+profitability, scheduling before register allocation, and tail duplication.
+Each treatment inherits the latest confirmed anchor and changes one decision;
+one feedback slot follows all three measured ablations. These extend the BOOM
+compiler policy beyond scalar costs. See `../MECHANISTIC_TESTS.md` for expected
+code changes, counterevidence and validation requirements. Preparation alone
+does not establish a performance result.
 
 ## Historical result through October 30
 

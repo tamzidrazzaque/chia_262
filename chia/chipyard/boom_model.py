@@ -68,6 +68,16 @@ for _name, (_maximum, _average, _inline, _growth) in STRUCTURAL_DEFAULTS.items()
         EXTRA_POLICY_DEFAULTS[_name].update(param_max_inline_insns_auto=_inline,
             param_inline_unit_growth=_growth)
 
+# Independent pass ablations inherit the exact loop/inlining anchor. Existing
+# names keep their source fragments and compiler identities unchanged.
+for _base in tuple(GROWTH_PRESETS):
+    for _suffix, _option, _value in [('no_presched', 'flag_schedule_insns', 0),
+                                     ('tracer', 'flag_tracer', 1)]:
+        _name = _base + '_' + _suffix
+        GROWTH_PRESETS[_name] = GROWTH_PRESETS[_base]
+        EXTRA_POLICY_DEFAULTS[_name] = {**EXTRA_POLICY_DEFAULTS.get(_base, {}),
+                                      _option: _value}
+
 
 def validate_policy(policy):
     """Bound the BOOM-only scheduling/allocation and loop-growth experiment."""

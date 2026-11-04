@@ -8,6 +8,58 @@ from chia.chipyard.cost_model import verify_policy_defaults
 from examples.boom_cost_model import pressure_proposals
 
 
+@pytest.mark.parametrize('base', ['unroll', 'inline_selective', 'compact'])
+@pytest.mark.parametrize('suffix,option,value', [('no_presched','flag_schedule_insns',0), ('tracer','flag_tracer',1)])
+def test_pass_ablation_inherits_every_existing_growth_default(base,suffix,option,value):
+    from chia.chipyard.boom_model import GROWTH_PRESETS, EXTRA_POLICY_DEFAULTS
+    name=base+'_'+suffix
+    assert GROWTH_PRESETS[name] == GROWTH_PRESETS[base]
+    assert EXTRA_POLICY_DEFAULTS[name] == {**EXTRA_POLICY_DEFAULTS.get(base,{}),option:value}
+    original=policy_fragment({'pressure_algorithm':2,'ira_loop_pressure':True,'growth_budget':base})
+    changed=policy_fragment({'pressure_algorithm':2,'ira_loop_pressure':True,'growth_budget':name})
+    addition=f'      SET_OPTION_IF_UNSET (&global_options, &global_options_set, {option}, {value});\n'
+    assert addition in changed and changed.replace(addition,'') == original
+    assert 'flag_schedule_insns2' not in changed
+
+
+@pytest.mark.parametrize('growth', ['unroll_no_presched','unroll_tracer'])
+@pytest.mark.parametrize('break_post_ra', [False,True])
+def test_actual_option_verification_covers_new_pass_flags_and_preserves_post_ra(monkeypatch,growth,break_post_ra):
+    def output(command,**kwargs):
+        values={'-fsched-pressure':'[disabled]','-fira-loop-pressure':'[disabled]',
+            '--param=sched-pressure-algorithm=':'1','--param=max-completely-peeled-insns=':'200',
+            '--param=unroll-jam-max-unroll=':'4','--param=max-inline-insns-auto=':'30',
+            '--param=inline-unit-growth=':'40','-funroll-loops':'[disabled]',
+            '--param=max-unrolled-insns=':'256','--param=max-average-unrolled-insns=':'128',
+            '-fschedule-insns':'[enabled]','-fschedule-insns2':'[enabled]','-ftracer':'[disabled]'}
+        if command[0].startswith('/candidate') and '-mtune=rocket' not in command:
+            values.update({'-fsched-pressure':'[enabled]','-fira-loop-pressure':'[enabled]',
+                '--param=sched-pressure-algorithm=':'2','--param=max-completely-peeled-insns=':'64',
+                '--param=unroll-jam-max-unroll=':'1','-funroll-loops':'[enabled]'})
+            values['-fschedule-insns' if growth.endswith('no_presched') else '-ftracer']='[disabled]' if growth.endswith('no_presched') else '[enabled]'
+            if break_post_ra and growth.endswith('no_presched'):values['-fschedule-insns2']='[disabled]'
+        for argument in command[1:]:
+            if argument.startswith('--param=') and argument.rsplit('=',1)[0]+'=' in values:
+                key,value=argument.rsplit('=',1);values[key+'=']=value
+            elif argument.startswith('-fno-'):
+                key=argument.replace('-fno-','-f',1)
+                if key in values:values[key]='[disabled]'
+            elif argument.startswith('-f') and argument in values:values[argument]='[enabled]'
+        return '\n'.join(k+'\t'+v for k,v in values.items())
+    monkeypatch.setattr('chia.chipyard.cost_model.subprocess.check_output',output)
+    policy={'pressure_algorithm':2,'ira_loop_pressure':True,'growth_budget':growth}
+    if break_post_ra and growth.endswith('no_presched'):
+        with pytest.raises(RuntimeError,match='effective BOOM policy'):verify_policy_defaults('/candidate','/baseline',policy)
+    else:
+        report=verify_policy_defaults('/candidate','/baseline',policy)
+        assert report['verified']
+        if growth.endswith('no_presched'):
+            assert report['boom']['-fschedule-insns']=='[disabled]'
+            assert report['boom']['-fschedule-insns2']=='[enabled]'
+            assert report['explicit']['-fschedule-insns']=='[enabled]'
+        else:assert report['explicit']['-ftracer']=='[disabled]'
+
+
 @pytest.mark.parametrize('name,maximum,average,inline,growth', [
     ('unroll_small',128,64,None,None), ('unroll_large',512,256,None,None),
     ('unroll_xlarge',1024,512,None,None), ('inline_selective',256,128,80,30),

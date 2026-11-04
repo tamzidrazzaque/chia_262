@@ -166,6 +166,36 @@ def test_structural_round_has_six_ablations_control_and_feedback(tmp_path,monkey
     assert len(planned['policy_axes']['growth_budget'])==9
 
 
+def test_mechanistic_portfolio_has_three_isolated_treatments_and_one_feedback_slot(tmp_path,monkeypatch):
+    directory=source(tmp_path);review=autopilot.review(directory);cfg=config()
+    anchor=review['selected']['proposal'];anchor['policy']['growth_budget']='unroll'
+    anchor['costs']['int_mul']=[3,3]
+    before=deepcopy(anchor)
+    monkeypatch.setattr(autopilot,'confirmed_anchor',lambda *_:(None,review['selected']))
+    monkeypatch.setattr(autopilot.pressure_proposals,'request_json',lambda *_:pytest.fail('structured ablations are not LLM proposals'))
+    planned=autopilot.plan(cfg,[review],tmp_path/'next',{'deadline_mode':True,
+        'round_overrides':{'1':{'target':'648.exchange2_s','family':'mechanistic-portfolio'}}})
+    seeds=AdaptiveProposals(planned).seed_profiles()
+    assert len(seeds)==4 and planned['campaign_budget']==5 and planned['prepare_seed_count']==4
+    assert planned['feedback_min_completed']==4
+    assert anchor==before==seeds[0]
+    assert seeds[1]['costs']['int_mul']==[4,4]
+    assert seeds[1]['policy']==anchor['policy']
+    assert [p['policy']['growth_budget'] for p in seeds[2:]]==['unroll_no_presched','unroll_tracer']
+    assert all(p['costs']==anchor['costs'] for p in seeds[2:])
+    assert all(p['move_profile']==anchor['move_profile'] for p in seeds)
+    assert all(p['costs']['branch_cost']==anchor['costs']['branch_cost'] for p in seeds)
+
+
+def test_mechanistic_treatments_preserve_inline_anchor_and_reject_nested_ablations():
+    anchor=config()['anchor_proposal'];anchor['policy']['growth_budget']='inline_selective'
+    treatments=autopilot.mechanistic_seeds(anchor)
+    assert treatments[1]['policy']['growth_budget']=='inline_selective_no_presched'
+    assert treatments[2]['policy']['growth_budget']=='inline_selective_tracer'
+    anchor['policy']['growth_budget']='unroll_tracer'
+    with pytest.raises(ValueError,match='without a pass ablation'):autopilot.mechanistic_seeds(anchor)
+
+
 def test_delta_projection_changes_only_allowed_axes_and_copies_anchor():
     api = AdaptiveProposals(config())
     value=api.project({'branch_cost':4,'growth_budget':'relaxed'},'Test the branch/growth interaction.')

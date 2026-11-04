@@ -56,6 +56,10 @@ FAMILIES = {
         "policy_axes": {"growth_budget":['unroll','unroll_small','unroll_large','unroll_xlarge',
             'inline_selective','inline_selective_large','inline_small_large']},
         "hypothesis": "Use the latest confirmed structural winner as anchor. Test branch avoidance and spill-load heuristics jointly with loop/inlining footprint. The branch-cost12 screening point suggests nonmonotonic interactions; do not assume bigger or smaller costs always help. Select informative contrasts from measured train evidence; freeze every other field."},
+    "mechanistic-portfolio": {
+        "cost_axes": {"int_mul": [3, 4]},
+        "policy_axes": {},
+        "hypothesis": "Compare three independent interventions at the latest confirmed anchor: multiply profitability, removal of pre-register-allocation scheduling (post-RA retained), and tail duplication for straighter control flow. Inspect actual arithmetic sequences, live ranges/static stack traffic and code footprint/branches respectively. Source capacities and static counts do not prove a dynamic bottleneck. No ISA, external flags, libraries, DFA or baseline changes. Combine interventions only after measured single-intervention feedback."},
 }
 MICROARCH = {
     "BOOM_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -73,6 +77,24 @@ MICROARCH = {
 
 def read(path):
     return json.loads(Path(path).read_text())
+
+
+def mechanistic_seeds(anchor):
+    """Return three isolated treatments, preserving the confirmed anchor."""
+    growth = anchor['policy']['growth_budget']
+    if growth.endswith(('_no_presched', '_tracer')):
+        raise ValueError('portfolio requires an anchor without a pass ablation')
+    multiply = deepcopy(anchor)
+    number = 4 if anchor['costs']['int_mul'] != [4, 4] else 3
+    multiply['costs']['int_mul'] = [number, number]
+    multiply['rationale'] = ('Only multiply profitability changes. Compare multiply versus shift/add instruction sequences in the same solver functions. Earlier kernel evidence and a different application anchor favored cost4, but transfer is unproven. If hot code is unchanged, reject the mechanism; a distinct ELF alone does not establish why a timing changes.')
+    scheduling = deepcopy(anchor)
+    scheduling['policy']['growth_budget'] = growth + '_no_presched'
+    scheduling['rationale'] = ('Disable only instruction scheduling before register allocation; retain post-RA scheduling, the inherited loop/inlining defaults and all costs. Hypothesis: earlier scheduling unnecessarily extends live ranges on an out-of-order target. Inspect IRA/live-range changes and static stack traffic; saves/restores are not measured spills. More stack traffic or slower hardware time rejects the benefit. This also makes the retained sched-pressure setting inactive before RA; it is an ablation of that pass, not a new pressure algorithm.')
+    tracing = deepcopy(anchor)
+    tracing['policy']['growth_budget'] = growth + '_tracer'
+    tracing['rationale'] = ('Enable only GCC tail duplication using its existing estimated branch probabilities; no PGO data. Hypothesis: straighter superblocks expose useful scheduling opportunities. Compare duplicated blocks, unconditional transfers and function bytes. More bytes can hurt the32KiB instruction cache; static size is not a measured miss rate. An unchanged binary gives no test of the mechanism, and slower hardware time rejects the benefit.')
+    return [multiply, scheduling, tracing]
 
 
 def write(path, value):
@@ -218,6 +240,9 @@ def plan(base, reviews, directory, settings=None):
     deadline = bool(settings and settings.get('deadline_mode'))
     if deadline:
         cfg.update(deadline_mode=True,campaign_budget=4,iterations=4,feedback_min_completed=2)
+    if family == 'mechanistic-portfolio':
+        growth = selected['proposal']['policy']['growth_budget']
+        cfg['policy_axes'] = {'growth_budget': [growth, growth+'_no_presched', growth+'_tracer']}
     for name, choices in cfg['cost_axes'].items():
         group = 'move_profile' if name.startswith('gpr_') else 'costs'
         value = selected['proposal'][group][name]
@@ -282,7 +307,14 @@ def plan(base, reviews, directory, settings=None):
             'source patches, flags, ISA/ABI changes or RVV. Source-derived capacities are not measured occupancy. '
             'Do not invent cycle bottlenecks or register parking. Scores from other targets/policies do not transfer. '
             'A generic microkernel proxy failed validation. Propose alternatives instead of endlessly refining one idea.'}
-    if family in ('codegen-growth','structural-frontier'):
+    if family == 'mechanistic-portfolio':
+        seeds = [p for p in mechanistic_seeds(anchor) if api.identity(p) not in tested]
+        if not seeds:
+            raise ValueError('mechanistic ablations already measured at this anchor; choose a different family')
+        proposal = {'hypothesis': cfg['hypothesis'], 'seeds': seeds}
+        cfg.update(campaign_budget=len(seeds)+2, iterations=len(seeds)+2,
+                   feedback_min_completed=len(seeds)+1)
+    elif family in ('codegen-growth','structural-frontier'):
         seeds = []
         choices = FAMILIES[family]['policy_axes']['growth_budget']
         # Reserve two structural points for evidence-guided CLI feedback.

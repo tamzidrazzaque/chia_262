@@ -128,6 +128,13 @@ def verify_policy_defaults(prefix: str, baseline_prefix: str, policy: dict) -> d
         'flag_unroll_loops': ('-funroll-loops', '[disabled]'),
         'param_max_unrolled_insns': ('--param=max-unrolled-insns', '140'),
         'param_max_average_unrolled_insns': ('--param=max-average-unrolled-insns', '50')}
+    # Extend queries only for the new ablations; historical records keep the
+    # same option set. Check both scheduling passes for the pre-RA ablation.
+    if 'flag_schedule_insns' in extras:
+        extra_options['flag_schedule_insns'] = ('-fschedule-insns', '[enabled]')
+        extra_options['flag_schedule_insns2'] = ('-fschedule-insns2', '[disabled]')
+    if 'flag_tracer' in extras:
+        extra_options['flag_tracer'] = ('-ftracer', '[disabled]')
     if extras:
         keys += [option for option, _ in extra_options.values()]
 
@@ -159,14 +166,15 @@ def verify_policy_defaults(prefix: str, baseline_prefix: str, policy: dict) -> d
     if growth is not None:
         expected.update({"--param=max-completely-peeled-insns": str(growth[0]), "--param=unroll-jam-max-unroll": str(growth[1])})
     for name, value in extras.items():
-        expected[extra_options[name][0]] = '[enabled]' if name == 'flag_unroll_loops' else str(value)
+        expected[extra_options[name][0]] = ('[enabled]' if value else '[disabled]') if name.startswith('flag_') else str(value)
     actual, rocket = query(prefix), query(prefix, ["-mtune=rocket"])
     overrides = ["-fno-sched-pressure", "-fno-ira-loop-pressure", "--param=sched-pressure-algorithm=1",
                  "--param=max-completely-peeled-insns=123", "--param=unroll-jam-max-unroll=3"]
     explicit_expected = dict(zip(keys[:5], ["[disabled]", "[disabled]", "1", "123", "3"]))
     if extras:
         for name,(option,value) in extra_options.items():
-            overrides.append('-fno-unroll-loops' if name == 'flag_unroll_loops' else option+'='+value)
+            overrides.append((option if value == '[enabled]' else option.replace('-f', '-fno-', 1))
+                             if name.startswith('flag_') else option+'='+value)
             explicit_expected[option] = value
     explicit = query(prefix, overrides)
     if actual != expected or rocket != baseline or explicit != explicit_expected:
