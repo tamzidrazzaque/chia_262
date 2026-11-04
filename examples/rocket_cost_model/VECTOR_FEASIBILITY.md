@@ -17,11 +17,17 @@ does not vectorize even a simple integer-add loop under explicit vectorization
 flags. The intrinsic smoke does not establish a viable automatic-vectorization
 cost-model baseline.
 
+**Direction selected on 2026-11-04:** use Saturn as the Rocket vector unit for
+this campaign. `MINV128D64RocketConfig` is the first configuration to qualify
+for SPEC; the final simulator or FPGA target still requires exact build,
+runtime and correctness evidence. Ara remains a historical source-level
+comparison, outside the active campaign.
+
 The current scalar Rocket target remains separate. Its documented
 `RocketConfig`, `rv64imafdc` toolchain, image discovery, and driver evidence do
 not establish vector support.
 
-## Source-level candidates
+## Source-level options reviewed
 
 The following configuration definitions were inspected in the installed
 container's source tree. These facts establish source-level Rocket integration
@@ -29,8 +35,8 @@ only.
 
 | Candidate | Source revisions in installed container | Rocket configuration and parameters | Status |
 |---|---|---|---|
-| Ara | Chipyard `ad07481af487c44c9f0545db39f9c16cabdecc77`; Ara `96daf15d3c54ac4975ea2bdc869f95bccdf90a1e` | `V4096Ara2LaneRocketConfig`; `WithAraRocketVectorUnit(4096, 2)` and one `Rocket` core | Configuration exists in source; exact platform build, toolchain, image, and execution are unverified |
-| Saturn | Chipyard `ad07481af487c44c9f0545db39f9c16cabdecc77`; Saturn `2dae15d16bebe10f413ea39bdd18aa402eb419dd` | `MINV128D64RocketConfig`; `WithRocketVectorUnit(128, 64, VectorParams.minParams)` and one `Rocket` core | Elaboration and a self-checking bare-metal RVV+Zvbb smoke pass on Verilator using an equivalent one-hart config with a test-only boot ROM; normal boot, runtime, application, and performance remain unverified |
+| Ara | Chipyard `ad07481af487c44c9f0545db39f9c16cabdecc77`; Ara `96daf15d3c54ac4975ea2bdc869f95bccdf90a1e` | `V4096Ara2LaneRocketConfig`; `WithAraRocketVectorUnit(4096, 2)` and one `Rocket` core | Source-level comparison only; outside the selected Saturn campaign |
+| Saturn | Chipyard `ad07481af487c44c9f0545db39f9c16cabdecc77`; Saturn `2dae15d16bebe10f413ea39bdd18aa402eb419dd` | `MINV128D64RocketConfig`; `WithRocketVectorUnit(128, 64, VectorParams.minParams)` and one `Rocket` core | Selected vector unit and initial config; elaboration and a self-checking bare-metal RVV+Zvbb smoke pass on Verilator using an equivalent one-hart config with a test-only boot ROM; normal boot, runtime, application, and performance remain unverified |
 
 The installed container also has Rocket Chip `2f1c549d061f7d6e7fd209ff8b322d0940d200b6`.
 The container image used was `ghcr.io/ucb-chia/chia-chipyard:latest`, with local
@@ -63,15 +69,15 @@ supports choosing it for this branch.
 ## First implementation probe
 
 Saturn `MINV128D64RocketConfig` was selected for the first elaboration and
-functional probe. It combines one Rocket core with a 128-bit vector length and
-64-bit data width, avoiding the much larger configured vector length of the
-named Ara candidate. Saturn's source declares `zvbb`, and the tested GCC
+functional probe and is now the initial configuration for the Saturn campaign.
+It combines one Rocket core with a 128-bit vector length and 64-bit data width.
+Saturn's source declares `zvbb`, and the tested GCC
 supports the smoke program's required ISA flags. The elaboration and
 instruction-level functional gates now pass with the test-only boot setup
-described below. This pragmatic probe does not establish that Saturn is easier
-to build, that a matching application compiler/runtime is available, or that
-Saturn is the final experiment target. Keep Ara as the alternative if later
-requirements favor it or Saturn cannot provide the needed full software path.
+described below. This pragmatic probe does not establish that a matching
+application compiler/runtime or performance target is available. If the exact
+configuration cannot support SPEC, document the blocker or qualify another
+Saturn configuration with a separate manifest and baseline.
 
 ## Current checkout and evidence gaps
 
@@ -230,11 +236,10 @@ no hardware was accessed.
    explicit-intrinsics application, first show a bounded compiler model edit
    changes its final machine code. Stop the cost-model search if neither path
    has code-generation sensitivity.
-2. Retain an exact simulator target manifest and generated RTL for the config
-   that will run the application. Compare Ara and Saturn support, vector
-   parameters, build requirements, and software path before selecting a final
-   target; Saturn remains the first application probe because of its current
-   instruction-level pass.
+2. Retain an exact simulator target manifest and generated RTL for the Saturn
+   configuration that will run the application. Verify its vector parameters,
+   build requirements, virtual-memory behavior and Linux software path before
+   accepting it as the SPEC target; the current instruction pass is narrower.
 3. Check authorized SPEC CPU2017 access and prioritize the BOOM handoff's
    `648.exchange2_s` test/train inputs. Reuse
    `examples/spec_build/spec_sw_build_loop.py:start_workload`, the existing

@@ -158,14 +158,14 @@ Validation artifacts retained under the ignored directory:
 - `examples/rocket_cost_model/.vector-validation/saturn-singlehart-vector-functional-pass.log`
 - `examples/rocket_cost_model/.vector-validation/saturn-singlehart-smoke-simulator`
 
-## 11. Current status and scope
+## 11. Status at the first feasibility checkpoint
 
-Current documented status:
+Status before the later audit and target selection:
 
 - The Saturn bare-metal vector instruction path is functionally verified in the model
 - This is not yet a measured performance experiment
 - No FireSim image, runtime, application-level software stack, or hardware validation has been completed
-- The work remains in feasibility / target-selection stage, not performance modeling
+- The work was in feasibility / target-selection stage, before performance modeling
 
 ## 12. Final note
 
@@ -208,3 +208,14 @@ planning a vector application or measurement campaign.
   Reuse the handoff's SPEC build, QEMU test, native comparison and target
   measurement stages, adapting only their vector compiler, runtime and target
   identities after checking each stage's assumptions.
+
+## 14. Saturn selection (2026-11-04)
+
+The experiment direction is now Rocket plus Saturn. The initial configuration
+to qualify is `MINV128D64RocketConfig`; Ara is outside the active campaign.
+This selects a vector-unit implementation, not a verified Linux SPEC target.
+Next, reuse the existing CHIA SPEC build and correctness path for Exchange2,
+verify a vector-capable compiler and guest, and qualify an exact Saturn timing
+backend. If the initial Saturn configuration fails a required gate, document
+the blocker or qualify a different Saturn configuration with a new manifest
+and baseline. Do not transfer scalar Rocket or BOOM measurements to it.

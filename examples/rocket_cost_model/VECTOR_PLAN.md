@@ -52,13 +52,14 @@ Work in this order:
    the experiment concerns code generation or scheduling of explicit RVV code;
    show that a bounded model edit changes the final binary before measuring.
    If neither route yields code sensitivity, stop the compiler-cost search.
-2. **Choose one executable target.** Continue with Saturn for the first
-   application probe because it already has an instruction pass. Record the
+2. **Qualify the selected Saturn target.** Continue with Saturn as the chosen
+   vector unit, using `MINV128D64RocketConfig` as the initial configuration
+   because it already has an instruction pass. Record the
    exact simulator config, boot ROM, memory initialization, RTL, simulator,
-   source revisions and hashes. Compare Ara's source features and software
-   requirements in a bounded target-selection note; build Ara only if the
-   application or Saturn's limitations justify it. A full Ara campaign is a
-   separate target and baseline.
+   source revisions and hashes. Verify the configuration and Linux software
+   path needed by SPEC before fixing the final measurement configuration.
+   Report a blocker if Saturn cannot support that path; do not switch vector
+   units within this campaign.
 3. **Reuse the SPEC path.** Check authorized CPU2017 access. Build
    `648.exchange2_s` test/train through `start_workload` with a vector compiler
    prefix and explicit ISA flags, then use the existing QEMU and native SPEC
@@ -97,56 +98,58 @@ held-out inputs. Keep that ordering. The exact target may be an RTL simulator
 only if the pilot establishes feasible full-application runtime; otherwise use
 a verified vector FireSim backend or stop before performance search.
 
-## Scope decision: select a concrete RVV implementation
+## Scope decision: Saturn for Rocket vector research
 
-The installed Chipyard container currently has two Rocket-integrated RVV
-candidates:
+**Selected implementation:** Saturn attached to one Rocket core. The initial
+configuration is `MINV128D64RocketConfig`, with 128-bit vector length, 64-bit
+datapath width and `VectorParams.minParams`. Its exact simulator and eventual
+measurement configuration must still pass the Linux, SPEC and timing gates.
+
+The installed Chipyard container also contains another Rocket-integrated RVV
+configuration:
 
 - Ara wrapper `V4096Ara2LaneRocketConfig`, with a 4096-bit vector length and
-  two Ara lanes.
-- Saturn `MINV128D64RocketConfig`, with a 128-bit vector length, 64-bit data
-  width, and Saturn's `minParams`.
+  two Ara lanes. Ara is documented here for provenance and is outside the
+  active experiment.
 
-The checked-in scalar Rocket image is not either candidate. The active
+The checked-in scalar Rocket image does not contain Saturn. The active
 container's Chipyard, Rocket Chip, and Saturn revisions differ from the scalar
 handoff pins, so this branch will use and record the installed versions as a
 separate target instead of claiming equivalence. Saturn elaboration and a
 bare-metal RVV+Zvbb smoke now pass in Verilator using a test-only one-hart boot
-config; neither candidate yet has a verified application runtime or
-performance image. Exact revisions, build and functional evidence, and
+config; the selected Saturn configuration has no verified application runtime
+or performance image yet. Exact revisions, build and functional evidence, and
 remaining gaps are recorded in
 [the feasibility report](VECTOR_FEASIBILITY.md).
 
-**Current direction:** investigate RVV, comparing these named configurations
-before selecting the final measurement target. Saturn's
-`MINV128D64RocketConfig` passed the first *functional/elaboration probe* with a
-test-only boot ROM and direct ELF loading. It is a single-Rocket configuration
-with a much smaller vector length than the named Ara
-`V4096Ara2LaneRocketConfig`. This is a practical first probe, not a claim that
-Saturn is easier to build, has a complete supported software stack, or is the
-preferred performance target. The source review did not establish a
-Rocket+Hwacha integration in the pinned tree, so Hwacha is not an active
-implementation path unless new evidence or a changed requirement justifies
-reopening it.
+Saturn is the chosen direction because its Rocket configuration is present in
+the pinned source and a bare-metal instruction test passes. Chipyard's
+[Saturn documentation](https://chipyard.readthedocs.io/en/stable/generators/saturn/)
+describes virtual-memory and precise-trap support, which the existing Linux
+SPEC path needs. Chipyard's
+[Ara integration documentation](https://chipyard.readthedocs.io/en/stable/generators/ara/)
+describes limitations in those features. These documentation claims must be
+checked against the exact pinned Saturn design and guest; the current smoke
+does not prove Linux application support. The source review did not establish
+a Rocket+Hwacha integration in the pinned tree.
 
-Ara and Saturn are different implementations, not interchangeable labels for
-one target. They can differ in vector parameters, supported extensions,
-integration, compiler requirements, and achievable execution path. Choose one
-exact implementation and bind all compiler, manifest, and measurement
-identities to it before building the cost model.
+Bind all compiler, manifest and measurement identities to the exact Saturn
+configuration before building the cost model. If a different Saturn parameter
+set is required for SPEC, record it as a new exact target with its own baseline.
 
 Do not treat `-march=rv64gcv`, a compiler flag, or a configuration name as
-proof that matching hardware and software exist. If neither candidate can be
-built and executed with a verified software stack, stop at documented offline
-feasibility. Never label the existing scalar Rocket image as vector-capable.
+proof that matching hardware and software exist. If Saturn cannot be built and
+executed with a verified software stack, stop at documented offline feasibility
+and report the blocker. Never label the existing scalar Rocket image as
+vector-capable.
 
 ## Phase 0: establish target feasibility
 
-1. Compare the Ara and Saturn Rocket configurations in the installed
-   Chipyard/Saturn revisions. Verify submodule revisions, mixins, vector
-   parameters, supported extensions, and required runtime/software support
-   against source; do not infer them from names. Record why one candidate is
-   selected or why neither is feasible.
+1. Verify the selected Saturn Rocket configuration in the installed Chipyard
+   and Saturn revisions. Record its vector parameters, supported extensions,
+   virtual-memory and trap behavior, and required Linux runtime support from
+   source and executable checks. Confirm whether `MINV128D64RocketConfig`
+   can support the SPEC path or document a new exact Saturn configuration.
 2. Find an exact matching simulation or FPGA target. Record its configuration,
    ISA/extension, vector parameters (such as VLEN/ELEN when applicable),
    memory/platform settings, exact simulator RTL/binary and boot inputs, or
@@ -297,8 +300,8 @@ search.
 
 ## Planned deliverables and exit criteria
 
-1. A recorded RVV-versus-Hwacha decision and evidence-backed target feasibility
-   report.
+1. A recorded Saturn selection and evidence-backed feasibility report for the
+   exact Rocket plus Saturn configuration.
 2. A target-specific, sanitized manifest schema/example and fail-closed
    preflight with offline tests.
 3. A reproducible vector-capable compiler baseline and correct real-application
@@ -311,5 +314,5 @@ search.
 6. A report that distinguishes code-generation evidence, functional
    validation, hardware measurements, uncertainty, and unresolved limitations.
 
-No target choice, implementation change, hardware run, performance result, or
-speedup claim is implied by this plan.
+Selecting Saturn does not establish a verified SPEC runtime, performance
+result or speedup. Each later gate still requires its own evidence.
