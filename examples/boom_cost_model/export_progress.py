@@ -70,7 +70,8 @@ def export(run_root, compiler_root, output):
     models = {}
     allowed = {'compiler_id', 'gcc_revision', 'baseline_gcc_sha256', 'costs', 'scheduling',
         'tuning', 'model_version', 'move_profile', 'move_profile_version', 'policy',
-        'policy_version', 'boom_revision', 'source_hashes', 'diff_sha256'}
+        'policy_version', 'optimization_policy', 'optimization_policy_version',
+        'policy_options_verified', 'boom_revision', 'source_hashes', 'diff_sha256'}
     for identity in sorted(identities - {BASELINE}):
         if not re.fullmatch('[0-9a-f]{64}', identity):
             raise ValueError('invalid compiler identity')

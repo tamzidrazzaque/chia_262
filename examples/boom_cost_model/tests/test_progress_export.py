@@ -26,3 +26,6 @@ def test_published_progress_distinguishes_train_reference_and_cached_samples():
     assert any(s['reused'] for s in d['samples'])
     assert all(s['native_correctness_passed'] and s['simulation_completed'] for s in d['samples'])
     assert all('rationale' not in h for c in d['campaigns'] for h in c['history'])
+    assert any(m.get('optimization_policy',{}).get('growth_budget') == 'unroll'
+        and m.get('policy_options_verified',{}).get('verified')
+        for m in d['compiler_models'].values() if m.get('optimization_policy'))

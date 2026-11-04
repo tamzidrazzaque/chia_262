@@ -4405,6 +4405,51 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "unroll"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "-funroll-loops": "[enabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "128",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "256",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "80",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "17",
+          "--param=max-average-unrolled-insns": "50",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=max-inline-insns-auto": "37",
+          "--param=max-unrolled-insns": "140",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -4455,6 +4500,51 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "unroll"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "-funroll-loops": "[enabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "128",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "256",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "80",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "17",
+          "--param=max-average-unrolled-insns": "50",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=max-inline-insns-auto": "37",
+          "--param=max-unrolled-insns": "140",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -4505,6 +4595,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "compact"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -4555,6 +4675,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "compact"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -4655,6 +4805,51 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "unroll"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "-funroll-loops": "[enabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "128",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "256",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "80",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "17",
+          "--param=max-average-unrolled-insns": "50",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=max-inline-insns-auto": "37",
+          "--param=max-unrolled-insns": "140",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -4705,6 +4900,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "compact"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -4755,6 +4980,51 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "unroll"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "-funroll-loops": "[enabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "128",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "256",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "80",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "17",
+          "--param=max-average-unrolled-insns": "50",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=max-inline-insns-auto": "37",
+          "--param=max-unrolled-insns": "140",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -4805,6 +5075,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "compact"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -4855,6 +5155,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "compact"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -4905,6 +5235,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "relaxed"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "128",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -4955,6 +5315,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "compact"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5005,6 +5395,51 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "unroll"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "-funroll-loops": "[enabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "128",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "256",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "80",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "17",
+          "--param=max-average-unrolled-insns": "50",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=max-inline-insns-auto": "37",
+          "--param=max-unrolled-insns": "140",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5055,6 +5490,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "tight"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "32",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5105,6 +5570,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": false,
+        "growth_budget": "compact"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5155,6 +5650,51 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "unroll"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "-funroll-loops": "[enabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "128",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "256",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "80",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "17",
+          "--param=max-average-unrolled-insns": "50",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=max-inline-insns-auto": "37",
+          "--param=max-unrolled-insns": "140",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5205,6 +5745,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 1,
+        "ira_loop_pressure": true,
+        "growth_budget": "compact"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5255,6 +5825,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "compact"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5305,6 +5905,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "compact"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5355,6 +5985,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "tight"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "32",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5405,6 +6065,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 0,
+        "ira_loop_pressure": false,
+        "growth_budget": "compact"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5455,6 +6145,51 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "inline"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "80",
+          "--param=max-average-unrolled-insns": "80",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=max-inline-insns-auto": "180",
+          "--param=max-unrolled-insns": "200",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "80",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "17",
+          "--param=max-average-unrolled-insns": "50",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=max-inline-insns-auto": "37",
+          "--param=max-unrolled-insns": "140",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5505,6 +6240,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "default"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5555,6 +6320,51 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "unroll"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "-funroll-loops": "[enabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "128",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "256",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "80",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "17",
+          "--param=max-average-unrolled-insns": "50",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=max-inline-insns-auto": "37",
+          "--param=max-unrolled-insns": "140",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5605,6 +6415,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 0,
+        "ira_loop_pressure": true,
+        "growth_budget": "compact"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5655,6 +6495,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 0,
+        "ira_loop_pressure": true,
+        "growth_budget": "default"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5705,6 +6575,51 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "unroll"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "-funroll-loops": "[enabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "128",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "256",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "80",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "17",
+          "--param=max-average-unrolled-insns": "50",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=max-inline-insns-auto": "37",
+          "--param=max-unrolled-insns": "140",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5755,6 +6670,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": false,
+        "growth_budget": "default"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5805,6 +6750,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "compact"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5855,6 +6830,36 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 1,
+        "ira_loop_pressure": true,
+        "growth_budget": "default"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5905,6 +6910,51 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "unroll"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "-funroll-loops": "[enabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "128",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "256",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "80",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "17",
+          "--param=max-average-unrolled-insns": "50",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=max-inline-insns-auto": "37",
+          "--param=max-unrolled-insns": "140",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -5955,6 +7005,51 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "inline_unroll"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "-funroll-loops": "[enabled]",
+          "--param=inline-unit-growth": "80",
+          "--param=max-average-unrolled-insns": "128",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=max-inline-insns-auto": "180",
+          "--param=max-unrolled-insns": "256",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "80",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "17",
+          "--param=max-average-unrolled-insns": "50",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=max-inline-insns-auto": "37",
+          "--param=max-unrolled-insns": "140",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -6005,6 +7100,51 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "unroll"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "-funroll-loops": "[enabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "128",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "256",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "80",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "17",
+          "--param=max-average-unrolled-insns": "50",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=max-inline-insns-auto": "37",
+          "--param=max-unrolled-insns": "140",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -6055,6 +7195,51 @@
         "fpr_store": 8
       },
       "move_profile_version": "directional-register-and-spill-costs-v1",
+      "optimization_policy": {
+        "pressure_algorithm": 2,
+        "ira_loop_pressure": true,
+        "growth_budget": "unroll"
+      },
+      "optimization_policy_version": "pressure-growth-defaults-v1",
+      "policy_options_verified": {
+        "boom": {
+          "-fira-loop-pressure": "[enabled]",
+          "-fsched-pressure": "[enabled]",
+          "-funroll-loops": "[enabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "128",
+          "--param=max-completely-peeled-insns": "64",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "256",
+          "--param=sched-pressure-algorithm": "2",
+          "--param=unroll-jam-max-unroll": "1"
+        },
+        "rocket": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "40",
+          "--param=max-average-unrolled-insns": "80",
+          "--param=max-completely-peeled-insns": "200",
+          "--param=max-inline-insns-auto": "30",
+          "--param=max-unrolled-insns": "200",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "4"
+        },
+        "explicit": {
+          "-fira-loop-pressure": "[disabled]",
+          "-fsched-pressure": "[disabled]",
+          "-funroll-loops": "[disabled]",
+          "--param=inline-unit-growth": "17",
+          "--param=max-average-unrolled-insns": "50",
+          "--param=max-completely-peeled-insns": "123",
+          "--param=max-inline-insns-auto": "37",
+          "--param=max-unrolled-insns": "140",
+          "--param=sched-pressure-algorithm": "1",
+          "--param=unroll-jam-max-unroll": "3"
+        },
+        "verified": true
+      },
       "tuning": "boom",
       "model_version": "megaboom-v3-experimental-v1",
       "boom_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
