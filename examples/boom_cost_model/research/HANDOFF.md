@@ -8,19 +8,32 @@ explicitly authorized continuous MegaBOOM loops until stopped; a collaborator
 must obtain authorization for their own cluster. Reading this handoff does not
 authorize provisioning or modifying shared-host networking.
 
-## Current result (November 3)
+## Current result (November 4)
 
 The follow-up data is in `data/progress-20261103.json`, alongside the older
 `spec-estimates.json` covering the first two scalar searches (all ten trials)
-and the coordinated/paired studies. The follow-up export includes nine completed
-campaigns, full cost/move/policy settings, 34 compiler identities and 86 saved
+and the coordinated/paired studies. The follow-up export includes 13 completed
+campaigns, full cost/move/policy settings, 50 compiler identities and 127 saved
 successful timing observations, with validated reuses explicitly labeled. Cached observations are explicitly marked and
 must not be counted as additional independent measurements.
 
-* Best confirmed Exchange2 train runtime: **77.68 s versus 82.11 s original**,
-  a **5.70% speedup**, with three train confirmation keys per compared compiler.
-  The newer winner has **not** been validated on reference inputs.
-* An earlier compiler, `11f4c099...`, independently measured **889.39 s versus
+* Best confirmed Exchange2 train runtime: **76.82 s versus 82.11 s original**,
+  a **6.89% speedup**, with three train confirmation keys per compared compiler.
+  The first winner confirmation reuses its validated screening measurement;
+  the other two are fresh measurements. Compiler identity:
+  `7ea95502b6f7d87b503791ac7d1ed22385e2a6a059dc4dbf42aba867a33e16bb`.
+* That same compiler passed held-out reference validation on **both F2 workers**:
+  **866.27 s versus 919.62 s original**, a **6.16% speedup** (5.80% less elapsed
+  time). Selected-compiler measurements are fresh; original controls are validated
+  cache reuses on each physical worker. Reference results remain excluded from
+  proposal feedback. One selected observation per worker is limited repeat
+  evidence, not statistical significance or an official SPEC metric.
+* The winner raises branch cost from 4 to 12 while preserving the earlier
+  ordinary-unroll and pressure-aware scheduling/allocation settings and other
+  costs. This is a combined compiler-policy result, not an isolated cache win.
+  Follow-up rounds 10–12 tested larger/smaller unrolling, inlining, interactions
+  and allocation/memory choices; none improved the confirmed 76.82 s anchor.
+* An earlier compiler, `11f4c099...`, measured **889.39 s versus
   919.62 s on reference inputs**, a **3.40% speedup**. Each physical worker ran
   both compilers once, with opposite orders. This is limited repeat evidence,
   not statistical significance or an official SPEC metric. Reference results
@@ -44,10 +57,13 @@ The loop rotates experiment families, preserves the confirmed anchor, rejects
 unchanged executables before FPGA work, revalidates full measurement-cache keys
 and native outputs, and begins feedback after the control plus another finished
 profile. See `../AUTOPILOT.md` for stop/drain behavior, explicit model policy and
-staged preparation reuse. The next cache investigation uses a separately
-qualified workload; see `../CACHE_STUDY.md`. The first capacity diagnostic failed on FPGA because its smallest stream case
+staged preparation reuse. The cache investigation uses a separately
+qualified workload; see `../CACHE_STUDY.md` and `data/cache-pressure.json`.
+The first capacity diagnostic failed on FPGA because its smallest stream case
 was shorter than the guest timer resolution. The corrected batched-clock version
-passed48 QEMU cases and is queued; no cache diagnostic hardware speedup is claimed.
+passed all 48 checks on one F2. It shows a capacity transition near the 32 KiB L1;
+cache, TLB and memory-parallelism effects are not isolated. No cache-oriented
+compiler speedup is claimed.
 Optional diagnostic failures can now be explicitly quarantined so ordinary
 experiments continue through their full checks.
 

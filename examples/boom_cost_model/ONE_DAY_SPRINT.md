@@ -2,10 +2,17 @@
 
 The immediate deliverable is a correctness-checked improvement on this fixed
 MegaBOOM configuration, with held-out evidence and complete compiler identities.
-The current confirmed Exchange2 train improvement is 5.70%. A newer branch-cost-12
-candidate screened at 76.82 s versus 77.68 s incumbent and 82.11 s original:
-approximately 6.89% speedup over original, still pending repeat confirmation.
+The confirmed Exchange2 train improvement is now 6.89%: the branch-cost-12
+candidate completed three confirmation keys at 76.82 s versus 77.68 s prior
+incumbent and 82.11 s original. Held-out reference validation also passed on
+both F2 workers at 866.27 s versus 919.62 s original, a 6.16% speedup. Selected
+reference observations are fresh; original controls are validated cache reuses.
 These are partial-suite research estimates, not official SPEC scores.
+
+Rounds 10–12 completed the structural frontier and subsequent interaction and
+allocation/memory checks without improving 76.82 s. The following priorities
+describe the continuing search; the initial confirmation and reference milestone
+are complete. See `research/HANDOFF.md` and its numeric dataset for evidence.
 
 1. Finish the active confirmation without interruption. Original and incumbent
    controls have three validated repeat keys each. The challenger needs its
