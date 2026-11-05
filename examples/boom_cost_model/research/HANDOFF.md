@@ -8,12 +8,12 @@ explicitly authorized continuous MegaBOOM loops until stopped; a collaborator
 must obtain authorization for their own cluster. Reading this handoff does not
 authorize provisioning or modifying shared-host networking.
 
-## Current result (November 4)
+## Current result (November 5)
 
 The follow-up data is in `data/progress-20261103.json`, alongside the older
 `spec-estimates.json` covering the first two scalar searches (all ten trials)
-and the coordinated/paired studies. The follow-up export includes 15 completed
-campaigns, full cost/move/policy settings, 56 compiler identities and 139 saved
+and the coordinated/paired studies. The follow-up export includes 18 completed
+campaigns, full cost/move/policy settings, 66 compiler identities and 158 saved
 successful timing observations, with validated reuses explicitly labeled. Cached observations are explicitly marked and
 must not be counted as additional independent measurements.
 
@@ -31,8 +31,14 @@ must not be counted as additional independent measurements.
 * The winner raises branch cost from 4 to 12 while preserving the earlier
   ordinary-unroll and pressure-aware scheduling/allocation settings and other
   costs. This is a combined compiler-policy result, not an isolated cache win.
-  Follow-up rounds 10–14 tested larger/smaller unrolling, inlining, interactions
-  and allocation/memory choices; none improved the confirmed 76.82 s anchor.
+  Follow-up rounds 10–17 tested larger/smaller unrolling, inlining, interactions,
+  allocation/memory choices and separate compiler passes; none passed promotion.
+* The independent-mechanism portfolio measured control76.82 s, multiply4 77.15 s,
+  pre-allocation scheduling disabled78.94 s, tail duplication78.10 s and their
+  multiply4/tail-duplication combination80.33 s. All passed correctness and
+  regressed against the control. A later arithmetic round measured77.93 s
+  (multiply2),77.33 s (divide24) and77.21 s (multiply2/divide3), also all correct
+  and slower than76.82 s. These are screening observations, not new wins.
 * An earlier compiler, `11f4c099...`, measured **889.39 s versus
   919.62 s on reference inputs**, a **3.40% speedup**. Each physical worker ran
   both compilers once, with opposite orders. This is limited repeat evidence,
