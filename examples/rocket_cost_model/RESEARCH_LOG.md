@@ -219,3 +219,24 @@ verify a vector-capable compiler and guest, and qualify an exact Saturn timing
 backend. If the initial Saturn configuration fails a required gate, document
 the blocker or qualify a different Saturn configuration with a new manifest
 and baseline. Do not transfer scalar Rocket or BOOM measurements to it.
+
+## 15. Real unchanged-SPEC roles 1-3 preparation (2026-11-04)
+
+The first loop-A preparation run now passes through CHIA using the licensed
+`648.exchange2_s` test workload, not a synthetic benchmark. Roles 1 and 2 were
+built and frozen as the scalar and stock-GCC RVV references. Candidate 3.1 was
+built from pinned GCC 15.1 source in the recorded Jammy worker and changes only
+the generic RVV integer-statement cost from 1 to 2 before attaching that table
+to Rocket's tuning profile.
+
+All three final binaries passed SPEC output validation. Role 1 contains no RVV
+instructions; role 2 contains 5,780 static RVV instructions; role 3.1 contains
+4,310. The role-2 and role-3 ELF hashes differ, establishing application-level
+code-generation sensitivity to the bounded edit. This does not establish a
+performance improvement: QEMU was used only for correctness and the CHIA
+summary deliberately records no performance backend and no Saturn timing.
+
+Implementation and sanitized status are in `spec_vector_baseline.py`,
+`vector_cost_model.py`, `roles_123_chia.py`, and `ROLE_123_STATUS.md`. Private
+SPEC configs, logs, binaries, candidate frontends, and the full machine-readable
+summary remain outside Git in the authorized research directories.

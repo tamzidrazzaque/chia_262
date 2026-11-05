@@ -136,6 +136,13 @@ time is never a Saturn performance result. CHIA should retain failed builds,
 validation failures, duplicate binaries, negative results, and rejected
 hypotheses instead of silently dropping them.
 
+The first roles 1-3 preparation run completed on 2026-11-04 for unchanged
+SPEC CPU2017 `648.exchange2_s` test input. All three roles passed SPEC
+validation, and candidate 3.1 produced a different RVV ELF from role 2. This
+qualifies the build, validation, audit, and compiler-sensitivity stages only.
+The exact-target measurement and scoring stages remain open; see
+[the sanitized status](ROLE_123_STATUS.md).
+
 ### Status of the private vector SPEC derivative
 
 SPEC CPU2017 does not provide an official "vector SPEC" edition. Roles 4 and 5

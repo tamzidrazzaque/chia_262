@@ -23,6 +23,14 @@ for SPEC; the final simulator or FPGA target still requires exact build,
 runtime and correctness evidence. Ara remains a historical source-level
 comparison, outside the active campaign.
 
+**Loop-A preparation update on 2026-11-04:** the real unchanged-SPEC
+`648.exchange2_s` test workload now builds and passes SPEC validation for the
+scalar role, the stock GCC 15.1 RVV role, and the first bounded Saturn-aware
+cost candidate. The candidate changes the final application ELF, so the
+compiler-cost hook is feasible for this workload. This remains correctness and
+static code-generation evidence only; the CHIA result has no Saturn timing
+backend and makes no speedup claim. See [the roles 1-3 status](ROLE_123_STATUS.md).
+
 The current scalar Rocket target remains separate. Its documented
 `RocketConfig`, `rv64imafdc` toolchain, image discovery, and driver evidence do
 not establish vector support.
