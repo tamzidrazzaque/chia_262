@@ -4,6 +4,11 @@ This handoff is for the agent running on the AWS FireSim manager instance. The
 goal is to build and verify the host driver for the released Rocket plus Saturn
 F2 image. Do not rebuild the FPGA image.
 
+Manager checkpoint: the matching driver was accepted on 2026-11-05. Read
+[SATURN_MANAGER_STATUS.md](SATURN_MANAGER_STATUS.md) and
+[saturn-driver-acceptance.json](saturn-driver-acceptance.json) before rebuilding.
+The next uncompleted gate is step 7, Linux/RVV hardware execution.
+
 ## Fixed target identity
 
 Do not substitute a newer checkout, scalar Rocket image, BOOM image, or the
@@ -133,11 +138,15 @@ the following official entry from the publication commit to the generated
 firesim_saturn_REFV256D128_rocket_singlecore_no_nic_l2_llc4mb_ddr3:
   agfi: agfi-012e92467d7d2149a
   deploy_quintuplet_override: null
-  deploy_makefrag_override: ../../generators/firechip/chip/src/main/makefrag/firesim
+  deploy_makefrag_override: ../../../generators/firechip/chip/src/main/makefrag/firesim
   custom_runtime_config: null
 ```
 
 This is manager configuration, not a change to the pinned hardware source.
+The three-parent relative path above is for `sims/firesim/deploy/config_hwdb.yaml`.
+The publication catalog lives in a different directory, so copying its two-parent
+path here fails resolution. An absolute path to the same pinned makefrag directory
+also works; that was used in the verified manager build.
 
 ## 5. Build only the matching driver
 
@@ -159,10 +168,10 @@ For the pinned FireSim revision, the expected output directory is:
 sims/firesim/sim/output/f2/f2-firesim-FireSim-FireSimREFV256D128RocketConfig-WithAutoILA_FRFCFS16GBQuadRankLLC4MB_BaseF2Config/
 ```
 
-The normal driver binary name in that directory is `FireSim`. Locate it with:
+The verified F2 driver binary name in that directory is `FireSim-f2`. Locate it with:
 
 ```bash
-rg --files ../sim/output/f2 | rg '/FireSim$'
+rg --files ../sim/output/f2 | rg '/FireSim-f2$'
 ```
 
 ## 6. Capture driver acceptance evidence

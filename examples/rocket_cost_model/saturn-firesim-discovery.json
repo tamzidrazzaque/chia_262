@@ -36,11 +36,19 @@
   },
   "driver": {
     "published_driver_tar": null,
-    "status": "must_build_from_pinned_source",
+    "status": "accepted",
     "official_command": "firesim builddriver",
     "driver_bundle": null,
-    "driver_bundle_sha256": null,
-    "matching_source_verified": false
+    "driver_bundle_sha256": "1b4784a9158ec170993e0bc9b59a2df2f730923664aa1bd563aebe9430634534",
+    "matching_source_verified": true,
+    "driver_name": "FireSim-f2",
+    "driver_sha256": "5d3353ea8e6bf2891555da3d7b29122b1143a2e3d8c61a2a55741f1fd0bc94bd",
+    "acceptance_record": "saturn-driver-acceptance.json",
+    "acceptance_record_sha256": "4da1edcc654b58822e470a2b952ff0e0c35b8923dcbacf3d00feac0c7f960f3a",
+    "generated_header_sha256": {
+      "FireSim-generated.const.h": "11046aabb7dd036beebd9d847acbf682769c8255c005f258a7f2c7f4170c0776",
+      "FireSim-generated.partition.const.h": "b99b525a281639e52a069ea56653d1d317ce7d61dbe17b39c47d4f7bcadcf403"
+    }
   },
   "hardware_execution_verified": false,
   "notes": [
@@ -62,8 +70,8 @@
     "observed_FireSim_revision": "b7927ea504c501194eaec3e993c415f2270170f8",
     "required_FireSim_revision": "b7927ea504c501194eaec3e993c415f2270170f8",
     "FireSim_revision_matches": true,
-    "status": "metadata_verified_driver_not_built",
-    "driver_build_started": false,
+    "status": "verified",
+    "driver_build_started": true,
     "hardware_execution_started": false
   }
 }

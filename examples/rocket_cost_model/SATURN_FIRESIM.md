@@ -72,15 +72,16 @@ container merely because either can compile a driver.
 
    Run this from `sims/firesim/deploy` after adding the official AGFI entry to
    the manager-generated `config_hwdb.yaml`, as specified in the manager handoff.
-4. Record the resulting `FireSim` SHA-256, generated-header hashes, dynamic
+4. Record the resulting `FireSim-f2` SHA-256, generated-header hashes, dynamic
    library dependencies, source status and exact revisions. Package it as a
    `driver_tar` only after those checks pass.
 5. On an F2 worker, run a minimal boot and RVV correctness test before SPEC.
    Only then freeze roles 1 and 2 and start the role-3 cost-model loop.
 
-The current host has no usable AWS credentials, so step 1 and the actual driver
-build have not been claimed as complete. The official image discovery is
-complete; the matching-driver acceptance gate is still open.
+The manager verified AWS metadata and built/accepted the matching driver on
+2026-11-05. `saturn-driver-acceptance.json` records source, generated-file and
+binary identities. The Linux/RVV hardware execution gate remains open; driver
+acceptance is not a hardware correctness or performance result.
 
 The complete manager-side command sequence and reporting contract are in
 `SATURN_MANAGER_HANDOFF.md`.

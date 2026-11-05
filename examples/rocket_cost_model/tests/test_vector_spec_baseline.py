@@ -1,5 +1,6 @@
 """The private SPEC roles 1-3 must preserve their controlled variables."""
 
+import hashlib
 import json
 from pathlib import Path
 import unittest
@@ -46,8 +47,23 @@ class VectorSpecBaselineTests(unittest.TestCase):
             discovery["manager_metadata_check"]["observed_FireSim_revision"],
         )
         self.assertTrue(discovery["manager_metadata_check"]["FireSim_revision_matches"])
-        self.assertEqual(discovery["driver"]["status"], "must_build_from_pinned_source")
-        self.assertFalse(discovery["driver"]["matching_source_verified"])
+        self.assertEqual(discovery["driver"]["status"], "accepted")
+        self.assertTrue(discovery["driver"]["matching_source_verified"])
+        receipt_path = discovery_path.parent / discovery["driver"]["acceptance_record"]
+        self.assertEqual(hashlib.sha256(receipt_path.read_bytes()).hexdigest(),
+                         discovery["driver"]["acceptance_record_sha256"])
+        receipt = json.loads(receipt_path.read_text())
+        self.assertEqual(receipt["build_exit_code"], 0)
+        self.assertEqual(receipt["quintuplet"], discovery["recipe"]["expected_quintuplet"])
+        self.assertEqual(receipt["AGFI"], discovery["catalog"]["AGFI"])
+        self.assertEqual(receipt["driver_sha256"], discovery["driver"]["driver_sha256"])
+        self.assertEqual(receipt["driver_bundle_sha256"], discovery["driver"]["driver_bundle_sha256"])
+        self.assertEqual(receipt["missing_dependencies"], [])
+        self.assertTrue(receipt["generated_header_sha256"])
+        for source, details in receipt["sources"].items():
+            self.assertTrue(details["clean"])
+            self.assertEqual(details["revision"], discovery["source"][source + "_revision"])
+        self.assertFalse(receipt["hardware_execution_verified"])
         self.assertFalse(discovery["hardware_execution_verified"])
 
     def test_role1_is_scalar_and_disables_both_vectorizers(self):

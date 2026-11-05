@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "status": "driver accepted",
+  "checked_date_utc": "2026-11-05",
+  "AGFI": "agfi-012e92467d7d2149a",
+  "AFI": "afi-0d72fa6baed12e032",
+  "state": "available",
+  "shell": "0x10212415",
+  "quintuplet": "f2-firesim-FireSim-FireSimREFV256D128RocketConfig-WithAutoILA_FRFCFS16GBQuadRankLLC4MB_BaseF2Config",
+  "sources": {
+    "Chipyard": {
+      "revision": "19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe",
+      "clean": true
+    },
+    "FireSim": {
+      "revision": "b7927ea504c501194eaec3e993c415f2270170f8",
+      "clean": true
+    },
+    "Saturn": {
+      "revision": "dfe75de2a8868d51d42c20612821431a9fcf645e",
+      "clean": true
+    },
+    "Rocket": {
+      "revision": "55bcad0f59436de98ea510334121de8546b9e9d7",
+      "clean": true
+    },
+    "F2_SDK": {
+      "revision": "80b34d3c25aff03353c0b4f2d304bb6067a5011d",
+      "clean": true
+    }
+  },
+  "build_exit_code": 0,
+  "driver_name": "FireSim-f2",
+  "driver_sha256": "5d3353ea8e6bf2891555da3d7b29122b1143a2e3d8c61a2a55741f1fd0bc94bd",
+  "driver_bundle_sha256": "1b4784a9158ec170993e0bc9b59a2df2f730923664aa1bd563aebe9430634534",
+  "generated_file_count": 58,
+  "generated_file_sha256": {
+    "AbstractClockGate.v": "4b0aadbcd127cc4ceb682c1b439a69fbdaf7f095791021b17b3437b2cde6af48",
+    "FireSim-generated.const.h": "11046aabb7dd036beebd9d847acbf682769c8255c005f258a7f2c7f4170c0776",
+    "FireSim-generated.const.vh": "83dc0d3cd334796d1615d3e7cd10c391af973d68e0467f388a741e7d0c5f6497",
+    "FireSim-generated.defines.vh": "d83752f6629f6f600728f83eb57627fa420047ce4767d8f839132f57f6cf7009",
+    "FireSim-generated.implementation.xdc": "25ef133358e9a718b67561326c83b2e48832e4b8da0351dc7444784263f4fb28",
+    "FireSim-generated.partition.const.h": "b99b525a281639e52a069ea56653d1d317ce7d61dbe17b39c47d4f7bcadcf403",
+    "FireSim-generated.peer2peer.const.yaml": "5aa6b5a545102e13bc02adcf45b425ce67c862f887be4879a227742d1234895e",
+    "FireSim-generated.sv": "e6ef640b9676a474ba5f2a944f70e96ad40d009f21f2ccaf1dc3f3b79f77a89c",
+    "FireSim-generated.synthesis.xdc": "ae49751c4a82941dc61b0380511207e9c11bbb3b16c0493f2575ca4357bc969b",
+    "firechip.chip.FireSim.FireSimREFV256D128RocketConfig.anno.json": "ad8cae36aa67e23f0fa1d888aeace733448339444cf078fad9aac92684c16503",
+    "firechip.chip.FireSim.FireSimREFV256D128RocketConfig.d": "df58e095bf69e7cc69dd29c8ebe3b2356b99a694754d5c91f97dfb0d7e0571f9",
+    "firechip.chip.FireSim.FireSimREFV256D128RocketConfig.fir": "da37b8376c2f9a2d5d137aab1d444a92b8a2756de819eefca4c942e489788013",
+    "firrtl_black_box_resource_files.f": "ca13d2d2b53dc10acb7f2cfa41473f5c0d106e8e52580868b43b548ad40ad963",
+    "plusarg_reader.v": "482a63c1f24a7ac920909620bd0df108e6954eabf9520de6e72334a2b5450efb",
+    "post-autocounter.fir": "f9e299df9d242513d093b1c85ac3852cce5742a12f1e70d7af9a75f59b57ea08",
+    "post-autocounter.json": "d7defc2c025f3c01329c43409f4e4e409303988913d836cddceef24239e0b7b2",
+    "post-bridge-extraction.fir": "f1677b004def21b2571cf43d480c0dbfafc65a83c58335ad23a0b549cd045de6",
+    "post-bridge-extraction.json": "27bbfc4fb12a9d5e5c22d4c63472564dafa678b1c4dd267362013c0e6977ef71",
+    "post-channel-excision.fir": "1587ca66f403d37f127a029e3220d51d7c4e517688912ee1310b1fb8ce48e792",
+    "post-channel-excision.json": "76fdeaedd867dbedf2683f2545d372c4b2286244bd18c5d237f24b83d6932fc2",
+    "post-debug-synthesis.fir": "f9e299df9d242513d093b1c85ac3852cce5742a12f1e70d7af9a75f59b57ea08",
+    "post-debug-synthesis.json": "d7defc2c025f3c01329c43409f4e4e409303988913d836cddceef24239e0b7b2",
+    "post-extract-model-all.json": "43cae5ec226be7c0eb2a418b6b98cebb5c7cf4c121c248b91cf6476ba0d2904b",
+    "post-extract-model.fir": "672cd285880c2b81765d6ca5b872b9ff35966ccd4884b0969dbcdd0f6c02148a",
+    "post-fame-defaults.fir": "1587ca66f403d37f127a029e3220d51d7c4e517688912ee1310b1fb8ce48e792",
+    "post-fame-defaults.json": "34392f0350f3ef9d7d67830ab6f8540160d4835c3a4e6c1443c131cfa4b25ddd",
+    "post-fame-transform.fir": "c82890e1ddf016c393a9541ba705960acf154738ba1fa2d3c09c40edb756a713",
+    "post-fame-transform.json": "25ba359fe64b25b0b331913ac79cafb7f978725bf9ac55e0a5bf23c2a70bcc49",
+    "post-fame5-transform.fir": "0a2372f5fe86cda1851ac17441559ed05dd8b7cc54aa27420a375d7ee0be7a6f",
+    "post-fame5-transform.json": "25ba359fe64b25b0b331913ac79cafb7f978725bf9ac55e0a5bf23c2a70bcc49",
+    "post-find-default-clocks.json": "34392f0350f3ef9d7d67830ab6f8540160d4835c3a4e6c1443c131cfa4b25ddd",
+    "post-gen-sram-models.fir": "e3265e10d97825eb9635ebce5ae9c832c5a0f9218d4171673785439082ed1fb2",
+    "post-gen-sram-models.json": "25ba359fe64b25b0b331913ac79cafb7f978725bf9ac55e0a5bf23c2a70bcc49",
+    "post-infer-model-ports.fir": "1587ca66f403d37f127a029e3220d51d7c4e517688912ee1310b1fb8ce48e792",
+    "post-infer-model-ports.json": "689475eb79cf43988b4605346b1fe9327bf61713d53c2bec86b101d8630c0cea",
+    "post-partition-all.json": "9698aea60fdceb342c2055f7f59e1fff6f00929cadace2470568f2809012edab",
+    "post-partition.fir": "815520cc8c4f5587c1f8ee0c90bec3d5e0d3bd9932d2b541739e9d247f4dfdc7",
+    "post-partition.json": "26e90beccca3d34542e00ecb396af6be776b2bc5c5d53da65e6baa0666aff9e5",
+    "post-plusargs-transform.fir": "815520cc8c4f5587c1f8ee0c90bec3d5e0d3bd9932d2b541739e9d247f4dfdc7",
+    "post-plusargs-transform.json": "26e90beccca3d34542e00ecb396af6be776b2bc5c5d53da65e6baa0666aff9e5",
+    "post-plusargs-wiring.fir": "815520cc8c4f5587c1f8ee0c90bec3d5e0d3bd9932d2b541739e9d247f4dfdc7",
+    "post-plusargs-wiring.json": "26e90beccca3d34542e00ecb396af6be776b2bc5c5d53da65e6baa0666aff9e5",
+    "post-promote-passthrough.fir": "1587ca66f403d37f127a029e3220d51d7c4e517688912ee1310b1fb8ce48e792",
+    "post-promote-passthrough.json": "d6d36fed2692e9b938580c67b8d3c7e1d48c6d778a25eb076cd7a5f3b9f2852b",
+    "post-sim-mapping.fir": "305260c076f2b3d118627558d37682fc86391716ae44af8e10344b497b02b701",
+    "post-split-expressions.fir": "b71ce319c21f75955d1dd3ebdd70eadb2c22191580fd8567fe67209ca0856438",
+    "post-split-expressions.json": "26e90beccca3d34542e00ecb396af6be776b2bc5c5d53da65e6baa0666aff9e5",
+    "post-trigger-wiring.fir": "f9e299df9d242513d093b1c85ac3852cce5742a12f1e70d7af9a75f59b57ea08",
+    "post-trigger-wiring.json": "0ffe6fdecb0be654ed648cca9ec555b92f7227928202ec2c8315f3e35bc56677",
+    "post-wrap-top-all.json": "43cae5ec226be7c0eb2a418b6b98cebb5c7cf4c121c248b91cf6476ba0d2904b",
+    "post-wrap-top.fir": "672cd285880c2b81765d6ca5b872b9ff35966ccd4884b0969dbcdd0f6c02148a",
+    "pre-extract-model-all.json": "43cae5ec226be7c0eb2a418b6b98cebb5c7cf4c121c248b91cf6476ba0d2904b",
+    "pre-extract-model.fir": "672cd285880c2b81765d6ca5b872b9ff35966ccd4884b0969dbcdd0f6c02148a",
+    "pre-fame5-transform.fir": "0a2372f5fe86cda1851ac17441559ed05dd8b7cc54aa27420a375d7ee0be7a6f",
+    "pre-fame5-transform.json": "25ba359fe64b25b0b331913ac79cafb7f978725bf9ac55e0a5bf23c2a70bcc49",
+    "pre-partition-all.json": "9698aea60fdceb342c2055f7f59e1fff6f00929cadace2470568f2809012edab",
+    "pre-partition.fir": "815520cc8c4f5587c1f8ee0c90bec3d5e0d3bd9932d2b541739e9d247f4dfdc7",
+    "pre-partition.json": "26e90beccca3d34542e00ecb396af6be776b2bc5c5d53da65e6baa0666aff9e5"
+  },
+  "generated_header_sha256": {
+    "FireSim-generated.const.h": "11046aabb7dd036beebd9d847acbf682769c8255c005f258a7f2c7f4170c0776",
+    "FireSim-generated.partition.const.h": "b99b525a281639e52a069ea56653d1d317ce7d61dbe17b39c47d4f7bcadcf403"
+  },
+  "dynamic_library_sha256": {
+    "libriscv.so": "88989b0314a0abf889598de5cacfdc59ed5be8e09a2a76243e5a84517ddc5b44",
+    "libdwarf.so.1": "3d38edc66c5ec73745171ed7f3750e8c13190151d097d6621c68fb3a862a8f03",
+    "libelf.so.1": "6e5d0e335e32597c87865aa0fff25847f60b5cf03523dc8a39a336839f9dbe97",
+    "libz.so.1": "9a1046cd4a615a1295b4b7612eefc201c31d7d13669a1859c688b5ae642693ef",
+    "libstdc++.so.6": "9581ad615b7c073423f57b69a3b148a89f8ea76fc909124211f9007909b807a6",
+    "libgmp.so.10": "42d12c2b0a0178e4e452a1d21fc130d8dc521ec0c364c1025357e8e8902f2f8c",
+    "libm.so.6": "fce00b6f25f459cf4ae0b7fae4257909a1a8a86f9149e7c029a5d617baf1ccd0",
+    "libgcc_s.so.1": "e1e904051f77f9569c2ea53c83bb4083c26575e0fbd4010e46f1cb8b21037ad1",
+    "libc.so.6": "3a15d66867d83762c7f2f1e37359cb8f6c5743edb369c65285cb0b1c4f7498bf",
+    "librt.so.1": "6d072187d88e092e81561a44c03a4a41397319022c6d43519757cc051c576d82",
+    "libdl.so.2": "c2994527172cc23b7fb0f7d611b71e00a37da27af12c2e5e9e0dc1a742886c96"
+  },
+  "missing_dependencies": [],
+  "build_host": {
+    "os": {
+      "NAME": "Ubuntu",
+      "VERSION_ID": "24.04",
+      "VERSION": "24.04.1 LTS (Noble Numbat)",
+      "ID": "ubuntu"
+    },
+    "architecture": "x86_64",
+    "tools": {
+      "gcc": "gcc (conda-forge gcc 13.2.0-13) 13.2.0",
+      "g++": "g++ (conda-forge gcc 13.2.0-13) 13.2.0",
+      "java": "openjdk version \"20.0.2-internal\" 2023-07-18",
+      "make": "GNU Make 4.4.1",
+      "python": "Python 3.10.14"
+    }
+  },
+  "environment": {
+    "original_conda_lock_sha256": "fbca42ba784ff879c20969004737c63fa813e19834a180d94badbaab36a437c9",
+    "setup_resume_command": "./build-setup.sh --skip-conda",
+    "notes": [
+      "Original checkout lockfile installed directly after host-glibc relocking hit a dead mapping URL.",
+      "Bootstrap Python constrained to 3.10; isolated bootstrap used instead of changing shared Conda.",
+      "FireSim setup upgraded cryptography incompatibly; restored locked cryptography 40.0.2.",
+      "Official makefrag resolved to an absolute local path because the publication-relative path does not resolve from deploy/config_hwdb.yaml.",
+      "SDK setup moved its nested IP checkout; restored the SDK gitlink before acceptance."
+    ]
+  },
+  "matching_source_verified": true,
+  "hardware_execution_verified": false,
+  "limitations": [
+    "Acceptance verifies public metadata, pinned source reconstruction, generated interfaces and host dependencies. It is not a hardware application test or recovery of the original builder archive.",
+    "RVV Linux boot and VLEN-256 self-check remain required before SPEC timing."
+  ]
+}
