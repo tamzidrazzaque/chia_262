@@ -50,7 +50,7 @@
       "FireSim-generated.partition.const.h": "b99b525a281639e52a069ea56653d1d317ce7d61dbe17b39c47d4f7bcadcf403"
     }
   },
-  "hardware_execution_verified": false,
+  "hardware_execution_verified": true,
   "notes": [
     "The public Chipyard catalog provides the AGFI but no driver_tar field.",
     "FireSim builds the host driver locally when driver_tar is absent.",
@@ -72,6 +72,8 @@
     "FireSim_revision_matches": true,
     "status": "verified",
     "driver_build_started": true,
-    "hardware_execution_started": false
-  }
+    "hardware_execution_started": true
+  },
+  "hardware_execution_record": "saturn-hardware-gate.json",
+  "hardware_execution_record_sha256": "e5ea00069faa5602aab13d82cd55d5e071c5e5b5e8b3cb0dbb156670b10a693a"
 }

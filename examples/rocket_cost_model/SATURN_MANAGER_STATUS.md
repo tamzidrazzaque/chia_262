@@ -1,6 +1,9 @@
 # Manager takeover status
 
-Outcome: **driver accepted**, 2026-11-05. Hardware execution has not started.
+Outcome: **hardware execution gate passed**, 2026-11-05.
+The driver remains accepted; the exact Saturn pair booted Linux and passed the
+self-checking RVV test with VLEN 256. See `SATURN_RVV_GATE.md` and
+`saturn-hardware-gate.json`.
 
 The corrected handoff at `9c4a1a0` was pulled. Fresh AWS metadata verified the
 available/public AGFI `agfi-012e92467d7d2149a`, AFI `afi-0d72fa6baed12e032`,
@@ -11,8 +14,8 @@ A separate Chipyard checkout was prepared at:
 `/home/ubuntu/cs262_compiler/chipyard-saturn-19a07f6`.
 Its Chipyard, FireSim, Saturn, Rocket Chip and F2 SDK revisions match the handoff,
 and all five source trees were clean at acceptance. Existing scalar/other
-checkouts were not reset. No bitstream was rebuilt, no Saturn image programmed
-and no run-farm worker launched by this takeover.
+checkouts were not reset. No bitstream was rebuilt. The subsequent hardware gate reused one existing,
+owner-authorized idle F2 worker and programmed the accepted Saturn image.
 
 ## Completed manager work
 
@@ -65,17 +68,27 @@ The initial official setup needed environment-only repairs:
 6. SDK setup moved a nested IP checkout; restore its pinned gitlink before source
    acceptance. Final source trees were clean.
 
-## Resume at the hardware gate
+## Hardware gate completed; resume with SPEC preparation
 
-`matching_source_verified` is true for this driver reconstruction. This verifies
-public metadata, source pins, generated interfaces and host dependencies; the
-original builder's archive was not independently recovered.
-`hardware_execution_verified` remains false.
+The exact AGFI and deployed driver hash were verified on the worker before boot.
+Linux exposed one Rocket processor and RVV. The test read `vlenb=32`, checked
+full-vector and partial-vector load/add/store results, read increasing `cycle`
+counters, exited 0 and powered down. FireSim reported `*** PASSED ***` after
+3,770,962,967 simulation cycles. Collection and the manager completed successfully.
+No driver process or simulation screen remained after collection.
 
-Next is step 7 of `SATURN_MANAGER_HANDOFF.md`: prepare a Linux workload with a
-self-checking vector load/arithmetic/store test, verify RVV and VLEN 256, and
-collect console output, target cycle counters and shutdown on the exact AGFI.
-Verify current worker ownership, running processes, SDK and slot state first.
-The earlier scalar adapter hard-codes scalar target guards; do not bypass those
-guards or relabel its scalar image as Saturn. No SPEC timing or role-3 search
-should begin until the hardware gate passes.
+`matching_source_verified` remains true for the accepted driver reconstruction.
+`hardware_execution_verified` is now true, backed by `saturn-hardware-gate.json`.
+The immutable driver-only acceptance receipt retains its original hardware-false
+field; the later hardware receipt establishes the completed execution gate.
+
+The existing F2 worker is running and idle with Saturn loaded, ready for the next
+workload. Its private identity and live checks are recorded outside Git. Avoid
+creating additional F2 workers unnecessarily.
+
+Next: prepare unchanged SPEC roles 1 and 2 for this VLEN-256 target, validate
+licensed inputs/expected outputs, then collect original-compiler baselines before
+role-3 timing. Preserve the exact platform, compiler/ISA controls, input identities
+and independent correctness gates. No SPEC performance run or adaptive search
+was performed by this hardware smoke. The scalar execution adapter's guards
+must remain intact; it is not the Saturn adapter.

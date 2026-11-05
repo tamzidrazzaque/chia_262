@@ -64,7 +64,21 @@ class VectorSpecBaselineTests(unittest.TestCase):
             self.assertTrue(details["clean"])
             self.assertEqual(details["revision"], discovery["source"][source + "_revision"])
         self.assertFalse(receipt["hardware_execution_verified"])
-        self.assertFalse(discovery["hardware_execution_verified"])
+        self.assertTrue(discovery["hardware_execution_verified"])
+        gate_path = discovery_path.parent / discovery["hardware_execution_record"]
+        self.assertEqual(hashlib.sha256(gate_path.read_bytes()).hexdigest(),
+                         discovery["hardware_execution_record_sha256"])
+        gate = json.loads(gate_path.read_text())
+        self.assertTrue(gate["hardware_execution_verified"])
+        self.assertEqual(gate["backend"], "fpga")
+        self.assertEqual(gate["vlen_bits"], TARGET_VLEN)
+        self.assertEqual(gate["driver_sha256"], receipt["driver_sha256"])
+        self.assertEqual(gate["driver_acceptance_record_sha256"],
+                         discovery["driver"]["acceptance_record_sha256"])
+        self.assertEqual(gate["AGFI"], discovery["catalog"]["AGFI"])
+        self.assertTrue(gate["guest_shutdown"])
+        self.assertTrue(gate["simulation_passed"])
+        self.assertEqual(gate["manager_returncode"], 0)
 
     def test_role1_is_scalar_and_disables_both_vectorizers(self):
         label, flags, vector_qemu = role_settings("1-scalar")

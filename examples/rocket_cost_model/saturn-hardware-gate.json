@@ -1,0 +1,61 @@
+{
+  "status": "passed",
+  "backend": "fpga",
+  "vlen_bits": 256,
+  "vector_full_and_tail_checks": true,
+  "guest_binary_sha256": "9e9e129691612371146f48bbb3cdabe2a6320440c9cc9d8c6ab553e4e5661f7d",
+  "cycle_before": 3719172933,
+  "cycle_after": 3719173590,
+  "cycle_delta": 657,
+  "single_core": true,
+  "guest_shutdown": true,
+  "checked_date_utc": "2026-11-05",
+  "hardware_execution_verified": true,
+  "AGFI": "agfi-012e92467d7d2149a",
+  "AFI": "afi-0d72fa6baed12e032",
+  "shell": "0x10212415",
+  "quintuplet": "f2-firesim-FireSim-FireSimREFV256D128RocketConfig-WithAutoILA_FRFCFS16GBQuadRankLLC4MB_BaseF2Config",
+  "driver_sha256": "5d3353ea8e6bf2891555da3d7b29122b1143a2e3d8c61a2a55741f1fd0bc94bd",
+  "driver_acceptance_record_sha256": "4da1edcc654b58822e470a2b952ff0e0c35b8923dcbacf3d00feac0c7f960f3a",
+  "deployed_driver_hash_verified": true,
+  "worker_dependencies_resolved": true,
+  "simulation_passed": true,
+  "simulation_cycles": 3770962967,
+  "manager_returncode": 0,
+  "manager_host_wall_seconds": 105.02967693200026,
+  "guest_isa": "rv64imafdcbv_zicntr_zicsr_zifencei_zihpm_zba_zbb_zbs",
+  "source_sha256": {
+    "validate.py": "ab7e46e1d5d141a8c07761b3b255f7ce1ca6843ccfc87847d3be692030f46ef1",
+    "run.sh": "9b330e276c10a9eb84d1412b20f73790951488e5d1c68f112c6800835406191b",
+    "smoke.c": "c27584cc6d7ad915f5b5c67b23f80274e0c53201ac382c00862bec76633a762d"
+  },
+  "compile_flags": [
+    "-O2",
+    "-static",
+    "-march=rv64gcv",
+    "-mabi=lp64d",
+    "-fno-tree-loop-vectorize",
+    "-fno-tree-slp-vectorize"
+  ],
+  "compiler": "pinned Chipyard riscv64-unknown-linux-gnu-gcc 13.2.0",
+  "software_sha256": {
+    "linux_bootbinary": "dbdf30cae7e8c88d3242c24a97591582686a0dbcc985b8b9cf34a72739673eb8",
+    "pristine_guest_rootfs": "c2ea685786bac45f1bd3389678124c7d853b06e28438ef6c0d06707863fea826",
+    "runtime_configuration": "4214a273c033582212c39732db72b44ced8642ce8143e8b0d13d5d76e7f8ff82",
+    "workload_descriptor": "5e5fe9e5f419934087693ddfc3f3c759fa3c07e31e1dd1b5ebdf45dea8faf183"
+  },
+  "collected_sha256": {
+    "HW_CFG_SUMMARY": "700bfa7aac9a1f02f4c3ee201d3351f829478750284f2e0013c954bd9cb4d24e",
+    "rvv-gate-output/binary.sha256": "8253ac7816f261e195af35b71c2e5ad3a3d4ae440f04bbdc95197b9ceebd4c6d",
+    "rvv-gate-output/cpuinfo.txt": "6ed327d60846dcb3706024c273fc50d22fbedd11bbe0fbf940f9103976008478",
+    "rvv-gate-output/result.txt": "4857e714a62b0f264613fe475c9a7483239fc987163dac936c76697ceee7db7e",
+    "rvv-gate-output/status": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "rvv-gate-output/uname.txt": "5eef88d8a18c71399c9e29989f4a8d84ddff0a46365862b6b774822e10c3872b",
+    "sim-run.sh": "7b33409e91e94f4fb556c731ce774614f987bc7e72d3d385526dfae22b5a784a",
+    "uartlog": "b1d6ee61562694276a31ca0ba933f3181b1f654032c94c604260be750e594276"
+  },
+  "limitations": [
+    "Platform correctness gate only; cycle counts are not SPEC or tuning performance labels.",
+    "Original FPGA-builder archive was not independently recovered; accepted source provenance is documented separately."
+  ]
+}

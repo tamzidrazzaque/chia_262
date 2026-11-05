@@ -7,7 +7,10 @@ F2 image. Do not rebuild the FPGA image.
 Manager checkpoint: the matching driver was accepted on 2026-11-05. Read
 [SATURN_MANAGER_STATUS.md](SATURN_MANAGER_STATUS.md) and
 [saturn-driver-acceptance.json](saturn-driver-acceptance.json) before rebuilding.
-The next uncompleted gate is step 7, Linux/RVV hardware execution.
+Step 7 also passed on 2026-11-05: see
+[saturn-hardware-gate.json](saturn-hardware-gate.json) and
+[SATURN_RVV_GATE.md](SATURN_RVV_GATE.md). Resume with SPEC workload preparation;
+do not rebuild or rerun the completed platform gate without a reason.
 
 ## Fixed target identity
 

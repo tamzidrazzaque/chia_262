@@ -80,8 +80,9 @@ container merely because either can compile a driver.
 
 The manager verified AWS metadata and built/accepted the matching driver on
 2026-11-05. `saturn-driver-acceptance.json` records source, generated-file and
-binary identities. The Linux/RVV hardware execution gate remains open; driver
-acceptance is not a hardware correctness or performance result.
+binary identities. The Linux/RVV hardware gate subsequently passed on the exact pair; see
+`saturn-hardware-gate.json`. This is platform correctness evidence, not a SPEC
+or compiler-tuning performance result.
 
 The complete manager-side command sequence and reporting contract are in
 `SATURN_MANAGER_HANDOFF.md`.
