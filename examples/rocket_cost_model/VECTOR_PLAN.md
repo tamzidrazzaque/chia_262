@@ -186,7 +186,8 @@ compiler audit identified the following gates for the next agents:
 | Claim | Current evidence | Decision |
 | --- | --- | --- |
 | Saturn instruction execution | The retained ELF, simulator and log hashes match their manifest; a self-checking RVV+Zvbb test passes on `SingleHartSaturnSmokeConfig`. | Accept only for the tested bare-metal instructions and test boot path. |
-| Standard Saturn target | `MINV128D64RocketConfig` elaborated and its FIRRTL contains Saturn modules; the passing simulator uses a second config that overrides the boot ROM. | Retain exact generated RTL and a build manifest for whichever config becomes the measurement target. |
+| Historical Saturn probe | `MINV128D64RocketConfig` elaborated and its FIRRTL contains Saturn modules; the passing simulator uses a second config that overrides the boot ROM. | Retain as feasibility evidence only; it is not the active measurement target. |
+| Active Saturn target | The official pinned catalog provides `FireSimREFV256D128RocketConfig`, AGFI `agfi-012e92467d7d2149a`, its F2 recipe and source revisions. It publishes no `driver_tar`. | Query and match the AGFI metadata, then build and fingerprint the target-specific driver from the pinned source before accepting measurements. |
 | Installed compiler | GCC 13.2.0 emits RVV intrinsics, but a simple `int` array-add loop compiled with `-O3 -ftree-vectorize -march=rv64gcv_zvbb` remained scalar. | Do not use this compiler as an assumed automatic-vectorization baseline. |
 | Existing compiler builder | `cost_model.py` pins GCC 13 and edits scalar `rocket_tune_info`; the Rocket application path fixes `rv64imafdc` and disables vectorization. | Build a separately pinned vector compiler path after proving a relevant vector cost hook. |
 | Application and measurement | No SPEC run on vector Rocket or vector FireSim image/driver is verified. The scalar Rocket handoff says licensed SPEC access was paused. | Reuse the existing SPEC build and correctness stages first; select the target timing backend after a wall-time and provenance pilot. |
@@ -201,14 +202,14 @@ Work in this order:
    the experiment concerns code generation or scheduling of explicit RVV code;
    show that a bounded model edit changes the final binary before measuring.
    If neither route yields code sensitivity, stop the compiler-cost search.
-2. **Qualify the selected Saturn target.** Continue with Saturn as the chosen
-   vector unit, using `MINV128D64RocketConfig` as the initial configuration
-   because it already has an instruction pass. Record the
-   exact simulator config, boot ROM, memory initialization, RTL, simulator,
-   source revisions and hashes. Verify the configuration and Linux software
-   path needed by SPEC before fixing the final measurement configuration.
-   Report a blocker if Saturn cannot support that path; do not switch vector
-   units within this campaign.
+2. **Qualify the selected Saturn target.** Use upstream
+   `REFV256D128RocketConfig` (VLEN 256, DLEN 128) and its
+   `FireSimREFV256D128RocketConfig` wrapper. Use the recorded official AGFI
+   and source pins, then record the matching built driver, bridge metadata,
+   memory/platform configuration and worker identity. The earlier MINV128D64
+   instruction pass is historical feasibility evidence, not evidence for this
+   target. Report a blocker if the released artifacts cannot be verified; do
+   not silently fall back to scalar Rocket, MegaBOOM or another vector config.
 3. **Reuse the SPEC path.** Check authorized CPU2017 access. Build
    `648.exchange2_s` test/train through `start_workload` with a vector compiler
    prefix and explicit ISA flags, then use the existing QEMU and native SPEC
@@ -249,10 +250,14 @@ a verified vector FireSim backend or stop before performance search.
 
 ## Scope decision: Saturn for Rocket vector research
 
-**Selected implementation:** Saturn attached to one Rocket core. The initial
-configuration is `MINV128D64RocketConfig`, with 128-bit vector length, 64-bit
-datapath width and `VectorParams.minParams`. Its exact simulator and eventual
-measurement configuration must still pass the Linux, SPEC and timing gates.
+**Selected implementation (updated 2026-11-04):** Saturn attached to one Rocket
+core using upstream `REFV256D128RocketConfig`, with VLEN 256 and DLEN 128. The
+measurement wrapper is `FireSimREFV256D128RocketConfig`. This deliberately
+replaces the earlier MINV128D64 probe so the campaign can use the configuration
+that upstream supports in FireSim. The official AGFI, recipe and source pins
+are recorded in `SATURN_FIRESIM.md`. The locally built driver and AWS image metadata,
+platform/memory configuration, Linux, SPEC and timing still must pass their
+acceptance gates.
 
 The installed Chipyard container also contains another Rocket-integrated RVV
 configuration:
@@ -261,18 +266,17 @@ configuration:
   two Ara lanes. Ara is documented here for provenance and is outside the
   active experiment.
 
-The checked-in scalar Rocket image does not contain Saturn. The active
-container's Chipyard, Rocket Chip, and Saturn revisions differ from the scalar
-handoff pins, so this branch will use and record the installed versions as a
-separate target instead of claiming equivalence. Saturn elaboration and a
-bare-metal RVV+Zvbb smoke now pass in Verilator using a test-only one-hart boot
-config; the selected Saturn configuration has no verified application runtime
-or performance image yet. Exact revisions, build and functional evidence, and
-remaining gaps are recorded in
+The checked-in scalar Rocket image does not contain Saturn. The installed
+container's older MINV128D64 evidence and revisions remain separate historical
+evidence and cannot identify the active upstream FireSim target. The active
+target's release revisions, AGFI and driver must be recorded from the matching
+upstream artifact rather than inferred from that container. Exact historical
+evidence and remaining gaps are recorded in
 [the feasibility report](VECTOR_FEASIBILITY.md).
 
-Saturn is the chosen direction because its Rocket configuration is present in
-the pinned source and a bare-metal instruction test passes. Chipyard's
+Saturn remains the chosen direction. The upstream REF configuration and FireSim
+wrapper now determine the measurement target; the bare-metal MINV test only
+establishes earlier Saturn feasibility. Chipyard's
 [Saturn documentation](https://chipyard.readthedocs.io/en/stable/generators/saturn/)
 describes virtual-memory and precise-trap support, which the existing Linux
 SPEC path needs. Chipyard's
@@ -282,9 +286,11 @@ checked against the exact pinned Saturn design and guest; the current smoke
 does not prove Linux application support. The source review did not establish
 a Rocket+Hwacha integration in the pinned tree.
 
-Bind all compiler, manifest and measurement identities to the exact Saturn
-configuration before building the cost model. If a different Saturn parameter
-set is required for SPEC, record it as a new exact target with its own baseline.
+Bind all compiler, manifest and measurement identities to
+`REFV256D128RocketConfig` and its exact FireSim artifact. The pinned GCC accepts
+only `scalable` or `zvl` for `-mrvv-vector-bits`, not a fixed value of 256, so
+the compiler path remains vector-length agnostic while QEMU correctness uses
+VLEN 256. Any later parameter change creates a new target and baseline.
 
 Do not treat `-march=rv64gcv`, a compiler flag, or a configuration name as
 proof that matching hardware and software exist. If Saturn cannot be built and
@@ -294,19 +300,22 @@ vector-capable.
 
 ## Phase 0: establish target feasibility
 
-1. Verify the selected Saturn Rocket configuration in the installed Chipyard
-   and Saturn revisions. Record its vector parameters, supported extensions,
-   virtual-memory and trap behavior, and required Linux runtime support from
-   source and executable checks. Confirm whether `MINV128D64RocketConfig`
-   can support the SPEC path or document a new exact Saturn configuration.
-2. Find an exact matching simulation or FPGA target. Record its configuration,
-   ISA/extension, vector parameters (such as VLEN/ELEN when applicable),
-   memory/platform settings, exact simulator RTL/binary and boot inputs, or
-   FPGA image and driver/build provenance, and execution-worker identity.
+1. Verify upstream `REFV256D128RocketConfig` and
+   `FireSimREFV256D128RocketConfig`. Record their release revisions, vector
+   parameters, supported extensions, virtual-memory/trap behavior and Linux
+   runtime support from source and executable checks. Do not transfer the
+   installed MINV128D64 probe's executable claims to this target.
+2. Use the discovered official F2 target and AGFI recorded in
+   `saturn-firesim-discovery.json`. In an AWS-authenticated manager, verify its
+   image description and build the exact driver from the pinned source. Record
+   its configuration, ISA/extension, vector parameters (such as VLEN/ELEN when
+   applicable), memory/platform settings, exact simulator RTL/binary and boot
+   inputs, or FPGA image and driver/build provenance, and execution-worker identity.
    Distinguish source-derived facts from verified build facts and measured facts.
-3. Check whether the image and driver are available and compatible with the
-   execution environment. Do not assume the public scalar Rocket F2 image or
-   the MegaBOOM image is reusable.
+3. Check whether the image and locally built driver are compatible with the
+   execution environment. The catalog does not publish a `driver_tar`; this is
+   an explicit build-and-verify step, not a missing hardware-image search. Do
+   not assume the public scalar Rocket F2 image or MegaBOOM driver is reusable.
 4. Define a target-specific manifest and preflight. Reject mismatched hardware,
    toolchain, runtime, or worker identities before building or measuring.
 5. Decide the fallback and stop condition if no matching simulator or image,

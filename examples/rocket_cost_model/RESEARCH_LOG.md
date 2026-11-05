@@ -211,8 +211,10 @@ planning a vector application or measurement campaign.
 
 ## 14. Saturn selection (2026-11-04)
 
-The experiment direction is now Rocket plus Saturn. The initial configuration
-to qualify is `MINV128D64RocketConfig`; Ara is outside the active campaign.
+At this point in the trace, the direction became Rocket plus Saturn and
+`MINV128D64RocketConfig` was the initial configuration to qualify. Section 16
+supersedes that exact target with the upstream REFV256D128 FireSim target; Ara
+remains outside the active campaign.
 This selects a vector-unit implementation, not a verified Linux SPEC target.
 Next, reuse the existing CHIA SPEC build and correctness path for Exchange2,
 verify a vector-capable compiler and guest, and qualify an exact Saturn timing
@@ -240,3 +242,39 @@ Implementation and sanitized status are in `spec_vector_baseline.py`,
 `vector_cost_model.py`, `roles_123_chia.py`, and `ROLE_123_STATUS.md`. Private
 SPEC configs, logs, binaries, candidate frontends, and the full machine-readable
 summary remain outside Git in the authorized research directories.
+
+## 16. Upstream FireSim target selection (2026-11-04)
+
+The active measurement target changed from the local MINV128D64 feasibility
+probe to upstream `REFV256D128RocketConfig` and its
+`FireSimREFV256D128RocketConfig` wrapper. This is a deliberate hardware-target
+change to follow the configuration supported by upstream FireSim, not a claim
+that the two configurations are equivalent.
+
+The first roles 1-3 run remains valid correctness and compiler-sensitivity
+evidence, but it used QEMU VLEN 128 and is not the frozen baseline for the new
+target. Future manifests require VLEN 256/DLEN 128 and the exact FireSim config.
+The old role-3.1 rationale and target identity are retired from active scoring.
+Before measurement, verify the released AGFI, matching driver, Chipyard,
+FireSim and Saturn revisions, bridge metadata, memory/platform configuration
+and worker. The pinned GCC 15 supports vector-length-agnostic `zvl`/`scalable`
+code only; it rejects a fixed `-mrvv-vector-bits=256` option.
+
+## 17. Official Saturn F2 image and driver path found (2026-11-04)
+
+The pinned Chipyard catalog at
+`f503763b0c702ac3c423e58d8cc9d0975796a8c2` contains the exact single-core
+Saturn Rocket target under
+`firesim_saturn_REFV256D128_rocket_singlecore_no_nic_l2_llc4mb_ddr3`, with
+AGFI `agfi-012e92467d7d2149a`. Its recipe uses
+`FireSimREFV256D128RocketConfig`,
+`WithAutoILA_FRFCFS16GBQuadRankLLC4MB_BaseF2Config`, and 60 MHz.
+
+The release pins FireSim `b2211da3b1a57dbf6f601629fbe52490e22827a8`,
+Saturn `dfe75de2a8868d51d42c20612821431a9fcf645e`, and Rocket Chip
+`55bcad0f59436de98ea510334121de8546b9e9d7`. The catalog does not contain a
+`driver_tar`; official FireSim behavior is to build the target-specific host
+driver with `firesim builddriver`. The current host has no usable AWS
+credentials, so the AGFI description and resulting driver have not been
+accepted yet. Exact evidence and the acceptance steps are recorded in
+`saturn-firesim-discovery.json` and `SATURN_FIRESIM.md`.

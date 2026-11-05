@@ -17,11 +17,15 @@ does not vectorize even a simple integer-add loop under explicit vectorization
 flags. The intrinsic smoke does not establish a viable automatic-vectorization
 cost-model baseline.
 
-**Direction selected on 2026-11-04:** use Saturn as the Rocket vector unit for
-this campaign. `MINV128D64RocketConfig` is the first configuration to qualify
-for SPEC; the final simulator or FPGA target still requires exact build,
-runtime and correctness evidence. Ara remains a historical source-level
-comparison, outside the active campaign.
+**Direction updated on 2026-11-04:** use upstream
+`REFV256D128RocketConfig` (VLEN 256, DLEN 128) and its
+`FireSimREFV256D128RocketConfig` wrapper as the active target. This replaces
+the earlier MINV128D64 selection so the campaign follows the Saturn
+configuration supported by upstream FireSim. The official catalog provides
+AGFI `agfi-012e92467d7d2149a`, its F2 recipe, and pinned source revisions. It
+does not publish a `driver_tar`; the exact driver must be built and accepted
+from those pins. See `SATURN_FIRESIM.md` and `saturn-firesim-discovery.json`.
+Ara remains outside the active campaign.
 
 **Loop-A preparation update on 2026-11-04:** the real unchanged-SPEC
 `648.exchange2_s` test workload now builds and passes SPEC validation for the
@@ -30,6 +34,8 @@ cost candidate. The candidate changes the final application ELF, so the
 compiler-cost hook is feasible for this workload. This remains correctness and
 static code-generation evidence only; the CHIA result has no Saturn timing
 backend and makes no speedup claim. See [the roles 1-3 status](ROLE_123_STATUS.md).
+Because that run used QEMU VLEN 128 metadata, it is retained as feasibility
+evidence and must not be reused as the frozen VLEN 256 baseline.
 
 The current scalar Rocket target remains separate. Its documented
 `RocketConfig`, `rv64imafdc` toolchain, image discovery, and driver evidence do
@@ -44,7 +50,8 @@ only.
 | Candidate | Source revisions in installed container | Rocket configuration and parameters | Status |
 |---|---|---|---|
 | Ara | Chipyard `ad07481af487c44c9f0545db39f9c16cabdecc77`; Ara `96daf15d3c54ac4975ea2bdc869f95bccdf90a1e` | `V4096Ara2LaneRocketConfig`; `WithAraRocketVectorUnit(4096, 2)` and one `Rocket` core | Source-level comparison only; outside the selected Saturn campaign |
-| Saturn | Chipyard `ad07481af487c44c9f0545db39f9c16cabdecc77`; Saturn `2dae15d16bebe10f413ea39bdd18aa402eb419dd` | `MINV128D64RocketConfig`; `WithRocketVectorUnit(128, 64, VectorParams.minParams)` and one `Rocket` core | Selected vector unit and initial config; elaboration and a self-checking bare-metal RVV+Zvbb smoke pass on Verilator using an equivalent one-hart config with a test-only boot ROM; normal boot, runtime, application, and performance remain unverified |
+| Historical Saturn probe | Chipyard `ad07481af487c44c9f0545db39f9c16cabdecc77`; Saturn `2dae15d16bebe10f413ea39bdd18aa402eb419dd` | `MINV128D64RocketConfig`; `WithRocketVectorUnit(128, 64, VectorParams.minParams)` and one `Rocket` core | Elaboration and bare-metal RVV+Zvbb pass; no longer the active measurement target |
+| Active Saturn target | Chipyard `f503763b0c702ac3c423e58d8cc9d0975796a8c2`; FireSim `b2211da3b1a57dbf6f601629fbe52490e22827a8`; Saturn `dfe75de2a8868d51d42c20612821431a9fcf645e`; Rocket Chip `55bcad0f59436de98ea510334121de8546b9e9d7` | `REFV256D128RocketConfig`, VLEN 256/DLEN 128; `FireSimREFV256D128RocketConfig`; AGFI `agfi-012e92467d7d2149a` | Official image and recipe found; AWS description, locally built matching driver, Linux/SPEC execution and timing remain unverified |
 
 The installed container also has Rocket Chip `2f1c549d061f7d6e7fd209ff8b322d0940d200b6`.
 The container image used was `ghcr.io/ucb-chia/chia-chipyard:latest`, with local
@@ -77,15 +84,13 @@ supports choosing it for this branch.
 ## First implementation probe
 
 Saturn `MINV128D64RocketConfig` was selected for the first elaboration and
-functional probe and is now the initial configuration for the Saturn campaign.
+functional probe but is no longer the active configuration for the campaign.
 It combines one Rocket core with a 128-bit vector length and 64-bit data width.
 Saturn's source declares `zvbb`, and the tested GCC
 supports the smoke program's required ISA flags. The elaboration and
 instruction-level functional gates now pass with the test-only boot setup
-described below. This pragmatic probe does not establish that a matching
-application compiler/runtime or performance target is available. If the exact
-configuration cannot support SPEC, document the blocker or qualify another
-Saturn configuration with a separate manifest and baseline.
+described below. This historical probe does not establish claims for the
+active REFV256D128 FireSim target.
 
 ## Current checkout and evidence gaps
 

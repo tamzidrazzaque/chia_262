@@ -1,11 +1,16 @@
 """The private SPEC roles 1-3 must preserve their controlled variables."""
 
+import json
 from pathlib import Path
 import unittest
 
 from examples.rocket_cost_model.spec_vector_baseline import (
     GENERATED,
     SCALAR_FLAGS,
+    TARGET_CONFIG,
+    TARGET_DLEN,
+    TARGET_FIRESIM_CONFIG,
+    TARGET_VLEN,
     VECTOR_FLAGS,
     candidate_name,
     render_config,
@@ -26,6 +31,15 @@ default:
 
 
 class VectorSpecBaselineTests(unittest.TestCase):
+    def test_official_firesim_discovery_matches_selected_target(self):
+        discovery_path = Path(__file__).parents[1] / "saturn-firesim-discovery.json"
+        discovery = json.loads(discovery_path.read_text())
+        self.assertEqual(discovery["recipe"]["TARGET_CONFIG"], TARGET_FIRESIM_CONFIG)
+        self.assertEqual(discovery["catalog"]["AGFI"], "agfi-012e92467d7d2149a")
+        self.assertEqual(discovery["driver"]["status"], "must_build_from_pinned_source")
+        self.assertFalse(discovery["driver"]["matching_source_verified"])
+        self.assertFalse(discovery["hardware_execution_verified"])
+
     def test_role1_is_scalar_and_disables_both_vectorizers(self):
         label, flags, vector_qemu = role_settings("1-scalar")
         self.assertEqual(label, "saturn_role1_scalar")
@@ -73,7 +87,10 @@ class VectorSpecBaselineTests(unittest.TestCase):
         self.assertIn("%define label saturn_role2_generic_vector", config)
         self.assertIn("ignore_errors        = 0", config)
         self.assertIn("use_submit_for_speed = yes", config)
-        self.assertIn("-cpu rv64,v=true,vlen=128,elen=64 ${command}", config)
+        self.assertEqual(TARGET_CONFIG, "REFV256D128RocketConfig")
+        self.assertEqual(TARGET_FIRESIM_CONFIG, "FireSimREFV256D128RocketConfig")
+        self.assertEqual((TARGET_VLEN, TARGET_DLEN), (256, 128))
+        self.assertIn("-cpu rv64,v=true,vlen=256,elen=64 ${command}", config)
         self.assertNotIn("rv64imafdc", config)
 
     def test_scalar_config_does_not_request_vector_qemu(self):

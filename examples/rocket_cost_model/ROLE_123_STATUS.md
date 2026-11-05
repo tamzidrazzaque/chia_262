@@ -1,5 +1,12 @@
 # Unchanged-SPEC roles 1-3 status
 
+> **Superseded target notice (2026-11-04):** this run used the earlier VLEN
+> 128 correctness target. The active campaign now selects upstream
+> `REFV256D128RocketConfig` and its `FireSimREFV256D128RocketConfig` wrapper.
+> The results below remain compiler-sensitivity evidence, but roles 2 and 3
+> are not frozen baselines for the new target and must be regenerated with
+> VLEN 256 correctness metadata before hardware measurement.
+
 ## Result on 2026-11-04
 
 The first CHIA preparation run for loop A completed for the real licensed SPEC
@@ -39,12 +46,12 @@ outside Git.
 - QEMU with VLEN 128 is a functional gate only. No target cycles or target
   performance result have been collected.
 
-## Next gate
+## Next gate for the active target
 
-Do not select role 3.1 as an optimization yet. First connect and qualify an
-exact `MINV128D64RocketConfig` Saturn timing backend that can execute the same
-workload identity, or run a bounded pilot proving that the selected application
-path is tractable. Then measure frozen role 2 and role 3.1 with paired fresh
-runs and score target cycles. Only exact-target measurements may accept,
-reject, or train the next role-3 proposal. Expand from test to train only after
-the timing pilot passes its wall-time and provenance gates.
+Do not select the old role 3.1 as an optimization. The official image has now
+been identified as AGFI `agfi-012e92467d7d2149a`; see `SATURN_FIRESIM.md`.
+Next verify its AWS description, build and fingerprint the matching driver from
+the pinned source, freeze its memory/platform and worker identities, and
+regenerate roles 2 and 3 under the VLEN 256 target metadata. Then measure them
+with paired fresh runs and score target cycles. Only exact-target measurements
+may accept, reject, or train the next role-3 proposal.
