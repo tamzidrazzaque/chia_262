@@ -7,7 +7,7 @@
     "url": "https://github.com/ucb-bar/chipyard/blob/f503763b0c702ac3c423e58d8cc9d0975796a8c2/sims/firesim-staging/sample_config_hwdb.yaml",
     "sha256": "80a2e8c7a77693e310f3fa1c8a9672efb0ad900fcc2f09edfb4800a36bd32604",
     "AGFI": "agfi-012e92467d7d2149a",
-    "AFI": null,
+    "AFI": "afi-0d72fa6baed12e032",
     "AWS_metadata_verified": false
   },
   "recipe": {
@@ -45,5 +45,22 @@
     "The public Chipyard catalog provides the AGFI but no driver_tar field.",
     "FireSim builds the host driver locally when driver_tar is absent.",
     "Query the AGFI description in an AWS-authenticated environment and require its deploy quintuplet and FireSim commit to match this record before accepting the driver."
-  ]
+  ],
+  "manager_metadata_check": {
+    "date_utc": "2026-11-05",
+    "region": "us-east-1",
+    "state": "available",
+    "public": true,
+    "shell": "0x10212415",
+    "AFI": "afi-0d72fa6baed12e032",
+    "AGFI": "agfi-012e92467d7d2149a",
+    "deploy_quintuplet": "f2-firesim-FireSim-FireSimREFV256D128RocketConfig-WithAutoILA_FRFCFS16GBQuadRankLLC4MB_BaseF2Config",
+    "deploy_quintuplet_matches": true,
+    "observed_FireSim_revision": "b7927ea504c501194eaec3e993c415f2270170f8",
+    "required_FireSim_revision": "b2211da3b1a57dbf6f601629fbe52490e22827a8",
+    "FireSim_revision_matches": false,
+    "status": "blocked_source_revision_mismatch",
+    "driver_build_started": false,
+    "hardware_execution_started": false
+  }
 }
