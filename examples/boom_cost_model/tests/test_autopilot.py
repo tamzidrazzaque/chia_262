@@ -196,6 +196,16 @@ def test_mechanistic_treatments_preserve_inline_anchor_and_reject_nested_ablatio
     with pytest.raises(ValueError,match='without a pass ablation'):autopilot.mechanistic_seeds(anchor)
 
 
+def test_direct_planner_honors_requested_model_without_mutating_legacy_base(tmp_path,monkeypatch):
+    directory=source(tmp_path);review=autopilot.review(directory);base=config()
+    monkeypatch.setattr(autopilot,'confirmed_anchor',lambda *_:(None,review['selected']))
+    planned=autopilot.plan(base,[review],tmp_path/'next',{'deadline_mode':True,
+        'llm_model':'claude-opus-5-5','llm_effort':'xhigh',
+        'round_overrides':{'1':{'target':'648.exchange2_s','family':'mechanistic-portfolio'}}})
+    assert planned['model']=='claude-opus-5-5' and planned['llm_effort']=='xhigh'
+    assert base['model']=='test' and 'llm_effort' not in base
+
+
 def test_delta_projection_changes_only_allowed_axes_and_copies_anchor():
     api = AdaptiveProposals(config())
     value=api.project({'branch_cost':4,'growth_budget':'relaxed'},'Test the branch/growth interaction.')

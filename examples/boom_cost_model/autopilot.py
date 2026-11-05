@@ -229,6 +229,13 @@ def plan(base, reviews, directory, settings=None):
     target, family = choose_domain(reviews, settings)
     source, selected = confirmed_anchor(reviews, target, base)
     cfg = deepcopy(base)
+    # Direct preparation/handoff callers must inherit the requested LLM policy
+    # just as supervise() does; never write a legacy model into a queued run.
+    if settings:
+        if settings.get('llm_model'):
+            cfg['model'] = settings['llm_model']
+        if settings.get('llm_effort'):
+            cfg['llm_effort'] = settings['llm_effort']
     for name in ('cost_seeds', 'adaptive_seeds', 'incumbent_run', 'incumbent_result_sha256',
                  'incumbent_compiler_id', 'incumbent_supporting_runs'):
         cfg.pop(name, None)
