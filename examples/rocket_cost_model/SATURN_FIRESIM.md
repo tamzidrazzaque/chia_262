@@ -65,7 +65,7 @@ container merely because either can compile a driver.
 
    Paths depend on whether the command is run from `sims/firesim/deploy` or a
    manager directory; the pinned files and catalog name must not change.
-4. Record the resulting `FireSim-f2` SHA-256, generated-header hashes, dynamic
+4. Record the resulting `FireSim` SHA-256, generated-header hashes, dynamic
    library dependencies, source status and exact revisions. Package it as a
    `driver_tar` only after those checks pass.
 5. On an F2 worker, run a minimal boot and RVV correctness test before SPEC.
@@ -74,3 +74,6 @@ container merely because either can compile a driver.
 The current host has no usable AWS credentials, so step 1 and the actual driver
 build have not been claimed as complete. The official image discovery is
 complete; the matching-driver acceptance gate is still open.
+
+The complete manager-side command sequence and reporting contract are in
+`SATURN_MANAGER_HANDOFF.md`.

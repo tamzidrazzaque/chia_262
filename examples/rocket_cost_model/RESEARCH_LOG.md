@@ -278,3 +278,18 @@ driver with `firesim builddriver`. The current host has no usable AWS
 credentials, so the AGFI description and resulting driver have not been
 accepted yet. Exact evidence and the acceptance steps are recorded in
 `saturn-firesim-discovery.json` and `SATURN_FIRESIM.md`.
+
+## 18. Exact source staged and F2-manager handoff prepared (2026-11-04)
+
+An isolated ignored checkout under `.vector-validation/chipyard-f503763b`
+verified the exact processor config, FireSim wrapper, official recipe and
+catalog entry. The relevant Chipyard, FireSim, Saturn, Rocket Chip and F2 SDK
+pins all matched the discovery record, and the inspected source trees were
+clean. The installed `ghcr.io/ucb-chia/chia-chipyard:latest` image is older and
+does not contain the selected configuration, so it must not build the driver.
+
+The large source checkout, generated artifacts and licensed inputs remain
+outside Git. `SATURN_MANAGER_HANDOFF.md` now gives the agent on the
+AWS-authenticated manager the exact read-only AGFI check, clean setup,
+`firesim builddriver` command, expected output, evidence requirements, boot
+gate and stop conditions.

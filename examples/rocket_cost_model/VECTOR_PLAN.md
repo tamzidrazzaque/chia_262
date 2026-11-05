@@ -316,6 +316,8 @@ vector-capable.
    execution environment. The catalog does not publish a `driver_tar`; this is
    an explicit build-and-verify step, not a missing hardware-image search. Do
    not assume the public scalar Rocket F2 image or MegaBOOM driver is reusable.
+   Follow `SATURN_MANAGER_HANDOFF.md` on the authenticated F2 manager and
+   report driver build and verification as separate outcomes.
 4. Define a target-specific manifest and preflight. Reject mismatched hardware,
    toolchain, runtime, or worker identities before building or measuring.
 5. Decide the fallback and stop condition if no matching simulator or image,
