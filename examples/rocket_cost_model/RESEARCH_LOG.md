@@ -262,7 +262,7 @@ code only; it rejects a fixed `-mrvv-vector-bits=256` option.
 
 ## 17. Official Saturn F2 image and driver path found (2026-11-04)
 
-The pinned Chipyard catalog at
+The Chipyard catalog publication at
 `f503763b0c702ac3c423e58d8cc9d0975796a8c2` contains the exact single-core
 Saturn Rocket target under
 `firesim_saturn_REFV256D128_rocket_singlecore_no_nic_l2_llc4mb_ddr3`, with
@@ -270,26 +270,43 @@ AGFI `agfi-012e92467d7d2149a`. Its recipe uses
 `FireSimREFV256D128RocketConfig`,
 `WithAutoILA_FRFCFS16GBQuadRankLLC4MB_BaseF2Config`, and 60 MHz.
 
-The release pins FireSim `b2211da3b1a57dbf6f601629fbe52490e22827a8`,
-Saturn `dfe75de2a8868d51d42c20612821431a9fcf645e`, and Rocket Chip
+AWS subsequently established that the image embeds FireSim
+`b7927ea504c501194eaec3e993c415f2270170f8`. Its matching Chipyard build
+source is the publication commit's immediate parent,
+`19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe`, with Saturn
+`dfe75de2a8868d51d42c20612821431a9fcf645e` and Rocket Chip
 `55bcad0f59436de98ea510334121de8546b9e9d7`. The catalog does not contain a
 `driver_tar`; official FireSim behavior is to build the target-specific host
 driver with `firesim builddriver`. The current host has no usable AWS
-credentials, so the AGFI description and resulting driver have not been
-accepted yet. Exact evidence and the acceptance steps are recorded in
+credentials, but the manager has now verified the AGFI description. The
+resulting driver has not been built or accepted yet. Exact evidence and the acceptance steps are recorded in
 `saturn-firesim-discovery.json` and `SATURN_FIRESIM.md`.
 
 ## 18. Exact source staged and F2-manager handoff prepared (2026-11-04)
 
 An isolated ignored checkout under `.vector-validation/chipyard-f503763b`
-verified the exact processor config, FireSim wrapper, official recipe and
-catalog entry. The relevant Chipyard, FireSim, Saturn, Rocket Chip and F2 SDK
-pins all matched the discovery record, and the inspected source trees were
-clean. The installed `ghcr.io/ucb-chia/chia-chipyard:latest` image is older and
-does not contain the selected configuration, so it must not build the driver.
+verified the processor config, FireSim wrapper, official recipe and catalog
+entry. It established the publication state but, as section 19 records, its
+post-publication FireSim pin is not the image's driver source. The installed
+`ghcr.io/ucb-chia/chia-chipyard:latest` image is older and does not contain the
+selected configuration, so it must not build the driver either.
 
 The large source checkout, generated artifacts and licensed inputs remain
 outside Git. `SATURN_MANAGER_HANDOFF.md` now gives the agent on the
 AWS-authenticated manager the exact read-only AGFI check, clean setup,
 `firesim builddriver` command, expected output, evidence requirements, boot
 gate and stop conditions.
+
+## 19. Published-image source provenance reconciled (2026-11-05)
+
+The manager correctly stopped when AWS reported FireSim `b7927ea...` rather
+than the originally documented `b2211da...`. Upstream history explains the
+difference: catalog commit `f503763b...` has parent `19a07f6...`, which pins
+the AWS-reported `b7927ea...`. The child commit simultaneously adds the new
+AGFI/recipe entries and advances FireSim by one small follow-up commit. Saturn,
+Rocket Chip, the FireSim target wrapper and its file hash, and the F2 SDK are
+unchanged across the boundary.
+
+The corrected driver build source is therefore Chipyard `19a07f6...` with
+FireSim `b7927ea...`; `f503763b...` remains the catalog-publication reference.
+The metadata gate is resolved, but no driver build or hardware run has occurred.

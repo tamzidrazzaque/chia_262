@@ -36,6 +36,16 @@ class VectorSpecBaselineTests(unittest.TestCase):
         discovery = json.loads(discovery_path.read_text())
         self.assertEqual(discovery["recipe"]["TARGET_CONFIG"], TARGET_FIRESIM_CONFIG)
         self.assertEqual(discovery["catalog"]["AGFI"], "agfi-012e92467d7d2149a")
+        self.assertTrue(discovery["catalog"]["AWS_metadata_verified"])
+        self.assertEqual(
+            discovery["source"]["Chipyard_revision"],
+            "19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe",
+        )
+        self.assertEqual(
+            discovery["source"]["FireSim_revision"],
+            discovery["manager_metadata_check"]["observed_FireSim_revision"],
+        )
+        self.assertTrue(discovery["manager_metadata_check"]["FireSim_revision_matches"])
         self.assertEqual(discovery["driver"]["status"], "must_build_from_pinned_source")
         self.assertFalse(discovery["driver"]["matching_source_verified"])
         self.assertFalse(discovery["hardware_execution_verified"])

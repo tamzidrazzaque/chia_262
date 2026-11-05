@@ -21,11 +21,18 @@ REF configuration. It is not the scalar Rocket image and it is not the earlier
 local `MINV128D64RocketConfig` probe.
 
 The catalog entry first appears in Chipyard commit
-`f503763b0c702ac3c423e58d8cc9d0975796a8c2`, which pins:
+`f503763b0c702ac3c423e58d8cc9d0975796a8c2`. AWS metadata shows that the image
+was built from its immediate parent, Chipyard
+`19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe`, which pins:
 
-- FireSim `b2211da3b1a57dbf6f601629fbe52490e22827a8`
+- FireSim `b7927ea504c501194eaec3e993c415f2270170f8`
 - Saturn `dfe75de2a8868d51d42c20612821431a9fcf645e`
 - Rocket Chip `55bcad0f59436de98ea510334121de8546b9e9d7`
+
+The publication commit added the finished AGFI/recipe and advanced FireSim to
+`b2211da3...` in the same change. That newer submodule pin is not the image's
+driver provenance. The target wrapper, Saturn and Rocket revisions, target
+configuration hash and F2 SDK are unchanged across the two commits.
 
 The machine-readable evidence is in `saturn-firesim-discovery.json`.
 
@@ -59,12 +66,12 @@ container merely because either can compile a driver.
    ```bash
    firesim builddriver \
      --runtimeconfigfile config_runtime.yaml \
-     --buildrecipesconfigfile ../../firesim-staging/sample_config_build_recipes.yaml \
-     --hwdbconfigfile ../../firesim-staging/sample_config_hwdb.yaml
+     --buildrecipesconfigfile config_build_recipes.yaml \
+     --hwdbconfigfile config_hwdb.yaml
    ```
 
-   Paths depend on whether the command is run from `sims/firesim/deploy` or a
-   manager directory; the pinned files and catalog name must not change.
+   Run this from `sims/firesim/deploy` after adding the official AGFI entry to
+   the manager-generated `config_hwdb.yaml`, as specified in the manager handoff.
 4. Record the resulting `FireSim` SHA-256, generated-header hashes, dynamic
    library dependencies, source status and exact revisions. Package it as a
    `driver_tar` only after those checks pass.

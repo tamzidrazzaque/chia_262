@@ -15,14 +15,21 @@ historical `MINV128D64RocketConfig` probe.
 - AGFI: `agfi-012e92467d7d2149a`
 - expected deploy quintuplet:
   `f2-firesim-FireSim-FireSimREFV256D128RocketConfig-WithAutoILA_FRFCFS16GBQuadRankLLC4MB_BaseF2Config`
-- Chipyard: `f503763b0c702ac3c423e58d8cc9d0975796a8c2`
-- FireSim: `b2211da3b1a57dbf6f601629fbe52490e22827a8`
+- Chipyard build source: `19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe`
+- FireSim build source: `b7927ea504c501194eaec3e993c415f2270170f8`
 - Saturn: `dfe75de2a8868d51d42c20612821431a9fcf645e`
 - Rocket Chip: `55bcad0f59436de98ea510334121de8546b9e9d7`
 - F2 SDK: `80b34d3c25aff03353c0b4f2d304bb6067a5011d`
+- catalog publication: `f503763b0c702ac3c423e58d8cc9d0975796a8c2`
 
 The target is one Rocket core with Saturn `VectorParams.refParams`, VLEN 256,
 DLEN 128, and a 128-bit system bus.
+
+The catalog-publication commit is not the driver source revision. Its immediate
+parent is the build-source revision above. The publication commit adds the
+finished AGFI and F2 recipe while simultaneously advancing FireSim by one
+follow-up commit. AWS embeds the parent's `b7927ea...` revision in the image,
+so the parent is authoritative for the matching driver.
 
 ## 1. Inspect the manager before changing it
 
@@ -63,9 +70,9 @@ below is an example; change it explicitly if the manager uses a different data
 volume.
 
 ```bash
-SATURN_MANAGER_ROOT=/scratch/trazzaque/chipyard-saturn-f503763b
+SATURN_MANAGER_ROOT=/scratch/trazzaque/chipyard-saturn-19a07f6
 git clone https://github.com/ucb-bar/chipyard.git "$SATURN_MANAGER_ROOT"
-git -C "$SATURN_MANAGER_ROOT" checkout --detach f503763b0c702ac3c423e58d8cc9d0975796a8c2
+git -C "$SATURN_MANAGER_ROOT" checkout --detach 19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe
 cd "$SATURN_MANAGER_ROOT"
 ./build-setup.sh
 ```
@@ -118,6 +125,20 @@ target_config:
 Do not replace the rest of the manager-generated run-farm configuration with
 this excerpt.
 
+The matching source revision predates publication of the catalog entry. Add
+the following official entry from the publication commit to the generated
+`config_hwdb.yaml`:
+
+```yaml
+firesim_saturn_REFV256D128_rocket_singlecore_no_nic_l2_llc4mb_ddr3:
+  agfi: agfi-012e92467d7d2149a
+  deploy_quintuplet_override: null
+  deploy_makefrag_override: ../../generators/firechip/chip/src/main/makefrag/firesim
+  custom_runtime_config: null
+```
+
+This is manager configuration, not a change to the pinned hardware source.
+
 ## 5. Build only the matching driver
 
 From `sims/firesim/deploy`:
@@ -125,8 +146,8 @@ From `sims/firesim/deploy`:
 ```bash
 firesim builddriver \
   --runtimeconfigfile config_runtime.yaml \
-  --buildrecipesconfigfile ../../firesim-staging/sample_config_build_recipes.yaml \
-  --hwdbconfigfile ../../firesim-staging/sample_config_hwdb.yaml
+  --buildrecipesconfigfile config_build_recipes.yaml \
+  --hwdbconfigfile config_hwdb.yaml
 ```
 
 This should build locally on the manager without launching an F2 worker. It

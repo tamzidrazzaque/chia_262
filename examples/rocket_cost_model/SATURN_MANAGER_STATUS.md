@@ -1,6 +1,6 @@
 # Manager takeover status
 
-Outcome: **blocked** at the released-image metadata gate, 2026-11-05.
+Outcome: **source provenance resolved; driver build pending**, 2026-11-05.
 
 The branch was fetched into a separate clean worktree at
 `/home/ubuntu/cs262_compiler/chia_262-saturn`; scalar work was preserved.
@@ -22,15 +22,17 @@ contains `firesim-commit:b7927ea504c501194eaec3e993c415f2270170f8`, while the
 handoff and discovery source pin require
 `b2211da3b1a57dbf6f601629fbe52490e22827a8`.
 
-This is an identity check failure, not a command execution error.
-`matching_source_verified` and `hardware_execution_verified` remain false.
-`AWS_metadata_verified` remains false because the complete expected identity
-was not verified; individual observed facts are in `manager_metadata_check`.
+The stop was correct: this was an identity check failure, not a command error.
+Subsequent upstream-history review resolved it. Catalog commit `f503763b...`
+has immediate parent `19a07f6...`, which pins the AWS-reported FireSim
+`b7927ea...`. The child commit both publishes the new AGFI/recipe and advances
+FireSim to `b2211da...`; the catalog commit's submodule pin is therefore not
+the already-built image's provenance. Saturn, Rocket Chip, the target wrapper,
+target-config hash and F2 SDK are unchanged.
 
-Next: reconcile the catalog/source history with the published image metadata.
-Determine whether a matching released image exists for the required source, or
-recover and review the exact source/configuration for the published image.
-Document the evidence before changing the target pins. Do not simply substitute
-the observed FireSim revision, accept the driver, or launch the RVV boot gate.
-Once resolved, resume step 3 of SATURN_MANAGER_HANDOFF.md in a separate exact
-Chipyard checkout using its official setup path.
+AWS metadata is now accepted. `matching_source_verified` remains false until
+the driver is built and checked, and `hardware_execution_verified` remains
+false. Resume step 3 of `SATURN_MANAGER_HANDOFF.md` using Chipyard
+`19a07f6b8d4d1db81f5561d9aeceb2cdc43407fe` and FireSim
+`b7927ea504c501194eaec3e993c415f2270170f8`. No driver or hardware run has yet
+started.
