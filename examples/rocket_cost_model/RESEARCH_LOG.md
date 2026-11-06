@@ -327,3 +327,15 @@ requires an independent exact-output hash. The corrected role-2 binary contains
 5,452 static RVV instructions and matches the 855-byte official output at VLEN
 256. A deterministic private roles 1/2 handoff archive was created for manager
 staging; licensed contents remain outside Git.
+
+## 21. Complete manager bundle contract produced (2026-11-05)
+
+The manager's fail-closed intake correctly quarantined the first combined tar
+because it lacked explicit compiler, ISA and validated-invocation sidecars.
+The producer now emits one content-addressed private directory per role without
+rebuilding either ELF. Each directory binds the exact `exchange2_s 0`
+invocation, official inputs and exact output, stock compiler identity, ISA
+audit, and original SPEC validation log. Both generated directories pass the
+same independent verifier used by manager intake. Their manifest identities
+are recorded in `SATURN_SPEC_LANE.md`; transfer and hardware execution remain
+pending.

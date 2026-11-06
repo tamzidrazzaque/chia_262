@@ -71,6 +71,41 @@ by this lane. Rebase d120225 also documents why an empty Exchange2 output cannot
 be accepted solely from a successful specdiff/harness status; this lane requires
 nonempty exact expected output bytes and hashes.
 
+## Complete producer directories (2026-11-05)
+
+The software host has now generated the complete per-role directory contract
+from the same frozen ELFs and validated SPEC runs; it did not rebuild GCC or
+SPEC. Both directories pass this lane's real `verify()` implementation locally,
+including independent pinned readelf/objdump inspection:
+
+```text
+role 1 manifest: 72464d772d5afeace52483643605b4d0e0f48b67a29901858a5d0d29dc9702b2
+role 2 manifest: 44ac81c9cb45df7ccf2c87abfcfe8f6f8378a949a9963cb8fb9654683a90bf89
+```
+
+The private source directories are under
+`/home/eecs/trazzaque/spec2017-research/results/saturn-vlen256-manager-bundles/`
+on the software host. They have not yet been transferred or admitted by the
+manager. Transfer each directory atomically to the corresponding manifest-named
+private incoming directory and communicate the manifest digest separately.
+The earlier six-member tar remains useful only as quarantined provenance and
+must not be staged.
+
+The producer command is:
+
+```bash
+python3 -m examples.rocket_cost_model.produce_saturn_spec_bundle \
+  --spec-dir /home/eecs/trazzaque/spec2017-research/install \
+  --evidence /home/eecs/trazzaque/spec2017-research/results/saturn-vlen256-baselines \
+  --output-root /home/eecs/trazzaque/spec2017-research/results/saturn-vlen256-manager-bundles \
+  --toolchain /home/eecs/trazzaque/spec2017-research/toolchain \
+  --role 1-scalar
+```
+
+Repeat with `--role 2-generic-vector`. The producer binds `./program 0`, the
+implicit `puzzles.txt` and `control` inputs, redirected stdout/stderr, exact
+`s.txt`, compiler identity, ISA audit and original private SPEC validation log.
+
 ## Exact incoming contract
 
 The machine-readable contract is

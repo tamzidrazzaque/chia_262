@@ -6,8 +6,11 @@ from pathlib import Path
 import tempfile
 import tarfile
 import unittest
+from unittest.mock import patch
 
 from examples.rocket_cost_model.bundle_spec_roles import create_bundle
+from examples.rocket_cost_model.produce_saturn_spec_bundle import create_role_directory
+from examples.rocket_cost_model.saturn_spec.bundle import sha
 from examples.rocket_cost_model.spec_vector_baseline import (
     GENERATED,
     SCALAR_FLAGS,
@@ -219,6 +222,75 @@ class VectorSpecBaselineTests(unittest.TestCase):
                      "roles/2-generic-vector/exchange2_s", "inputs/puzzles.txt",
                      "inputs/control", "expected/s.txt"},
                 )
+
+    def test_complete_manager_directory_binds_validated_invocation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            spec, evidence, tools = root / "spec", root / "evidence", root / "tools"
+            role = "2-generic-vector"
+            label, flags, _ = role_settings(role)
+            reference = spec / "benchspec/CPU/548.exchange2_r/data/test/output/s.txt"
+            exe = spec / "benchspec/CPU/648.exchange2_s/exe"
+            run = (spec / "benchspec/CPU/648.exchange2_s/run" /
+                   f"run_base_test_{label}-64.0000")
+            reference.parent.mkdir(parents=True)
+            exe.mkdir(parents=True)
+            run.mkdir(parents=True)
+            evidence.mkdir()
+            (tools / "bin").mkdir(parents=True)
+            reference.write_text("solution\n")
+            (run / "s.txt").write_text("solution\n")
+            (run / "puzzles.txt").write_text("licensed input\n")
+            (run / "control").write_text("0\n")
+            (exe / f"exchange2_s_base.{label}-64").write_bytes(b"ELF fixture")
+            for name in ("readelf", "objdump", "gcc"):
+                (tools / "bin" / f"riscv64-unknown-linux-gnu-{name}").write_text("tool")
+            fake_compiler_sha = sha(tools / "bin/riscv64-unknown-linux-gnu-gcc")
+            fake_elf_sha = sha(exe / f"exchange2_s_base.{label}-64")
+            output_validation = validate_exchange2_output(
+                spec, "648.exchange2_s", "test", label,
+            )
+            stem = f"648.exchange2_s-test-{label}-validate"
+            (evidence / f"{stem}.json").write_text(json.dumps({
+                "role": role,
+                "benchmark": "648.exchange2_s",
+                "size": "test",
+                "source_variant": "unchanged SPEC CPU2017 source",
+                "target_flags": flags,
+                "target_vlen": 256,
+                "target_dlen": 128,
+                "gcc_sha256": fake_compiler_sha,
+                "output_validation": output_validation,
+            }))
+            (evidence / f"{stem}.log").write_text(
+                " Success 648.exchange2_s base test ratio=0\n"
+            )
+            audit = {"riscv_arch": "rv64imafdcv_zvbb1p0_zvl128b1p0",
+                     "static_rvv_instruction_count": 7}
+            with patch(
+                "examples.rocket_cost_model.produce_saturn_spec_bundle.inspect_elf",
+                return_value=audit,
+            ), patch(
+                "examples.rocket_cost_model.produce_saturn_spec_bundle.BASELINE_GCC_SHA",
+                fake_compiler_sha,
+            ), patch(
+                "examples.rocket_cost_model.produce_saturn_spec_bundle.EXCHANGE2_BASELINES",
+                {role: fake_elf_sha},
+            ):
+                bundle, identity = create_role_directory(
+                    spec, evidence, root / "out", tools, role,
+                )
+            self.assertEqual(sha(bundle / "manifest.json"), identity)
+            manifest = json.loads((bundle / "manifest.json").read_text())
+            self.assertEqual(manifest["argv"], ["./program", "0"])
+            self.assertEqual(manifest["inputs"], {
+                "puzzles.txt": "payload/puzzles.txt", "control": "payload/control",
+            })
+            self.assertEqual(manifest["expected_outputs"], {"s.txt": "reference/s.txt"})
+            self.assertEqual(set(manifest["files_sha256"]), {
+                path.relative_to(bundle).as_posix()
+                for path in bundle.rglob("*") if path.is_file() and path.name != "manifest.json"
+            })
 
 
 if __name__ == "__main__":

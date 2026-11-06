@@ -55,6 +55,11 @@ python3 -m examples.rocket_cost_model.bundle_spec_roles \
   --output /home/eecs/trazzaque/spec2017-research/results/saturn-vlen256-baselines/saturn-spec-roles-1-2.tar
 ```
 
+That original tar is now a quarantine-only compatibility artifact. The
+complete executable-ready per-role directories and their manifest identities
+are documented in `SATURN_SPEC_LANE.md`; use those directory bundles for new
+intake and staging.
+
 ## Fixed target identity
 
 Do not substitute a newer checkout, scalar Rocket image, BOOM image, or the
