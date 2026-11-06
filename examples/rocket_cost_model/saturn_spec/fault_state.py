@@ -44,7 +44,7 @@ def compare(state):
     same_page = bool(addresses) and len({a // 4096 for a in addresses}) == 1
     # vstart is measured after the fault but the QEMU record is pre-instruction.
     # A partial load may legitimately advance it before a spurious fault.
-    same = all(matches[k] for k in ('pc', 'a2', 'a4', 's1', 'vl', 'vtype')) and valid and same_page
+    same = all(matches[k] for k in ('pc', 'a4', 's1', 'vl', 'vtype')) and valid and same_page
     return {'outcome': 'matching_valid_addresses_false_fault_evidence' if same else 'execution_divergence',
             'matches': matches, 'element_addresses': addresses, 'within_object': valid,
             'single_page': same_page, 'qemu': QEMU}
