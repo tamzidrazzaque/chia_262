@@ -1,13 +1,14 @@
 ## Current checkpoint: replacement diagnostic comparison complete
 
 The one authorized replacement diagnostic captured SIGSEGV and a private core
-from the unchanged role-2 executable. The FPGA fault state differs from the
-recorded QEMU state: `a4=0x144f6a24` versus `0xf1924`, `VL=1` versus `4`, and
-`t2=1` versus `9`, at the same PC `0x11e80`. Original `si_addr=0x144f6a24`
-(`SEGV_MAPERR`); core mappings do not contain that address. The core corroborates
-the selected scalar and vector registers. This supports execution divergence,
-not the same-valid-address false-fault hypothesis. The first divergent
-instruction and root cause remain unlocalized.
+from the unchanged role-2 executable. A corrected like-for-like comparison at
+QEMU's final-loop hit shows that PC, stride, `t2`, `a3`, VL, VTYPE, VSTART,
+`s0`, `s5`, `s8`, and the stack-resident step all match FPGA. Only `a4`
+differs: QEMU calculates the valid `0xf2344`, while FPGA has `0x144f6a24` and
+raises `SEGV_MAPERR` on that unmapped address. The core corroborates the FPGA
+registers and `sp+80 = 0x144`. This strongly supports a Saturn/Rocket execution,
+replay, or scalar-vector integration defect rather than an invalid
+compiler-generated address. The first corrupting instruction remains unknown.
 
 Stopped after comparison. No additional retry, performance sample or role 3
 was launched. The worker was verified idle. Protected components, frozen bundle,

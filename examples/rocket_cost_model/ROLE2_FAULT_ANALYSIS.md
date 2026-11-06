@@ -1,5 +1,35 @@
 # Role-2 Saturn fault analysis
 
+## Matched-iteration correction (2026-11-06)
+
+The initial report compared QEMU's first dynamic hit (`t2=9`) against FPGA's
+failing final-loop hit (`t2=1`). A conditional QEMU breakpoint at `0x11e80`
+with `t2 == 1` now supplies the like-for-like state:
+
+| Register/value | QEMU matched hit | FPGA fault |
+| --- | --- | --- |
+| PC | `0x11e80` | `0x11e80` |
+| `a4` | `0xf2344` | `0x144f6a24` |
+| `s1` | `0x144` | `0x144` |
+| `t2` / `a3` / VL | `1` / `1` / `1` | `1` / `1` / `1` |
+| `s8` / `s5` / `s0` | `9` / `5` / `0xf1910` | `9` / `5` / `0xf1910` |
+| VTYPE / VSTART | `0x17` / `0` | `0x17` / `0` |
+| stack value at `sp+80` | `0x144` | `0x144` |
+
+The core exposes the FPGA stack value directly. In the frozen instruction
+sequence, `a4` begins at `s0 + 4*s5 = 0xf1924`. Each of the first two chunks
+has VL 4 and advances it by `(sp+80) * 4 = 0x510`, producing `0xf2344` for the
+final chunk. QEMU observes exactly that address and completes correctly.
+
+Therefore the differing FPGA `VL=1` and `t2=1` in the earlier first-hit table
+were normal final-iteration state, not evidence of divergence themselves. The
+remaining divergence is the corrupted scalar address register `a4`, despite
+all captured values needed to calculate it matching QEMU. This strongly points
+to a Saturn/Rocket execution, replay, or scalar-vector integration defect
+triggered before the failing load; it does not support GCC having generated an
+architecturally invalid address. The exact first corrupting dynamic instruction
+is still unknown.
+
 ## Replacement diagnostic result: execution divergence
 
 Exactly one separately authorized replacement attempt completed the fault
