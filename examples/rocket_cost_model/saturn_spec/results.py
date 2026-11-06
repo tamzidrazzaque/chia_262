@@ -66,6 +66,9 @@ def collect(stage, image_path, completion_path, preflight_path, collected, desti
     simulation = re.findall(r'\*\*\* PASSED \*\*\* after (\d+) cycles', uart)
     if len(simulation) != 1 or '*** FAILED ***' in uart or 'Kernel panic' in uart:
         raise ValueError('missing successful simulation completion')
+    for name in {m['stdout'], m['stderr'], *m['expected_outputs']}:
+        if not (result / 'outputs' / name).is_file():
+            raise ValueError('incomplete collected stdout/stderr/output files')
     for dest, source in m['expected_outputs'].items():
         if sha(result / 'outputs' / dest) != m['files_sha256'][source]:
             raise ValueError('SPEC exact expected-output mismatch')

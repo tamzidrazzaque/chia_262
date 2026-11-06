@@ -226,8 +226,14 @@
           "pattern": "^[0-9a-f]{64}$"
         },
         "snapshot_id": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/sha256"
+            }
+          ]
         },
         "candidate_id": {
           "oneOf": [
@@ -243,7 +249,7 @@
         "target_flags": {
           "enum": [
             "-march=rv64gc -mabi=lp64d -mtune=rocket -fno-tree-loop-vectorize -fno-tree-slp-vectorize",
-            "-march=rv64gcv_zvbb -mabi=lp64d -mtune=rocket -mrvv-vector-bits=zvl -fvect-cost-model=dynamic -fopt-info-vec-all"
+            "-march=rv64gcv_zvbb -mabi=lp64d -mtune=rocket -mrvv-vector-bits=scalable -fvect-cost-model=dynamic -fopt-info-vec-all"
           ]
         }
       }

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .bundle import intake
 from .platform import preflight, verify_platform
+from .published import intake_archive
 from .results import collect
 from .staging import stage, verify_image
 
@@ -13,6 +14,9 @@ from .staging import stage, verify_image
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
+    p = sub.add_parser('archive-intake')
+    for name in ('archive', 'quarantine-root', 'platform'):
+        p.add_argument('--' + name, required=True, type=Path)
     p = sub.add_parser('intake')
     p.add_argument('--bundle', required=True, type=Path)
     p.add_argument('--manifest-sha256', required=True)
@@ -34,7 +38,10 @@ def main():
     for name in ('stage', 'image', 'completion', 'preflight', 'collected', 'out'):
         p.add_argument('--' + name, required=True, type=Path)
     a = parser.parse_args()
-    if a.command == 'intake':
+    if a.command == 'archive-intake':
+        site = verify_platform(a.platform)
+        print(intake_archive(a.archive, a.quarantine_root, site['readelf'], site['objdump']))
+    elif a.command == 'intake':
         site = verify_platform(a.platform)
         print(intake(a.bundle, a.verified_root, a.manifest_sha256, site['readelf'], site['objdump']))
     elif a.command == 'stage':

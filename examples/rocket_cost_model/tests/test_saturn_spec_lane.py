@@ -20,9 +20,13 @@ def write(path, value):
 def incoming(tmp_path, monkeypatch):
     root = tmp_path / 'incoming'
     for name, data in {'payload/program': b'ELF unit fixture, never executed',
-                       'payload/input.dat': b'input fixture\n', 'reference/stdout.txt': b'answer fixture\n',
+                       'payload/input.dat': b'input fixture\n', 'reference/s.txt': b'answer fixture\n',
                        'metadata/validation.log': b' Success 648.exchange2_s base test fixture\n'}.items():
         p = root / name; p.parent.mkdir(parents=True, exist_ok=True); p.write_bytes(data)
+    monkeypatch.setattr(b, 'EXCHANGE2_BASELINES', {'1-scalar': b.sha(root / 'payload/program'), '2-generic-vector': b.sha(root / 'payload/program')})
+    monkeypatch.setattr(b, 'EXCHANGE2_REFERENCE_SHA', b.sha(root / 'reference/s.txt'))
+    monkeypatch.setattr(b, 'EXCHANGE2_REFERENCE_BYTES', (root / 'reference/s.txt').stat().st_size)
+    monkeypatch.setattr(b, 'BASELINE_GCC_SHA', 'a' * 64)
     compiler = {'gcc_version': '15.1.0', 'gcc_revision': b.GCC_REVISION,
                 'role': '2-generic-vector', 'target_flags': role_settings('2-generic-vector')[1],
                 'compiler_sha256': 'a' * 64, 'snapshot_id': 'b' * 64, 'candidate_id': None}
@@ -36,7 +40,7 @@ def incoming(tmp_path, monkeypatch):
          'source_variant': b.SOURCE, 'target': b.TARGET.copy(), 'executable': 'payload/program',
          'compiler_manifest': 'metadata/compiler.json', 'isa_metadata': 'metadata/isa.json',
          'validation_manifest': 'metadata/validation.json', 'inputs': {'input.dat': 'payload/input.dat'},
-         'expected_outputs': {'stdout.txt': 'reference/stdout.txt'},
+         'expected_outputs': {'s.txt': 'reference/s.txt'},
          'argv': ['./program', 'input.dat', "quoted';not-shell"], 'stdin': None,
          'stdout': 'stdout.txt', 'stderr': 'stderr.txt'}
     validation = {'status': 'passed', 'spec_validation': 'passed', 'backend': 'qemu',
@@ -183,7 +187,7 @@ def collected(staged, tmp_path):
             'probe.sha256': p['overlay_sha256']['root/saturn-spec/rvv-probe'] + '  probe\n',
             'executable.sha256': b.sha(out / 'overlay/root/saturn-spec/bundle/payload/program') + '  program\n',
             'time.txt': 'real 1.25\nuser 1.00\nsys 0.25\n', 'outputs/stdout.txt': 'answer fixture\n',
-            'outputs/stderr.txt': ''}
+            'outputs/stderr.txt': '', 'outputs/s.txt': 'answer fixture\n'}
     for name, text in data.items():
         f = result / name; f.parent.mkdir(parents=True, exist_ok=True); f.write_text(text)
     (root / 'uartlog').write_text('reboot: Power down\n*** PASSED *** after 1000 cycles\n')
@@ -212,7 +216,7 @@ def test_collect_bound_correct_outputs(collected):
                                    'failed_job', 'failed_collection', 'manager', 'driver', 'phase', 'lease', 'expired'])
 def test_reject_unusable_result(collected, change):
     out, image, completion, preflight, root, dest = collected
-    paths = {'wrong_output': ('outputs/stdout.txt', 'wrong'), 'vlen': ('probe.txt', 'RVV_GATE_VLEN_BITS=128\n'),
+    paths = {'wrong_output': ('outputs/s.txt', 'wrong'), 'vlen': ('probe.txt', 'RVV_GATE_VLEN_BITS=128\n'),
              'stale_identity': ('identity.json', '{}'), 'zero_time': ('time.txt', 'real 0\nuser 0\nsys 0\n'),
              'failed_job': ('job.status', '1'), 'failed_collection': ('collection.status', '1')}
     if change in paths:
@@ -332,3 +336,57 @@ def test_stage_rejects_swapped_platform_binding(staged):
     plan['expected_bootbinary_sha256'] = '0' * 64
     write(out / 'plan.json', plan)
     with pytest.raises(ValueError, match='binding differs'): s.verify_stage(out)
+
+
+@pytest.fixture
+def published_archive(tmp_path, monkeypatch):
+    import io
+    import tarfile
+    from examples.rocket_cost_model.saturn_spec import published
+    data = {'roles/1-scalar/exchange2_s': b'scalar unit fixture, never executable',
+            'roles/2-generic-vector/exchange2_s': b'vector unit fixture, never executable',
+            'inputs/puzzles.txt': b'unit fixture', 'inputs/control': b'0\n',
+            'expected/s.txt': b'x' * 855}
+    hashes = {k: __import__('hashlib').sha256(v).hexdigest() for k, v in data.items()}
+    monkeypatch.setattr(published, 'PUBLISHED_ELFS', {r: hashes['roles/' + r + '/exchange2_s']
+                                                    for r in ('1-scalar', '2-generic-vector')})
+    monkeypatch.setattr(published, 'PUBLISHED_OUTPUT', hashes['expected/s.txt'])
+    manifest = {'schema_version': 1, 'workload': {'benchmark': '648.exchange2_s', 'size': 'test', 'source': 'SPEC CPU2017'},
+        'target': {'config': 'REFV256D128RocketConfig', 'firesim_config': 'FireSimREFV256D128RocketConfig', 'vlen': 256, 'dlen': 128},
+        'roles': {r: {'label': role_settings(r)[0], 'target_flags': role_settings(r)[1],
+                      'archive_path': 'roles/' + r + '/exchange2_s', 'binary_sha256': h}
+                  for r, h in published.PUBLISHED_ELFS.items()},
+        'files': {k: {'sha256': hashes[k], 'bytes': len(data[k])} for k in ('inputs/puzzles.txt', 'inputs/control', 'expected/s.txt')}}
+    data['manifest.json'] = json.dumps(manifest).encode()
+    path = tmp_path / 'unit.tar'
+    with tarfile.open(path, 'w') as tf:
+        for name, content in data.items():
+            info = tarfile.TarInfo(name); info.size = len(content); tf.addfile(info, io.BytesIO(content))
+    monkeypatch.setattr(published, 'PUBLISHED_ARCHIVE_SHA', b.sha(path))
+    monkeypatch.setattr(published, 'inspect_elf', lambda p, *args: {
+        'riscv_arch': 'unit-audit-not-real-ELF', 'static_rvv_instruction_count': 0 if '1-scalar' in str(p) else 5452})
+    return path
+
+
+def test_published_archive_is_only_quarantined(published_archive, tmp_path):
+    from examples.rocket_cost_model.saturn_spec import published
+    dest = published.intake_archive(published_archive, tmp_path / 'quarantine', 'r', 'o')
+    receipt = b.read_json(dest / 'PENDING_METADATA.json')
+    assert receipt['image_staging_allowed'] is False
+    assert receipt['state'] == 'payload_verified_pending_required_metadata'
+    assert not (dest / 'intake.json').exists()
+
+
+def test_published_archive_rejects_changed_bytes(published_archive, tmp_path):
+    from examples.rocket_cost_model.saturn_spec import published
+    with published_archive.open('ab') as f: f.write(b'tampered')
+    with pytest.raises(ValueError, match='published'):
+        published.intake_archive(published_archive, tmp_path / 'quarantine', 'r', 'o')
+
+
+def test_reject_nonbaseline_compiler_hash(incoming):
+    root, m = incoming
+    p = root / m['compiler_manifest']; c = b.read_json(p); c['compiler_sha256'] = 'f' * 64
+    write(p, c); m['files_sha256'][m['compiler_manifest']] = b.sha(p)
+    write(root / 'manifest.json', m)
+    with pytest.raises(ValueError, match='baseline compiler hash'): verify(root)

@@ -107,3 +107,10 @@ bundle delivery plus its external manifest SHA-256, not at hardware dispatch.
 The completed RVV gate's install descriptors were archived under the private
 `rvv-gate-001/installed-workload` directory; its accepted images, binaries and
 collected evidence remain unchanged.
+
+During final integration the manager rebased onto producer commit `d120225`.
+The lane now requires the corrected `scalable` vector flags and recognizes the
+published `9c6331de...` archive identity. That archive's current packager omits
+the compiler/ISA/validated-invocation sidecars required for executable-ready
+intake; payload-only archive verification therefore remains quarantined until
+complete per-role metadata arrives. See the lane contract before transfer.

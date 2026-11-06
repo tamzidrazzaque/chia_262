@@ -40,6 +40,12 @@ order-balanced fresh boots with identical inputs and platform settings. Require
 the exact output hash and clean shutdown for every measured sample; retain raw
 target-cycle observations and platform identities outside Git.
 
+The archive is a payload handoff, not yet a complete executable-ready intake.
+The current producer format omits compiler/ISA/validated-invocation sidecars.
+The manager's `archive-intake` quarantines this exact payload until the complete
+per-role contract in `SATURN_SPEC_LANE.md` is supplied. Transfer alone must not
+trigger final guest construction or hardware execution.
+
 The producer is:
 
 ```bash

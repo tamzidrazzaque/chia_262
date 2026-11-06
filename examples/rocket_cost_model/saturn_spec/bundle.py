@@ -15,6 +15,11 @@ DRIVER_SHA = '5d3353ea8e6bf2891555da3d7b29122b1143a2e3d8c61a2a55741f1fd0bc94bd'
 QUINTUPLET = ('f2-firesim-FireSim-FireSimREFV256D128RocketConfig-'
               'WithAutoILA_FRFCFS16GBQuadRankLLC4MB_BaseF2Config')
 GCC_REVISION = '1b306039ac49f8ad91ca71d3de3150a3c9fa792a'
+BASELINE_GCC_SHA = 'e46d71073c10417353a0718bff6bfadb818757b887da2622d353926a26700b0c'
+EXCHANGE2_BASELINES = {'1-scalar': '6500e7e82a183d11d5e83b0ff4b3ee79fc709127c849b8c2fca1675307d27e7d',
+                       '2-generic-vector': '933c5062989468d8eba30c72a08dadb2e15bf39dfffff2532f5f2fed5cada541'}
+EXCHANGE2_REFERENCE_SHA = '93c5882eda07b05bf277b4636f8a92cd16bf347e8cf5513fc578b8f60c12506e'
+EXCHANGE2_REFERENCE_BYTES = 855
 TARGET = {'agfi': AGFI, 'driver_sha256': DRIVER_SHA, 'quintuplet': QUINTUPLET,
           'vlen_bits': 256, 'dlen_bits': 128}
 FIELDS = {'schema_version', 'role', 'candidate_id', 'benchmark', 'input_id', 'size',
@@ -162,6 +167,15 @@ def verify(root, manifest_sha256, readelf, objdump):
         relative(name)
         if sha(root / name) != digest(expected):
             raise ValueError('bundle file digest mismatch: ' + name)
+    if m['benchmark'] == '648.exchange2_s':
+        reference = m['expected_outputs'].get('s.txt') if isinstance(m['expected_outputs'], dict) else None
+        if reference not in hashes or (root / reference).stat().st_size == 0:
+            raise ValueError('Exchange2 requires a nonempty s.txt reference')
+        if m['size'] == 'test':
+            if hashes[reference] != EXCHANGE2_REFERENCE_SHA or (root / reference).stat().st_size != EXCHANGE2_REFERENCE_BYTES:
+                raise ValueError('Exchange2 test reference differs from published independent oracle')
+            if m['role'] in EXCHANGE2_BASELINES and hashes.get(m['executable']) != EXCHANGE2_BASELINES[m['role']]:
+                raise ValueError('Exchange2 baseline ELF is not the frozen published role')
     if 'manifest.json' in hashes:
         raise ValueError('manifest cannot hash itself')
     required = {m[k] for k in ('compiler_manifest', 'isa_metadata', 'validation_manifest', 'executable')}
@@ -198,13 +212,14 @@ def verify(root, manifest_sha256, readelf, objdump):
             or compiler.get('role') != m['role'] or compiler.get('target_flags') != flags:
         raise ValueError('wrong compiler revision, role, or fixed flags; GCC 13 rebuilds forbidden')
     digest(compiler.get('compiler_sha256'))
-    digest(compiler.get('snapshot_id'))
+    if compiler.get('snapshot_id') is not None:
+        digest(compiler['snapshot_id'])
     candidate = compiler.get('candidate_id')
     if m['role'] == '3-saturn-aware':
-        if not digest(candidate).startswith(m['candidate_id']):
+        if not digest(candidate).startswith(m['candidate_id']) or compiler.get('snapshot_id') != candidate:
             raise ValueError('candidate identity mismatch')
-    elif candidate is not None:
-        raise ValueError('baseline must not contain a candidate ID')
+    elif candidate is not None or compiler['compiler_sha256'] != BASELINE_GCC_SHA:
+        raise ValueError('baseline compiler hash differs or candidate ID is non-null')
     isa = read_json(root / m['isa_metadata'])
     if isa.get('elf_sha256') != hashes[m['executable']]:
         raise ValueError('ISA audit refers to a different executable')

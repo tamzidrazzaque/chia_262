@@ -41,6 +41,36 @@ All licensed binaries, inputs, goldens, SPEC logs, raw timing data, site
 configuration and host identities stay outside Git. Only sanitized code,
 schemas, unit tests and documentation are published.
 
+## Published roles 1/2 archive from d120225
+
+The producer's newer handoff publishes `saturn-spec-roles-1-2.tar`, SHA-256
+`9c6331dea7f03a6e9364df4305d8ce0dae696ab5f683feb0c37208ce9bdb10ca`.
+Deliver it privately to:
+
+```text
+/home/ubuntu/cs262_compiler/saturn-spec-lane/incoming/saturn-spec-roles-1-2.tar
+```
+
+`archive-intake --archive PATH --quarantine-root PRIVATE_ROOT --platform LOCK`
+accepts only this published archive, checks its exact six regular members,
+all member hashes, role labels/flags, VLEN/DLEN, the published ELF identities,
+and the 855-byte reference SHA. It independently inspects the copied ELFs.
+It never extracts links or trusts tar paths, and it never constructs a guest.
+
+**The published archive format currently omits compiler manifests, per-role ISA
+sidecars, the validated argv/stdin contract, and validation logs.** It is therefore
+quarantined as `payload_verified_pending_required_metadata`; it is not silently
+upgraded to an executable-ready bundle. Its quarantine directory has no
+`intake.json`, so `stage` cannot consume it. The producer must supply complete
+per-role metadata following the directory contract below (reusing these exact
+binaries/inputs; no rebuild) before image staging is allowed. Do not fabricate
+compiler hashes, snapshot IDs or validation evidence on the manager.
+
+The new producer uses `-mrvv-vector-bits=scalable`. The old `zvl` flags are rejected
+by this lane. Rebase d120225 also documents why an empty Exchange2 output cannot
+be accepted solely from a successful specdiff/harness status; this lane requires
+nonempty exact expected output bytes and hashes.
+
 ## Exact incoming contract
 
 The machine-readable contract is
@@ -103,6 +133,9 @@ implement SPEC numeric-tolerance/specdiff comparators on the manager. The
 producer must bind these particular golden bytes to a successful SPEC validation;
 do not substitute official reference hashes that permit tolerance differences.
 Unsupported comparator needs should block intake, not silently weaken checks.
+For Exchange2, `s.txt` must be present and nonempty. For its published test
+input, the lane additionally pins the 855-byte official reference hash and
+frozen roles 1/2 ELF hashes from `d120225`, independently of producer assertions.
 
 Allowed roles are `1-scalar`, `2-generic-vector`, `3-saturn-aware`. Role 1 is a
 valid scalar reference **on Saturn**; scalar Rocket execution adapters/images
@@ -118,12 +151,17 @@ Required fields:
   "gcc_version": "15.1.0",
   "gcc_revision": "1b306039ac49f8ad91ca71d3de3150a3c9fa792a",
   "role": "2-generic-vector",
-  "target_flags": "-march=rv64gcv_zvbb -mabi=lp64d -mtune=rocket -mrvv-vector-bits=zvl -fvect-cost-model=dynamic -fopt-info-vec-all",
+  "target_flags": "-march=rv64gcv_zvbb -mabi=lp64d -mtune=rocket -mrvv-vector-bits=scalable -fvect-cost-model=dynamic -fopt-info-vec-all",
   "compiler_sha256": "<64 hex digits>",
-  "snapshot_id": "<64 hex digits>",
+  "snapshot_id": null,
   "candidate_id": null
 }
 ```
+
+For roles 1/2 the compiler hash must be the audited stock baseline
+`e46d71073c10417353a0718bff6bfadb818757b887da2622d353926a26700b0c`;
+`snapshot_id` may be null. Role 3 requires a full snapshot ID equal to its full
+candidate ID. No new compiler snapshot is built by intake.
 
 Flags must exactly match `role_settings` in `spec_vector_baseline.py`. Scalar
 role flags are `-march=rv64gc -mabi=lp64d -mtune=rocket
@@ -172,7 +210,7 @@ From this repository root, the preparation entry point is:
 ../.venv/bin/python -m examples.rocket_cost_model.saturn_spec --help
 ```
 
-It has only `intake`, `stage`, `preflight`, `verify-image`, and `collect` commands.
+It has only `archive-intake`, `intake`, `stage`, `preflight`, `verify-image`, and `collect` commands.
 There is no compiler build, SPEC build, guest construction or hardware dispatcher
 command. **Do not run the following intake/staging steps until the real bundle
 and its external manifest digest arrive.**
