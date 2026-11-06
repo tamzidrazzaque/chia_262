@@ -404,3 +404,10 @@ def test_adapter_missing_environment_does_not_consume_attempt(staged):
     assert result.returncode != 0
     assert 'Source the pinned FireSim' in result.stderr
     assert not (Path(out) / 'infrasetup.started.json').exists()
+
+
+def test_fresh_roles_clear_fpga_dram(staged):
+    out, plan, site = staged
+    runtime = yaml.safe_load((out / 'config_runtime.yaml').read_text())
+    assert runtime['host_debug']['zero_out_dram'] is True
+    assert runtime['metasimulation']['metasimulation_enabled'] is False

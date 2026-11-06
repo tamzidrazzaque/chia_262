@@ -101,6 +101,9 @@ def stage(snapshot, platform_path, output, phase, sample, scratch_mib=1024):
     runtime['run_farm'] = {'base_recipe': 'run-farm-recipes/externally_provisioned.yaml',
                           'recipe_arg_overrides': {'run_farm_hosts_to_use': [{site['worker_ip']: 'one_fpga_spec'}]}}
     runtime['metasimulation']['metasimulation_enabled'] = False
+    # Pinned FireSim recommends clearing FPGA DRAM for nondeterministic boots.
+    # Apply the same initialization to every fresh role; account for it as host overhead.
+    runtime.setdefault('host_debug', {})['zero_out_dram'] = True
     runtime['target_config'].update(topology='no_net_config', no_net_num_nodes=1,
         default_hw_config='firesim_saturn_REFV256D128_rocket_singlecore_no_nic_l2_llc4mb_ddr3', plusarg_passthrough='')
     runtime['workload'].update(workload_name=name + '.json', terminate_on_completion=True, suffix_tag=image_id[:16])
