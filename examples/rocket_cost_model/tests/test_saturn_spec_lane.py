@@ -411,3 +411,27 @@ def test_fresh_roles_clear_fpga_dram(staged):
     runtime = yaml.safe_load((out / 'config_runtime.yaml').read_text())
     assert runtime['host_debug']['zero_out_dram'] is True
     assert runtime['metasimulation']['metasimulation_enabled'] is False
+
+
+def test_diagnostic_stage_is_core_enabled_and_not_performance(staged, tmp_path):
+    out, plan, site = staged
+    helper = tmp_path / 'launcher'
+    helper.write_bytes(b'unit-only adapter identity')
+    diagnostic = tmp_path / 'diagnostic'
+    p = s.stage(plan['snapshot'], plan['platform'], diagnostic, 'diagnostic', 0,
+                diagnostic_launcher=helper)
+    assert p['identity']['protocol'] == 'diagnostic-ptrace-core-v1'
+    assert s.verify_stage(diagnostic)['image_id'] == p['image_id']
+    runner = (diagnostic / 'overlay/root/saturn-spec/run.sh').read_text()
+    assert 'ulimit -c unlimited' in runner
+    assert '/proc/sys/kernel/core_pattern' in runner
+    import shlex
+    manifest = b.read_json(diagnostic / 'overlay/root/saturn-spec/bundle/manifest.json')
+    assert '/fault-capture /root/saturn-spec/result ' + shlex.join(manifest['argv']) in runner
+    assert '/bin/busybox time' not in runner
+    subprocess.run(['sh', '-n', str(diagnostic / 'overlay/root/saturn-spec/run.sh')], check=True)
+    with pytest.raises(ValueError, match='diagnostic runs cannot enter performance'):
+        r.collect(diagnostic, None, None, None, None, None)
+    with pytest.raises(ValueError, match='normal stages forbid'):
+        s.stage(plan['snapshot'], plan['platform'], tmp_path / 'invalid', 'baseline', 0,
+                diagnostic_launcher=helper)

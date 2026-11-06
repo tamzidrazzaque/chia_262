@@ -40,8 +40,16 @@ def runner(m, identity):
         lines += ['mkdir -p ' + shlex.quote(root + '/work/' + str(Path(dest).parent)),
                   'mkdir -p ' + shlex.quote(root + '/result/outputs/' + str(Path(dest).parent))]
     lines += ['cd "$WORK"', 'sha256sum program > "$RESULT/executable.sha256"', 'set +e']
+    if identity['phase'] == 'diagnostic':
+        lines[-1:] = ['umask 077', 'ulimit -c unlimited',
+            'echo /root/saturn-spec/result/core.%p > /proc/sys/kernel/core_pattern',
+            'cat /proc/sys/kernel/core_pattern > "$RESULT/core-pattern.txt"',
+            'cat /proc/self/limits > "$RESULT/limits.txt"',
+            'cat /proc/self/coredump_filter > "$RESULT/coredump-filter.txt"', 'set +e']
     stdin = shlex.quote(m['stdin']) if m['stdin'] is not None else '/dev/null'
     command = ['/bin/busybox', 'time', '-p', '-o', root + '/result/time.txt', *m['argv']]
+    if identity['phase'] == 'diagnostic':
+        command = [root + '/fault-capture', root + '/result', *m['argv']]
     lines += [shlex.join(command) + ' < ' + stdin + ' > ' + shlex.quote(m['stdout']) + ' 2> ' + shlex.quote(m['stderr']),
               'status=$?', "printf '%s\\n' \"$status\" > \"$RESULT/job.status\"", 'collect=0']
     for dest in sorted({m['stdout'], m['stderr'], *m['expected_outputs']}):
@@ -51,7 +59,7 @@ def runner(m, identity):
     return '\n'.join(lines) + '\n'
 
 
-def stage(snapshot, platform_path, output, phase, sample, scratch_mib=1024):
+def stage(snapshot, platform_path, output, phase, sample, scratch_mib=1024, diagnostic_launcher=None):
     site = verify_platform(platform_path)
     snapshot = Path(snapshot)
     if (snapshot / 'REJECTED').exists():
@@ -61,10 +69,14 @@ def stage(snapshot, platform_path, output, phase, sample, scratch_mib=1024):
     if snapshot.name != bundle_id:
         raise ValueError('snapshot directory is not content-addressed by its manifest')
     m = verify(snapshot / 'bundle', bundle_id, site['readelf'], site['objdump'])
-    if phase not in ('baseline', 'search', 'confirmation', 'holdout') or type(sample) is not int or sample < 0:
+    if phase not in ('baseline', 'search', 'confirmation', 'holdout', 'diagnostic') or type(sample) is not int or sample < 0:
         raise ValueError('invalid phase/sample')
     if type(scratch_mib) is not int or not 0 <= scratch_mib <= 65536:
         raise ValueError('scratch MiB must be between 0 and 65536')
+    if (phase == 'diagnostic') != (diagnostic_launcher is not None):
+        raise ValueError('diagnostic stage requires an explicit launcher, normal stages forbid it')
+    if phase == 'diagnostic' and m['role'] != '2-generic-vector':
+        raise ValueError('only frozen role 2 diagnostic authorized')
     bundle_root = snapshot / 'bundle'
     payload_bytes = sum((bundle_root / n).stat().st_size for n in m['files_sha256'])
     work_bytes = sum((bundle_root / n).stat().st_size for n in [m['executable'], *m['inputs'].values()])
@@ -79,6 +91,9 @@ def stage(snapshot, platform_path, output, phase, sample, scratch_mib=1024):
                 'worker_id': site['worker_id'], 'agfi': AGFI, 'driver_sha256': DRIVER_SHA,
                 'vlen_bits': 256, 'protocol': 'busybox-time-posix-elapsed-v1',
                 'rootfs_gib': rootfs_gib, 'scratch_mib': scratch_mib}
+    if phase == 'diagnostic':
+        identity['diagnostic_launcher_sha256'] = sha(Path(diagnostic_launcher))
+        identity['protocol'] = 'diagnostic-ptrace-core-v1'
     # Runner bytes, base and platform identities are part of the stage identity.
     script = runner(m, identity)
     image_id = canonical({'identity': identity, 'runner_sha256': hashlib.sha256(script.encode()).hexdigest()})
@@ -91,6 +106,9 @@ def stage(snapshot, platform_path, output, phase, sample, scratch_mib=1024):
     verify(overlay / 'bundle', bundle_id, site['readelf'], site['objdump'])
     shutil.copyfile(site['artifacts']['rvv_probe']['path'], overlay / 'rvv-probe')
     (overlay / 'rvv-probe').chmod(0o500)
+    if phase == 'diagnostic':
+        shutil.copyfile(diagnostic_launcher, overlay / 'fault-capture')
+        (overlay / 'fault-capture').chmod(0o500)
     (overlay / 'run.sh').write_text(script)
     (overlay / 'stage-identity.json').write_text(json.dumps({'image_id': image_id, **identity}, sort_keys=True) + '\n')
     config = {'name': name, 'base': 'br-base.json', 'rootfs-size': str(rootfs_gib) + 'GiB', 'workdir': str(out.resolve()),
@@ -155,7 +173,10 @@ def verify_stage(directory):
     m = verify(out / 'overlay/root/saturn-spec/bundle', p['identity']['bundle_sha256'], site['readelf'], site['objdump'])
     expected = {'role': m['role'], 'benchmark': m['benchmark'], 'input_id': m['input_id'],
                 'worker_id': site['worker_id'], 'agfi': AGFI, 'driver_sha256': DRIVER_SHA,
-                'vlen_bits': 256, 'protocol': 'busybox-time-posix-elapsed-v1'}
+                'vlen_bits': 256, 'protocol': ('diagnostic-ptrace-core-v1' if p['identity']['phase'] == 'diagnostic'
+                                             else 'busybox-time-posix-elapsed-v1')}
+    if p['identity']['phase'] == 'diagnostic' and sha(out / 'overlay/root/saturn-spec/fault-capture') != p['identity']['diagnostic_launcher_sha256']:
+        raise ValueError('diagnostic launcher changed')
     if any(p['identity'].get(k) != value for k, value in expected.items()) \
             or p['expected_bootbinary_sha256'] != site['artifacts']['base_bootbinary']['sha256'] \
             or p['name'] != 'saturn-spec-' + p['image_id'][:24]:

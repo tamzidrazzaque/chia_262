@@ -35,6 +35,8 @@ def validate_completion(plan, image, completion, preflight):
 def collect(stage, image_path, completion_path, preflight_path, collected, destination):
     stage = Path(stage)
     p = verify_stage(stage)
+    if p['identity']['phase'] == 'diagnostic':
+        raise ValueError('diagnostic runs cannot enter performance collection')
     image, completion, preflight = map(read_json, (image_path, completion_path, preflight_path))
     validate_completion(p, image, completion, preflight)
     for key, path in [('plan_sha256', stage / 'plan.json'), ('image_receipt_sha256', Path(image_path)),
