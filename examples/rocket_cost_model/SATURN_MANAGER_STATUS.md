@@ -1,3 +1,25 @@
+## Pilot guests admitted; manager bootstrap stopped
+
+The reviewed trigger exception passed for both guest constructions. Exact
+`br-base/host-init.sh` ran normally, `make -q` returned 0 before and after, and
+all six trigger/script hashes remained unchanged. Both frozen-base rootfs
+images were constructed at exactly 2 GiB and passed `verify-image` with the
+accepted boot binary. No protected component was rebuilt.
+
+Role 1 passed fresh platform/idle-worker preflight and acquired the worker
+lease. The native manager then exited with status 1 at its startup check:
+`ERROR: You must source firesim/sourceme-manager.sh!` This precedes manager
+task dispatch; infrastructure setup and simulation did not start. Its failed
+attempt receipt is preserved privately. The one-attempt execution guard blocks
+retrying that task under the existing stage. Role 2 was not dispatched.
+
+No pilot measurements exist and neither `runworkload` task was attempted.
+Do not infer a speedup. The next continuation must establish the official
+manager environment and explicitly resolve admission of a pre-dispatch
+bootstrap retry without deleting or falsifying the original attempt evidence.
+The sanitized construction receipt records both image hashes and all six
+pre/post hashes per role; raw logs, images and host identities remain private.
+
 ## Pilot construction checkpoint
 
 Continuation from `5207934` was authorized for exactly one role-1/role-2 pair.

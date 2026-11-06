@@ -1,29 +1,73 @@
 {
   "schema_version": 1,
-  "checkpoint_commit": "5207934",
-  "state": "stopped_before_base_host_init",
-  "authorized_samples": {
-    "1-scalar": 1,
-    "2-generic-vector": 1
+  "state": "guests_admitted_manager_bootstrap_failed",
+  "roles": {
+    "1-scalar": {
+      "host_init_noop": {
+        "before": {
+          "host-init.sh": "70dedb1c829c4299c48d612630e2f39109135ffdba4de946d6868556f4cd22a2",
+          "trigger/Makefile": "e70ed8995e1348bb11a350b3b6c6c18aafdf947ff519623b7b2cf87fac0db0c9",
+          "trigger/start.S": "057dcd0a45f7708eea30d7a981d7c60885f7afa788a5d73437aa175b67aed51a",
+          "trigger/end.S": "a6e23cbbf9f4215f9877bd18b3205129009b361ce6028da0f4486130c57fad7b",
+          "trigger/start": "e83d728eec1725a6a4915d75ab8a5ead13aaab9f8435750d035f2ac408a54dca",
+          "trigger/end": "8c8058395a453d03a21daf047030985e9b7a6cf6e62a83f49fda9e83548660c1"
+        },
+        "make_q_before": 0,
+        "executed": true,
+        "after": {
+          "host-init.sh": "70dedb1c829c4299c48d612630e2f39109135ffdba4de946d6868556f4cd22a2",
+          "trigger/Makefile": "e70ed8995e1348bb11a350b3b6c6c18aafdf947ff519623b7b2cf87fac0db0c9",
+          "trigger/start.S": "057dcd0a45f7708eea30d7a981d7c60885f7afa788a5d73437aa175b67aed51a",
+          "trigger/end.S": "a6e23cbbf9f4215f9877bd18b3205129009b361ce6028da0f4486130c57fad7b",
+          "trigger/start": "e83d728eec1725a6a4915d75ab8a5ead13aaab9f8435750d035f2ac408a54dca",
+          "trigger/end": "8c8058395a453d03a21daf047030985e9b7a6cf6e62a83f49fda9e83548660c1"
+        },
+        "make_q_after": 0
+      },
+      "image_id": "c1278a89c65e2aa0a90cadec1b6e83e97f6e3d18274b7aa32b32e86408f3d1c3",
+      "rootfs_sha256": "b6322688107621ccba7002398d2541a7e04cedaad002013248db22062abe08b9",
+      "bootbinary_sha256": "dbdf30cae7e8c88d3242c24a97591582686a0dbcc985b8b9cf34a72739673eb8",
+      "plan_sha256": "bf7a577dcd6986657e478be35497cb3327a190cf4e3bd761fed43b162f1bc2c4",
+      "capacity_bytes": 2147483648,
+      "image_admission_passed": true,
+      "runworkload_started": false
+    },
+    "2-generic-vector": {
+      "host_init_noop": {
+        "before": {
+          "host-init.sh": "70dedb1c829c4299c48d612630e2f39109135ffdba4de946d6868556f4cd22a2",
+          "trigger/Makefile": "e70ed8995e1348bb11a350b3b6c6c18aafdf947ff519623b7b2cf87fac0db0c9",
+          "trigger/start.S": "057dcd0a45f7708eea30d7a981d7c60885f7afa788a5d73437aa175b67aed51a",
+          "trigger/end.S": "a6e23cbbf9f4215f9877bd18b3205129009b361ce6028da0f4486130c57fad7b",
+          "trigger/start": "e83d728eec1725a6a4915d75ab8a5ead13aaab9f8435750d035f2ac408a54dca",
+          "trigger/end": "8c8058395a453d03a21daf047030985e9b7a6cf6e62a83f49fda9e83548660c1"
+        },
+        "make_q_before": 0,
+        "executed": true,
+        "after": {
+          "host-init.sh": "70dedb1c829c4299c48d612630e2f39109135ffdba4de946d6868556f4cd22a2",
+          "trigger/Makefile": "e70ed8995e1348bb11a350b3b6c6c18aafdf947ff519623b7b2cf87fac0db0c9",
+          "trigger/start.S": "057dcd0a45f7708eea30d7a981d7c60885f7afa788a5d73437aa175b67aed51a",
+          "trigger/end.S": "a6e23cbbf9f4215f9877bd18b3205129009b361ce6028da0f4486130c57fad7b",
+          "trigger/start": "e83d728eec1725a6a4915d75ab8a5ead13aaab9f8435750d035f2ac408a54dca",
+          "trigger/end": "8c8058395a453d03a21daf047030985e9b7a6cf6e62a83f49fda9e83548660c1"
+        },
+        "make_q_after": 0
+      },
+      "image_id": "4d325b2815ca6b2f1251f68602a259e66fa0c49d01c555bf706c9d38dcd970d6",
+      "rootfs_sha256": "96da715010f49da6edfb61ed95628b3f7ebbe129db61b67826425d46acb0e193",
+      "bootbinary_sha256": "dbdf30cae7e8c88d3242c24a97591582686a0dbcc985b8b9cf34a72739673eb8",
+      "plan_sha256": "d7d898909c92af1a63b0ac645723a84faf248d3717a1f769f04b171b55c0cec8",
+      "capacity_bytes": 2147483648,
+      "image_admission_passed": true,
+      "runworkload_started": false
+    }
   },
-  "constructed_guests": 0,
-  "hardware_tasks_started": 0,
-  "image_receipts_created": 0,
-  "both_stages_reverified": true,
-  "frozen_platform_reverified": true,
-  "rootfs_gib_each": 2,
-  "accepted_bootbinary_sha256": "dbdf30cae7e8c88d3242c24a97591582686a0dbcc985b8b9cf34a72739673eb8",
-  "blocked_action": {
-    "task": "br-base/host-init.sh",
-    "action": "handleHostInit",
-    "command": "make -C trigger",
-    "compiler_invocation": "riscv64-unknown-linux-gnu-gcc -nostartfiles -nostdlib",
-    "targets": [
-      "start",
-      "end"
-    ],
-    "executed": false
-  },
+  "rebuilt_protected_components": false,
+  "role_1_preflight_passed": true,
+  "role_1_infrasetup_manager_exit": 1,
+  "failure": "FireSim startup required sourceme-manager.sh; exited before task dispatch. Existing one-attempt guard blocks retry.",
+  "pilot_samples_launched": 0,
   "measurements_available": false,
-  "stop_reason": "Frozen base host initialization requests a build action. Operator instructed stop on base/compiler rebuild requests. No dependency bypass or replacement base was attempted."
+  "post_failure_worker_idle_verified": true
 }
