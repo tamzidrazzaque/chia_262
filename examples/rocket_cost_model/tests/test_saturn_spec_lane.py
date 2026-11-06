@@ -390,3 +390,17 @@ def test_reject_nonbaseline_compiler_hash(incoming):
     write(p, c); m['files_sha256'][m['compiler_manifest']] = b.sha(p)
     write(root / 'manifest.json', m)
     with pytest.raises(ValueError, match='baseline compiler hash'): verify(root)
+
+
+def test_adapter_missing_environment_does_not_consume_attempt(staged):
+    import os
+    import sys
+    out = staged[0] if isinstance(staged, tuple) else staged
+    script = Path(out) / 'native-manager-staged.py'
+    env = dict(os.environ)
+    env.pop('FIRESIM_SOURCED', None)
+    result = subprocess.run([sys.executable, str(script), 'infrasetup'], env=env,
+                            capture_output=True, text=True)
+    assert result.returncode != 0
+    assert 'Source the pinned FireSim' in result.stderr
+    assert not (Path(out) / 'infrasetup.started.json').exists()

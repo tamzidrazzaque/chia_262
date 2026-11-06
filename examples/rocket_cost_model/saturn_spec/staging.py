@@ -120,7 +120,10 @@ def stage(snapshot, platform_path, output, phase, sample, scratch_mib=1024):
         if adapter.count(old) != 1:
             raise ValueError('accepted native adapter layout changed')
         adapter = adapter.replace(old, new)
-    prefix = ("import sys\nfrom examples.rocket_cost_model.saturn_spec.execution import guard\n"
+    prefix = ("import os, sys\n"
+              + "if not os.environ.get('FIRESIM_SOURCED'):\n"
+              + "    raise SystemExit('Source the pinned FireSim sourceme-manager.sh before dispatch')\n"
+              + "from examples.rocket_cost_model.saturn_spec.execution import guard\n"
               + "with guard(" + repr(str(out.resolve())) + ", sys.argv[1]):\n"
               + "    exec(compile(" + repr(adapter) + ", __file__, 'exec'), globals())\n")
     (out / 'native-manager-staged.py').write_text(prefix)
