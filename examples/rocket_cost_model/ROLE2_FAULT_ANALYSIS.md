@@ -1,5 +1,51 @@
 # Role-2 Saturn fault analysis
 
+## Replacement diagnostic result: execution divergence
+
+Exactly one separately authorized replacement attempt completed the fault
+capture. The previous `rcS` panic attempt remains preserved. The replacement
+used the unchanged frozen role-2 ELF, official input, original diagnostic
+launcher, accepted platform/boot binary, 2-GiB image and DRAM zeroing.
+
+| Register | Recorded QEMU first hit | FPGA first-fault state |
+| --- | --- | --- |
+| PC | `0x11e80` | `0x11e80` |
+| a4 | `0xf1924` | `0x144f6a24` |
+| s1 | `0x144` | `0x144` |
+| t2 | `9` | `1` |
+| VL | `4` | `1` |
+| VTYPE | `0x17` | `0x17` |
+| VSTART | `0` | `0` |
+
+The pre-delivery signal snapshot records SIGSEGV with `si_code=1`
+(`SEGV_MAPERR`) and `si_addr=0x144f6a24`, equal to the FPGA load base. This
+address lies outside the recorded backing object and outside every load mapping
+in the core. Other captured FPGA registers are `a3=1`, `s8=9`, `s5=5`, and
+`s0=0xf1910`; QEMU comparison values for those registers were not supplied.
+
+**This supports outcome 2: earlier execution-state divergence, not a false
+fault on the recorded valid QEMU addresses.** The record compares QEMU's first
+hit with FPGA's failing hit; it does not identify the first divergent dynamic
+instruction or establish whether the originating problem is hardware, kernel,
+or compiler behavior. No further localization run was authorized or launched.
+
+The private core independently corroborates all eight requested scalar
+registers and the vector header (`VL=1`, `VTYPE=0x17`, `VSTART=0`, `VLENB=32`).
+The core's signal note has `si_code=-6` because libgfortran re-raised SIGSEGV.
+The original signal address above comes from `PTRACE_GETSIGINFO` before signal
+delivery; interpreting the re-raised note as an original memory address would
+be incorrect.
+
+The VLEN-256 full/tail probe, manager exit, simulation completion and shutdown
+passed. SPEC correctness did not pass; this is exclusively a diagnostic and
+must not become a performance sample. The worker was verified idle. All raw
+core/memory, register snapshots, UART and debugger logs remain private under
+`/home/ubuntu/cs262_compiler/saturn-spec-lane/diagnostic-009/`.
+See `saturn-role2-diagnostic-replacement-receipt.json` for sanitized hashes and
+selected diagnostic values. No additional retry or role 3 was started.
+
+Earlier analysis and the failed first diagnostic checkpoint follow.
+
 ## Reproduced hardware failure
 
 Three fresh executions of the frozen role-2 ELF

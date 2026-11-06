@@ -1,3 +1,16 @@
+## Current checkpoint: replacement comparison completed; stopped
+
+The separately authorized replacement diagnostic captured a private core and
+first-fault registers. FPGA `a4`, `VL` and `t2` differ from the recorded QEMU
+state at PC `0x11e80`; the original signal address equals the invalid FPGA
+base. This supports execution divergence rather than a false fault on the
+recorded valid QEMU addresses. The first divergent instruction and root cause
+are still unknown. No further run is authorized. Read the latest
+`ROLE2_FAULT_ANALYSIS.md`, `SATURN_MANAGER_STATUS.md`, and
+`saturn-role2-diagnostic-replacement-receipt.json`. The worker was verified idle.
+The first failed diagnostic and all protected components remain preserved.
+Earlier checkpoints below are historical.
+
 ## Latest execution checkpoint
 
 The authorized autonomous continuation produced one validated scalar pilot but

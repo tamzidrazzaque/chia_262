@@ -1,3 +1,24 @@
+## Current checkpoint: replacement diagnostic comparison complete
+
+The one authorized replacement diagnostic captured SIGSEGV and a private core
+from the unchanged role-2 executable. The FPGA fault state differs from the
+recorded QEMU state: `a4=0x144f6a24` versus `0xf1924`, `VL=1` versus `4`, and
+`t2=1` versus `9`, at the same PC `0x11e80`. Original `si_addr=0x144f6a24`
+(`SEGV_MAPERR`); core mappings do not contain that address. The core corroborates
+the selected scalar and vector registers. This supports execution divergence,
+not the same-valid-address false-fault hypothesis. The first divergent
+instruction and root cause remain unlocalized.
+
+Stopped after comparison. No additional retry, performance sample or role 3
+was launched. The worker was verified idle. Protected components, frozen bundle,
+launcher, 2-GiB capacity and DRAM policy remained unchanged. The old failed
+diagnostic is preserved. See `ROLE2_FAULT_ANALYSIS.md` and
+`saturn-role2-diagnostic-replacement-receipt.json`. All raw evidence is private
+under `/home/ubuntu/cs262_compiler/saturn-spec-lane/diagnostic-009/`.
+The focused lane/capture tests pass (57 tests).
+
+Earlier checkpoints below are historical.
+
 ## Latest checkpoint: authorized diagnostic boot failed before role 2
 
 Pulled `bc0e663` and prepared one explicitly diagnostic guest with private core

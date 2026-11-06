@@ -39,8 +39,8 @@ def compare(state):
         return {'outcome': 'insufficient_vector_fault_state', 'qemu': QEMU}
     matches = {key: regs[key] == value for key, value in QEMU.items()}
     addresses = [regs['a4'] + i * regs['s1'] for i in range(regs['vl'])] if regs['vl'] <= 32 else []
-    valid = len(addresses) == 4 and all(a % 4 == 0 and 0xf1910 <= a and a + 4 <= 0xf2474 for a in addresses)
-    same_page = valid and len({a // 4096 for a in addresses}) == 1
+    valid = bool(addresses) and all(a % 4 == 0 and 0xf1910 <= a and a + 4 <= 0xf2474 for a in addresses)
+    same_page = bool(addresses) and len({a // 4096 for a in addresses}) == 1
     # vstart is measured after the fault but the QEMU record is pre-instruction.
     # A partial load may legitimately advance it before a spurious fault.
     same = all(matches[k] for k in ('pc', 'a4', 's1', 'vl', 'vtype')) and valid and same_page

@@ -27,6 +27,11 @@ def test_register_comparison(tmp_path):
     assert f.compare(state)['outcome'] == 'matching_valid_addresses_false_fault_evidence'
     state['registers']['vstart'] = 2
     assert f.compare(state)['outcome'] == 'matching_valid_addresses_false_fault_evidence'
+    state['registers']['vl'] = 1
+    assert f.compare(state)['within_object']
+    assert f.compare(state)['single_page']
+    assert f.compare(state)['outcome'] == 'execution_divergence'
+    state['registers']['vl'] = 4
     state['registers']['a4'] += 4
     assert f.compare(state)['outcome'] == 'execution_divergence'
     del state['registers']['vl']
