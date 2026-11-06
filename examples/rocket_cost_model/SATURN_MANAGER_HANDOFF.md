@@ -1,3 +1,15 @@
+## Latest execution checkpoint
+
+The authorized autonomous continuation produced one validated scalar pilot but
+no valid pair. Three fresh role-2 boots passed the VLEN-256 probe and then
+reproduced signal 11 at the same strided vector-load instruction, with empty
+expected output. All were rejected. Further retries stopped under the
+operator's persistent-blocker condition; the worker was verified idle.
+Read the current top of `SATURN_MANAGER_STATUS.md` and
+`saturn-spec-pilot-progress.json` before resuming. The old construction holds
+and environment-bootstrap issues below are historical and were resolved.
+All protected binaries, accepted pins and failed-attempt evidence are preserved.
+
 # Saturn F2 manager handoff
 
 This handoff is for the agent running on the AWS FireSim manager instance. The

@@ -1,3 +1,36 @@
+## Current checkpoint: blocked on repeated role-2 execution fault
+
+One role-1 sample is valid. The paired pilot is **not complete**: three fresh
+role-2 hardware stages passed the VLEN-256 full/tail probe, used the accepted
+platform and frozen ELF, then terminated with signal 11 at the same executable
+address (`0x11e80`, a strided vector load). All produced empty `s.txt` and were
+rejected by the prepared collector. Manager exit 0 and simulation pass did not
+override workload correctness. The cause is not isolated to compiler, kernel
+or hardware. No binary or platform substitution was attempted.
+
+This satisfies the operator's stop condition for the same unresolved blocker
+after several evidence-backed attempts. Further hardware retries are stopped;
+post-run preflight confirmed the authorized worker idle. No valid sample was
+repeated and role 3 was not started. All accepted source/driver/base/boot pins
+remain unchanged. Both role plans use 2-GiB ext4/image capacity and the same
+DRAM-zeroing initialization. The integration fixes passed 54 lane tests.
+
+Sanitized proof is in `saturn-spec-pilot-progress.json`. Private evidence:
+
+- `/home/ubuntu/cs262_compiler/saturn-spec-lane/results/pilot-004-role1/result.json`
+- `/home/ubuntu/cs262_compiler/saturn-spec-lane/role2-failure-ledger.json`
+- `/home/ubuntu/cs262_compiler/saturn-spec-lane/pilot-private-measurement-summary.json`
+- individual immutable stages under `staging/paired-pilot-004`,
+  `staging/pilot-role2-retry-005`, and `staging/pilot-role2-retry-006`
+
+Licensed outputs, images, raw logs, fault disassembly, host identities and timing
+artifacts remain private. No speedup can be inferred. Diagnose the reproducible
+vector memory fault before resuming the lane; changing the frozen role-2 ELF,
+kernel, driver or FPGA pins requires a new operator decision. Preserve the
+accepted scalar sample and all rejected-attempt evidence.
+
+Earlier checkpoints below are historical.
+
 ## Role 2 rejected; fresh retry pending
 
 Role 2 passed the VLEN-256 probe but its unchanged executable terminated with

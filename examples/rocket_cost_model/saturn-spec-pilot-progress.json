@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "state": "role_1_validated_role_2_rejected_retry_pending",
+  "state": "blocked_reproducible_role_2_execution_fault",
   "valid_samples": {
     "1-scalar": 1,
     "2-generic-vector": 0
@@ -19,14 +19,66 @@
   "protected_components_rebuilt": false,
   "timing_evidence": "private_only",
   "speedup_claim": false,
-  "role_2_rejected": {
-    "job_signal": 11,
-    "collection_status": 0,
-    "vlen_bits": 256,
-    "probe_passed": true,
-    "expected_output_passed": false,
-    "output_empty": true,
-    "fault_instruction_class": "strided vector load",
-    "binary_substituted": false
-  }
+  "valid_pair_complete": false,
+  "role_2_failed_fresh_attempts": [
+    {
+      "image_id": "8bdc05e3fcdb8537141e337dd4bc7b017d00e28cf4c6b879960c8158442c1df0",
+      "image_receipt_sha256": "054d2a3d63234e61c0ba91fb3687f9f6375a19279d1c4b1dc42ad450516036ab",
+      "completion_sha256": "e58ebdf37dd740f9884169d29b874eb88bdf6cc12047da834bfe17e4a352eaeb",
+      "uart_sha256": "d898098c03f968ca0540fbd11f28d7c28994d7ed51fc4d98c8daf57c57b0931a",
+      "stderr_sha256": "9d7d80e89a51b4d722151c911de37b29d2c2699b31a36a1a1c472c726427e230",
+      "executable_sha256": "933c5062989468d8eba30c72a08dadb2e15bf39dfffff2532f5f2fed5cada541",
+      "guest_signal": 11,
+      "fault_pc": "0x11e80",
+      "fault_instruction_class": "strided vector load",
+      "expected_output_bytes": 0,
+      "collection_rejected": true,
+      "probe_passed": true,
+      "vlen_bits": 256,
+      "manager_exit": 0,
+      "simulation_passed": true,
+      "clean_shutdown": true
+    },
+    {
+      "image_id": "145de2027851b34ad976bb3bf77deadd8d5762d7150b958ee4ce85845bcc220d",
+      "image_receipt_sha256": "e1da86ecbf611cfe4682179a9adcf5ca7b824cd973a49f276d3372b9fd7dc06d",
+      "completion_sha256": "5df30c8d278b81d3e39c89eed04d13907eb810502f5082d60a99d3661fe0b11c",
+      "uart_sha256": "b1edaac82e1dc120a07b618444a836abae8acfb20e7e00e3fe8f3ab557a18d54",
+      "stderr_sha256": "00d4cfd75eafa00803a44684e86d7df3897947b5dc1196241b38b4ce39982a6a",
+      "executable_sha256": "933c5062989468d8eba30c72a08dadb2e15bf39dfffff2532f5f2fed5cada541",
+      "guest_signal": 11,
+      "fault_pc": "0x11e80",
+      "fault_instruction_class": "strided vector load",
+      "expected_output_bytes": 0,
+      "collection_rejected": true,
+      "probe_passed": true,
+      "vlen_bits": 256,
+      "manager_exit": 0,
+      "simulation_passed": true,
+      "clean_shutdown": true
+    },
+    {
+      "image_id": "28966e8a0b14d575af31c46029cad521bd57703dce65bbb054c88ae912ab01ae",
+      "image_receipt_sha256": "963eb87642132d8fd75fe9e6cebf33dda30b9a917ccd2a20eff346b5a96cc589",
+      "completion_sha256": "747f8bbb16490975820ada13dd746e6797a7f4074b0a995003a7c81c3a84b1f1",
+      "uart_sha256": "e14e55e95347ba87d98a7ee503d39f33a5e96dbdba1db97859c4faf6d94db1a3",
+      "stderr_sha256": "00d4cfd75eafa00803a44684e86d7df3897947b5dc1196241b38b4ce39982a6a",
+      "executable_sha256": "933c5062989468d8eba30c72a08dadb2e15bf39dfffff2532f5f2fed5cada541",
+      "guest_signal": 11,
+      "fault_pc": "0x11e80",
+      "fault_instruction_class": "strided vector load",
+      "expected_output_bytes": 0,
+      "collection_rejected": true,
+      "probe_passed": true,
+      "vlen_bits": 256,
+      "manager_exit": 0,
+      "simulation_passed": true,
+      "clean_shutdown": true
+    }
+  ],
+  "role_2_failed_attempt_count": 3,
+  "root_cause": "not isolated; identical locked ELF faults at the same instruction across fresh hardware stages",
+  "further_repetitions_started": false,
+  "role_3_started": false,
+  "final_worker_idle_verified": true
 }
