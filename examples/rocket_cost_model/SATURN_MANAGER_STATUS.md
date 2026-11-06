@@ -1,3 +1,17 @@
+## Latest checkpoint: authorized diagnostic boot failed before role 2
+
+Pulled `bc0e663` and prepared one explicitly diagnostic guest with private core
+dumps and pre-handler register/signal capture. The frozen ELF/input and accepted
+platform remained unchanged. The only hardware attempt panicked in `rcS`
+before the runner started. No core, snapshot or QEMU/FPGA register comparison
+exists. Neither false-fault nor earlier-divergence hypothesis is established.
+The kernel's configured core/vector-regset support is present; no rebuild was
+attempted or shown necessary. The worker is idle and the single-attempt limit
+is consumed. See `ROLE2_FAULT_ANALYSIS.md` and
+`saturn-role2-diagnostic-receipt.json`; raw evidence stays private. The 57
+focused tests pass. A replacement diagnostic boot requires renewed operator
+authorization; no replacement, performance repetition or role 3 was launched.
+
 ## Current checkpoint: blocked on repeated role-2 execution fault
 
 Offline localization of the frozen ELF is now recorded in

@@ -65,3 +65,39 @@ false Saturn memory fault for a valid single-page `vlse32.v` with fractional
 LMUL. If they differ, locate the first earlier vector-dependent divergence
 before changing compiler targeting. This diagnostic is not a performance
 sample and must not replace frozen role 2.
+
+## Manager diagnostic checkpoint: boot failed before workload
+
+The single authorized diagnostic hardware attempt used an unchanged frozen
+role-2 ELF and official input bundle. Its admitted guest enabled core dumps
+and carried a separate ptrace launcher to preserve the first signal's scalar,
+vector and siginfo state before libgfortran could re-raise it. No protected
+component was rebuilt. The adapter and lane tests passed (57 focused tests).
+
+This attempt panicked in Linux during `rcS`, before the workload runner or
+role-2 executable started: illegal instruction at `kobject_get+0x30/0x78`
+(`epc=0xffffffff8078cc5a`, `badaddr=0x60e20207`). The private worker image has no
+result directory. No role-2 core or first-fault snapshot was generated, so
+**neither register-comparison hypothesis has been determined**. This kernel
+trap must not be reported as the role-2 userspace vector fault.
+
+The matching failed simulation was stopped, raw UART/manager evidence was
+preserved privately, and post-stop preflight verified the worker idle. No
+replacement boot was launched because the operator authorized one diagnostic
+attempt. The accepted kernel configuration includes `CONFIG_COREDUMP=y` and
+its source has an `NT_RISCV_VECTOR` regset; the failure does not establish that
+a kernel rebuild is required or that this format cannot expose the state.
+
+See `saturn-role2-diagnostic-receipt.json` for sanitized hashes and outcome.
+The private stage is under
+`/home/ubuntu/cs262_compiler/saturn-spec-lane/staging/role2-diagnostic-008/`.
+The capture launcher is ready for a separately authorized replacement attempt;
+do not change role 2 or treat this diagnostic as performance.
+
+The capture design accounts for GCC 15.1's
+[libgfortran signal handler](https://raw.githubusercontent.com/gcc-mirror/gcc/releases/gcc-15.1.0/libgfortran/runtime/compile_options.c),
+which prints a backtrace and then re-raises the signal. Its eventual core may
+therefore carry re-raise registers/siginfo; the pre-delivery ptrace snapshot is
+the authoritative first-fault state. Vector `vstart` at a fault may also differ
+from QEMU's pre-instruction zero after partial progress; compare base, stride,
+VL and VTYPE before interpreting that difference as earlier divergence.

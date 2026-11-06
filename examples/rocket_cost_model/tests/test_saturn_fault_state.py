@@ -25,6 +25,8 @@ def test_register_comparison(tmp_path):
     state = f.decode(tmp_path)
     assert state['si_addr'] == 0xf1924
     assert f.compare(state)['outcome'] == 'matching_valid_addresses_false_fault_evidence'
+    state['registers']['vstart'] = 2
+    assert f.compare(state)['outcome'] == 'matching_valid_addresses_false_fault_evidence'
     state['registers']['a4'] += 4
     assert f.compare(state)['outcome'] == 'execution_divergence'
     del state['registers']['vl']

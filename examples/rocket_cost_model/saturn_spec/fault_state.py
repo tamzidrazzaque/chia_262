@@ -41,7 +41,9 @@ def compare(state):
     addresses = [regs['a4'] + i * regs['s1'] for i in range(regs['vl'])] if regs['vl'] <= 32 else []
     valid = len(addresses) == 4 and all(a % 4 == 0 and 0xf1910 <= a and a + 4 <= 0xf2474 for a in addresses)
     same_page = valid and len({a // 4096 for a in addresses}) == 1
-    same = all(matches.values()) and valid and same_page
+    # vstart is measured after the fault but the QEMU record is pre-instruction.
+    # A partial load may legitimately advance it before a spurious fault.
+    same = all(matches[k] for k in ('pc', 'a4', 's1', 'vl', 'vtype')) and valid and same_page
     return {'outcome': 'matching_valid_addresses_false_fault_evidence' if same else 'execution_divergence',
             'matches': matches, 'element_addresses': addresses, 'within_object': valid,
             'single_page': same_page, 'qemu': QEMU}
