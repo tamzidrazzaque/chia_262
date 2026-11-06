@@ -92,3 +92,18 @@ role-3 timing. Preserve the exact platform, compiler/ISA controls, input identit
 and independent correctness gates. No SPEC performance run or adaptive search
 was performed by this hardware smoke. The scalar execution adapter's guards
 must remain intact; it is not the Saturn adapter.
+
+## SPEC lane prepared; waiting for the producer bundle
+
+See [SATURN_SPEC_LANE.md](SATURN_SPEC_LANE.md) for the exact private intake path,
+bundle contract and commands. The lane verifies immutable GCC-15 role bundles,
+stages overlays/configuration without constructing guests, reuses the accepted
+native adapter/driver/base/probe, rejects stale or conflicting worker state and
+collects hash-bound exact outputs. There is no GCC/SPEC rebuild path.
+
+Only read-only worker preflight has been performed during this preparation.
+No new final guest, SPEC execution or hardware run was launched. Resume at
+bundle delivery plus its external manifest SHA-256, not at hardware dispatch.
+The completed RVV gate's install descriptors were archived under the private
+`rvv-gate-001/installed-workload` directory; its accepted images, binaries and
+collected evidence remain unchanged.

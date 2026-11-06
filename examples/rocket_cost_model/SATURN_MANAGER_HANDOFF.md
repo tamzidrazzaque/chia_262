@@ -11,6 +11,9 @@ Step 7 also passed on 2026-11-05: see
 [saturn-hardware-gate.json](saturn-hardware-gate.json) and
 [SATURN_RVV_GATE.md](SATURN_RVV_GATE.md). Resume with SPEC workload preparation;
 do not rebuild or rerun the completed platform gate without a reason.
+The prepared SPEC intake/staging lane and sender contract are in
+[SATURN_SPEC_LANE.md](SATURN_SPEC_LANE.md). Wait for the immutable bundle and
+external manifest digest before final guest construction or execution.
 
 ## Current roles 1/2 workload handoff
 
