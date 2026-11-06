@@ -1,3 +1,21 @@
+## Pilot construction checkpoint
+
+Continuation from `5207934` was authorized for exactly one role-1/role-2 pair.
+Both staged plans and the frozen platform were reverified; each retains the
+2-GiB capacity and accepted boot binary.
+
+Construction stopped before FireMarshal executed `br-base/host-init.sh`.
+The base host initialization calls `make -C trigger`; its Makefile invokes
+`riscv64-unknown-linux-gnu-gcc` to produce the base's `start` and `end` trigger
+helpers. A private fail-closed wrapper rejected this build action before it ran.
+The frozen base was not rebuilt or replaced, and no dependency was bypassed.
+
+Neither final guest exists, neither image receipt exists, and no infrastructure
+or hardware task was started. There are no pilot measurements to report.
+See `saturn-spec-pilot-construction-status.json`. Resume by reviewing how to
+consume the accepted base as a prebuilt dependency without invoking its build
+hooks, while preserving the existing staged identities and admission checks.
+
 # Manager takeover status
 
 Outcome: **hardware execution gate passed**, 2026-11-05.

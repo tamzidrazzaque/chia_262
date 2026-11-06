@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "checkpoint_commit": "5207934",
+  "state": "stopped_before_base_host_init",
+  "authorized_samples": {
+    "1-scalar": 1,
+    "2-generic-vector": 1
+  },
+  "constructed_guests": 0,
+  "hardware_tasks_started": 0,
+  "image_receipts_created": 0,
+  "both_stages_reverified": true,
+  "frozen_platform_reverified": true,
+  "rootfs_gib_each": 2,
+  "accepted_bootbinary_sha256": "dbdf30cae7e8c88d3242c24a97591582686a0dbcc985b8b9cf34a72739673eb8",
+  "blocked_action": {
+    "task": "br-base/host-init.sh",
+    "action": "handleHostInit",
+    "command": "make -C trigger",
+    "compiler_invocation": "riscv64-unknown-linux-gnu-gcc -nostartfiles -nostdlib",
+    "targets": [
+      "start",
+      "end"
+    ],
+    "executed": false
+  },
+  "measurements_available": false,
+  "stop_reason": "Frozen base host initialization requests a build action. Operator instructed stop on base/compiler rebuild requests. No dependency bypass or replacement base was attempted."
+}
