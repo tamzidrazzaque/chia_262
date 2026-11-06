@@ -1,3 +1,15 @@
+## First valid role-1 sample collected
+
+Role 1 completed on F2 and passed the prepared collector: exact ELF/output and
+identity bindings, VLEN 256 full/tail probe, positive guest timing, target cycles,
+manager exit 0, simulation pass and clean shutdown. Raw timing and logs remain
+private. Two prior boot failures are retained as rejected attempts.
+
+The valid attempt uses identical 2-GiB guest capacity and DRAM zeroing across
+the paired role plans. Role 2 is now entering fresh preflight/infrastructure
+setup. Stop after its first valid sample and report the pair; no repetition
+block, role 3 or speedup claim is authorized.
+
 ## Autonomous pilot continuation
 
 The manager environment bootstrap is corrected by reusing the successful RVV

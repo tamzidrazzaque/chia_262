@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "state": "role_1_validated_role_2_pending",
+  "valid_samples": {
+    "1-scalar": 1,
+    "2-generic-vector": 0
+  },
+  "role_1": {
+    "collection_sha256": "5fc681f1d611a3a803c245106cdd3643b5180b8919c0b00847f30b1953af6ba4",
+    "vlen_bits": 256,
+    "exact_output_passed": true,
+    "clean_shutdown": true,
+    "simulation_passed": true,
+    "manager_exit": 0
+  },
+  "prior_rejected_guest_boots": 2,
+  "zero_out_dram_both_roles": true,
+  "rootfs_gib_each": 2,
+  "protected_components_rebuilt": false,
+  "timing_evidence": "private_only",
+  "speedup_claim": false
+}
