@@ -1,3 +1,20 @@
+## Autonomous pilot continuation
+
+The manager environment bootstrap is corrected by reusing the successful RVV
+gate's pinned environment setup. New generated adapters now reject a missing
+`FIRESIM_SOURCED` before entering the execution guard; 53 lane tests pass.
+The original consumed attempt remains intact.
+
+A fresh role-1 guest passed image admission and worker preflight, then reached
+a Linux kernel panic after rootfs mount and before the RVV probe or SPEC.
+The accepted boot binary hash matches the successful gate. The failed driver
+was terminated only after checking its command line against this stage's
+identity. Native collection rejected the missing guest result, regardless of
+the manager's nominal successful exit. No valid pilot sample exists yet.
+Raw UART, manager logs and failed-attempt receipts are private. Another fresh
+stage is being prepared under the same accepted configuration to test whether
+the boot failure repeats; no successful repetition or role 3 is authorized.
+
 ## Pilot guests admitted; manager bootstrap stopped
 
 The reviewed trigger exception passed for both guest constructions. Exact
