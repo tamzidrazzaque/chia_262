@@ -4,8 +4,9 @@ import struct
 from pathlib import Path
 
 REGISTERS = 'pc ra sp gp tp t0 t1 t2 s0 s1 a0 a1 a2 a3 a4 a5 a6 a7 s2 s3 s4 s5 s6 s7 s8 s9 s10 s11 t3 t4 t5 t6'.split()
-QEMU = {'pc': 0x11e80, 'a4': 0xf1924, 's1': 0x144, 't2': 9,
-        'vl': 4, 'vtype': 0x17, 'vstart': 0}
+# Matching final-loop hit, corrected by handoff 6233711.
+QEMU = {'pc': 0x11e80, 'a4': 0xf2344, 's1': 0x144, 't2': 1,
+        'vl': 1, 'vtype': 0x17, 'vstart': 0}
 
 
 def decode(directory):
@@ -25,7 +26,7 @@ def decode(directory):
         if len(data) < 40:
             raise ValueError('truncated RVV regset')
         regs.update(zip(('vstart', 'vl', 'vtype', 'vcsr', 'vlenb'), struct.unpack_from('<5Q', data)))
-    selected = {k: regs[k] for k in ('pc', 'a4', 's1', 't2', 'a3', 's8', 's5', 's0',
+    selected = {k: regs[k] for k in ('pc', 'a2', 'a4', 's1', 't2', 'a3', 's8', 's5', 's0',
                                     'vl', 'vtype', 'vstart', 'vlenb') if k in regs}
     return {'registers': selected, 'signal': signo, 'si_code': code,
             'si_addr': struct.unpack_from('<Q', sig, 16)[0], 'vector_errno': meta['vector_errno']}
@@ -43,7 +44,7 @@ def compare(state):
     same_page = bool(addresses) and len({a // 4096 for a in addresses}) == 1
     # vstart is measured after the fault but the QEMU record is pre-instruction.
     # A partial load may legitimately advance it before a spurious fault.
-    same = all(matches[k] for k in ('pc', 'a4', 's1', 'vl', 'vtype')) and valid and same_page
+    same = all(matches[k] for k in ('pc', 'a2', 'a4', 's1', 'vl', 'vtype')) and valid and same_page
     return {'outcome': 'matching_valid_addresses_false_fault_evidence' if same else 'execution_divergence',
             'matches': matches, 'element_addresses': addresses, 'within_object': valid,
             'single_page': same_page, 'qemu': QEMU}

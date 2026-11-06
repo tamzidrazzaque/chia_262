@@ -9,7 +9,9 @@ from examples.rocket_cost_model.saturn_spec import fault_state as f
 from examples.rocket_cost_model.saturn_spec import staging as s
 
 
-def test_register_comparison(tmp_path):
+def test_register_comparison(tmp_path, monkeypatch):
+    monkeypatch.setattr(f, 'QEMU', {'pc': 0x11e80, 'a4': 0xf1924, 's1': 0x144, 't2': 9,
+                                   'vl': 4, 'vtype': 0x17, 'vstart': 0})
     regs = [0] * 32
     for key, value in f.QEMU.items():
         if key in f.REGISTERS:
@@ -60,3 +62,13 @@ def test_native_capture_original_segv(tmp_path):
     assert struct.unpack_from('<i', sig, 8)[0] > 0
     assert struct.unpack_from('<Q', sig, 16)[0] == 0
     assert json.loads((tmp_path / 'fault.meta.json').read_text())['captured_before_delivery']
+
+
+def test_default_reference_matches_final_loop_iteration():
+    state = {'signal': 11, 'si_code': 1, 'si_addr': 0x144f6a24,
+             'registers': {**f.QEMU, 'a4': 0x144f6a24}}
+    result = f.compare(state)
+    assert result['matches']['vl'] and result['matches']['t2']
+    assert not result['matches']['a4']
+    assert result['single_page'] and not result['within_object']
+    assert result['outcome'] == 'execution_divergence'
