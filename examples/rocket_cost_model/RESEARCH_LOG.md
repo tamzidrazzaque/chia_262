@@ -310,3 +310,20 @@ unchanged across the boundary.
 The corrected driver build source is therefore Chipyard `19a07f6...` with
 FireSim `b7927ea...`; `f503763b...` remains the catalog-publication reference.
 The metadata gate is resolved, but no driver build or hardware run has occurred.
+
+## 20. Saturn hardware gate and VLEN-256 baselines completed (2026-11-05)
+
+The manager built and accepted the exact driver, booted Linux on the published
+Saturn F2 image, confirmed VLEN 256, passed explicit RVV load/add/store checks,
+collected cycle counters, and shut down cleanly. The gate evidence is recorded
+in `SATURN_RVV_GATE.md` and `saturn-hardware-gate.json`.
+
+Local preparation then regenerated unchanged-SPEC roles 1 and 2 for the exact
+target. A skeptical check found that the original role-2 flag
+`-mrvv-vector-bits=zvl` treated Zvl128 as an exact vector length. At VLEN 256
+the binary returned an empty `s.txt`, while Exchange2's configured
+`specdiff -m` still returned success. The pipeline now uses scalable RVV and
+requires an independent exact-output hash. The corrected role-2 binary contains
+5,452 static RVV instructions and matches the 855-byte official output at VLEN
+256. A deterministic private roles 1/2 handoff archive was created for manager
+staging; licensed contents remain outside Git.

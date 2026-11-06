@@ -32,7 +32,7 @@ SCALAR_FLAGS = (
 )
 VECTOR_FLAGS = (
     "-march=rv64gcv_zvbb -mabi=lp64d -mtune=rocket "
-    "-mrvv-vector-bits=zvl -fvect-cost-model=dynamic -fopt-info-vec-all"
+    "-mrvv-vector-bits=scalable -fvect-cost-model=dynamic -fopt-info-vec-all"
 )
 
 
@@ -104,6 +104,40 @@ def validated(log: str, benchmark: str, size: str) -> bool:
     return bool(re.search(
         rf"(?m)^ Success {re.escape(benchmark)} base {re.escape(size)}\b", log
     ))
+
+
+def validate_exchange2_output(spec_dir: Path, benchmark: str, size: str,
+                              label: str) -> dict:
+    """Require Exchange2's produced solution to exactly match its reference.
+
+    CPU2017's Exchange2 comparison uses ``specdiff -m``, which can return zero
+    for an empty output.  That makes the harness success line insufficient for
+    this experiment.  Keep licensed contents private and record only hashes.
+    """
+    if benchmark != BENCHMARK:
+        raise ValueError(f"no independent output validator for {benchmark}")
+    reference = (
+        spec_dir / "benchspec/CPU/548.exchange2_r/data" / size / "output/s.txt"
+    )
+    run_root = spec_dir / "benchspec/CPU" / benchmark / "run"
+    run_dirs = list(run_root.glob(f"run_base_{size}_{label}-64.*"))
+    if not reference.is_file() or not run_dirs:
+        raise ValueError("missing Exchange2 reference or run output")
+    run_dir = max(run_dirs, key=lambda path: path.stat().st_mtime_ns)
+    actual = run_dir / "s.txt"
+    if not actual.is_file():
+        raise ValueError("Exchange2 did not produce s.txt")
+    reference_hash = sha256(reference)
+    actual_hash = sha256(actual)
+    if actual.stat().st_size == 0 or actual_hash != reference_hash:
+        raise ValueError("Exchange2 output does not exactly match the reference")
+    return {
+        "validator": "exact-output-sha256",
+        "output": "s.txt",
+        "bytes": actual.stat().st_size,
+        "sha256": actual_hash,
+        "reference_sha256": reference_hash,
+    }
 
 
 def validate_candidate_manifest(manifest: dict, candidate_id: str, gcc_root: Path) -> None:
@@ -214,7 +248,8 @@ def main() -> int:
         "qemu_correctness_only": True,
         "target_performance_result": False,
     }
-    (output / f"{stem}.json").write_text(json.dumps(metadata, indent=2) + "\n")
+    metadata_path = output / f"{stem}.json"
+    metadata_path.write_text(json.dumps(metadata, indent=2) + "\n")
 
     environment = os.environ.copy()
     environment["RISCV"] = str(gcc_root)
@@ -227,9 +262,18 @@ def main() -> int:
     print(f"runcpu exit={result.returncode}; log={log}")
     if result.returncode:
         return result.returncode
-    if args.action == "validate" and not validated(log.read_text(), args.benchmark, args.size):
-        print("SPEC did not report the required success result; inspect the private log")
-        return 1
+    if args.action == "validate":
+        if not validated(log.read_text(), args.benchmark, args.size):
+            print("SPEC did not report the required success result; inspect the private log")
+            return 1
+        try:
+            metadata["output_validation"] = validate_exchange2_output(
+                spec_dir, args.benchmark, args.size, label,
+            )
+        except ValueError as exc:
+            print(f"independent output validation failed: {exc}")
+            return 1
+        metadata_path.write_text(json.dumps(metadata, indent=2) + "\n")
     return 0
 
 

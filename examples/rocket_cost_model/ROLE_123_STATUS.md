@@ -1,5 +1,34 @@
 # Unchanged-SPEC roles 1-3 status
 
+## Active VLEN-256 baselines (2026-11-05)
+
+Roles 1 and 2 have now been regenerated for the selected
+`REFV256D128RocketConfig` target using unchanged licensed SPEC CPU2017
+`648.exchange2_s` test source and inputs. Both passed a fresh QEMU correctness
+run at the target VLEN and an independent exact-output hash check:
+
+| Role | Final ELF SHA-256 | Static RVV instructions | Exact output |
+| --- | --- | ---: | --- |
+| 1. Scalar reference | `6500e7e82a183d11d5e83b0ff4b3ee79fc709127c849b8c2fca1675307d27e7d` | 0 | 855 bytes, SHA-256 `93c5882eda07b05bf277b4636f8a92cd16bf347e8cf5513fc578b8f60c12506e` |
+| 2. Generic vector reference | `933c5062989468d8eba30c72a08dadb2e15bf39dfffff2532f5f2fed5cada541` | 5,452 | same exact reference hash |
+
+Role 2 uses stock GCC 15.1 with `-mrvv-vector-bits=scalable`. The earlier
+`zvl` setting was invalid for this deployment: GCC's own source defines it as
+treating the Zvl minimum as the exact VLEN. That binary returned immediately
+with an empty output at VLEN 256 even though CPU2017's Exchange2 `specdiff -m`
+comparison reported success. The experiment now rejects an empty or non-exact
+`s.txt` independently of the harness status. The corrected role 2 ran for
+269.9 seconds under QEMU VLEN 256 and matched the official reference exactly.
+
+The private deterministic roles 1/2 handoff is retained outside Git at
+`/home/eecs/trazzaque/spec2017-research/results/saturn-vlen256-baselines/`
+as `saturn-spec-roles-1-2.tar`. Its SHA-256 is
+`9c6331dea7f03a6e9364df4305d8ce0dae696ab5f683feb0c37208ce9bdb10ca`.
+It contains licensed material and must not be published. The next controlled
+step is manager-side intake, FireMarshal staging, and paired role-1/role-2 F2
+measurement. Role 3 remains unmeasured and must not be generated or selected
+from QEMU timing.
+
 > **Superseded target notice (2026-11-04):** this run used the earlier VLEN
 > 128 correctness target. The active campaign now selects upstream
 > `REFV256D128RocketConfig` and its `FireSimREFV256D128RocketConfig` wrapper.

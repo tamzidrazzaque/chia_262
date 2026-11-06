@@ -12,6 +12,40 @@ Step 7 also passed on 2026-11-05: see
 [SATURN_RVV_GATE.md](SATURN_RVV_GATE.md). Resume with SPEC workload preparation;
 do not rebuild or rerun the completed platform gate without a reason.
 
+## Current roles 1/2 workload handoff
+
+The software-preparation host has produced a deterministic private archive for
+the first paired baseline run. It contains unchanged-SPEC role 1 and role 2
+executables, official test inputs, the official reference output, and a
+manifest. It contains licensed SPEC material and therefore remains outside
+Git. Accept only this identity:
+
+```text
+archive: saturn-spec-roles-1-2.tar
+SHA-256: 9c6331dea7f03a6e9364df4305d8ce0dae696ab5f683feb0c37208ce9bdb10ca
+role 1 ELF: 6500e7e82a183d11d5e83b0ff4b3ee79fc709127c849b8c2fca1675307d27e7d
+role 2 ELF: 933c5062989468d8eba30c72a08dadb2e15bf39dfffff2532f5f2fed5cada541
+expected s.txt: 93c5882eda07b05bf277b4636f8a92cd16bf347e8cf5513fc578b8f60c12506e
+```
+
+Before staging, hash the archive, inspect `manifest.json`, and verify every
+member hash. Reject a different target, VLEN, compiler flag set, ELF, input, or
+reference. Prepare the FireMarshal adapter and measurement protocol in
+parallel, but do not substitute locally rebuilt binaries or start a hardware
+run until this exact private archive has been transferred. Run roles in paired,
+order-balanced fresh boots with identical inputs and platform settings. Require
+the exact output hash and clean shutdown for every measured sample; retain raw
+target-cycle observations and platform identities outside Git.
+
+The producer is:
+
+```bash
+python3 -m examples.rocket_cost_model.bundle_spec_roles \
+  --spec-dir /home/eecs/trazzaque/spec2017-research/install \
+  --evidence /home/eecs/trazzaque/spec2017-research/results/saturn-vlen256-baselines \
+  --output /home/eecs/trazzaque/spec2017-research/results/saturn-vlen256-baselines/saturn-spec-roles-1-2.tar
+```
+
 ## Fixed target identity
 
 Do not substitute a newer checkout, scalar Rocket image, BOOM image, or the

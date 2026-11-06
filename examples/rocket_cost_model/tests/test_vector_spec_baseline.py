@@ -3,8 +3,11 @@
 import hashlib
 import json
 from pathlib import Path
+import tempfile
+import tarfile
 import unittest
 
+from examples.rocket_cost_model.bundle_spec_roles import create_bundle
 from examples.rocket_cost_model.spec_vector_baseline import (
     GENERATED,
     SCALAR_FLAGS,
@@ -17,6 +20,7 @@ from examples.rocket_cost_model.spec_vector_baseline import (
     render_config,
     role_settings,
     validate_candidate_manifest,
+    validate_exchange2_output,
     validated,
 )
 
@@ -93,6 +97,8 @@ class VectorSpecBaselineTests(unittest.TestCase):
         self.assertEqual(label, "saturn_role2_generic_vector")
         self.assertEqual(flags, VECTOR_FLAGS)
         self.assertIn("-fvect-cost-model=dynamic", flags)
+        self.assertIn("-mrvv-vector-bits=scalable", flags)
+        self.assertNotIn("-mrvv-vector-bits=zvl", flags)
         self.assertTrue(vector_qemu)
 
     def test_role3_requires_safe_immutable_candidate_id(self):
@@ -151,6 +157,68 @@ class VectorSpecBaselineTests(unittest.TestCase):
                                   "648.exchange2_s", "test"))
         self.assertFalse(validated(" Success 648.exchange2_s base train ratio=0\n",
                                    "648.exchange2_s", "test"))
+
+    def test_exchange2_requires_nonempty_exact_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            spec = Path(directory)
+            reference = spec / "benchspec/CPU/548.exchange2_r/data/test/output/s.txt"
+            run = (spec / "benchspec/CPU/648.exchange2_s/run/"
+                   "run_base_test_saturn_role2_generic_vector-64.0000")
+            reference.parent.mkdir(parents=True)
+            run.mkdir(parents=True)
+            reference.write_text("solution\n")
+            output = run / "s.txt"
+            output.write_text("")
+            with self.assertRaisesRegex(ValueError, "does not exactly match"):
+                validate_exchange2_output(
+                    spec, "648.exchange2_s", "test",
+                    "saturn_role2_generic_vector",
+                )
+            output.write_text("solution\n")
+            result = validate_exchange2_output(
+                spec, "648.exchange2_s", "test", "saturn_role2_generic_vector",
+            )
+            self.assertEqual(result["bytes"], 9)
+            self.assertEqual(result["sha256"], result["reference_sha256"])
+
+    def test_private_bundle_is_content_addressed_and_deterministic(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            spec, evidence = root / "spec", root / "evidence"
+            reference = spec / "benchspec/CPU/548.exchange2_r/data/test/output/s.txt"
+            exe = spec / "benchspec/CPU/648.exchange2_s/exe"
+            reference.parent.mkdir(parents=True)
+            exe.mkdir(parents=True)
+            evidence.mkdir()
+            reference.write_text("solution\n")
+            for role in ("1-scalar", "2-generic-vector"):
+                label, _, _ = role_settings(role)
+                run = (spec / "benchspec/CPU/648.exchange2_s/run" /
+                       f"run_base_test_{label}-64.0000")
+                run.mkdir(parents=True)
+                (run / "s.txt").write_text("solution\n")
+                (run / "puzzles.txt").write_text("licensed input\n")
+                (run / "control").write_text("0\n")
+                binary = exe / f"exchange2_s_base.{label}-64"
+                binary.write_bytes((role + " binary").encode())
+                validation = validate_exchange2_output(
+                    spec, "648.exchange2_s", "test", label,
+                )
+                metadata = evidence / (
+                    f"648.exchange2_s-test-{label}-validate.json"
+                )
+                metadata.write_text(json.dumps({"output_validation": validation}))
+            bundle = root / "bundle.tar"
+            first = create_bundle(spec, evidence, bundle)
+            second = create_bundle(spec, evidence, bundle)
+            self.assertEqual(first["bundle_sha256"], second["bundle_sha256"])
+            with tarfile.open(bundle) as archive:
+                self.assertEqual(
+                    set(archive.getnames()),
+                    {"manifest.json", "roles/1-scalar/exchange2_s",
+                     "roles/2-generic-vector/exchange2_s", "inputs/puzzles.txt",
+                     "inputs/control", "expected/s.txt"},
+                )
 
 
 if __name__ == "__main__":

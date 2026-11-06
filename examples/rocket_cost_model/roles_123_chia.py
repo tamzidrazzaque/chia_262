@@ -28,6 +28,7 @@ from examples.rocket_cost_model.spec_vector_baseline import (
     render_config,
     role_settings,
     sha256,
+    validate_exchange2_output,
     validated,
 )
 from examples.rocket_cost_model.vector_cost_model import build_candidate, proposal
@@ -77,7 +78,7 @@ def _audit_elf(binary: Path, objdump: Path, readelf: Path) -> dict:
     }
 
 
-def _verify_reusable_role(output: Path, gcc_root: Path, speckle: Path,
+def _verify_reusable_role(spec_dir: Path, output: Path, gcc_root: Path, speckle: Path,
                           qemu: Path, role: str, benchmark: str, size: str,
                           label: str, target_flags: str, vector_qemu: bool,
                           candidate_id: str | None) -> None:
@@ -120,6 +121,10 @@ def _verify_reusable_role(output: Path, gcc_root: Path, speckle: Path,
     validate_log = output / f"{benchmark}-{size}-{label}-validate.log"
     if not validated(validate_log.read_text(), benchmark, size):
         raise RuntimeError(f"cannot resume {role}; SPEC validation evidence is absent")
+    try:
+        validate_exchange2_output(spec_dir, benchmark, size, label)
+    except ValueError as exc:
+        raise RuntimeError(f"cannot resume {role}; {exc}") from exc
 
 
 @ChiaFunction(num_cpus=1, max_retries=0)
@@ -140,7 +145,7 @@ def run_role_task(repo: str, spec_dir: str, gcc_root: str, toolchain_root: str,
     label, flags, vector_qemu = role_settings(role, candidate_id)
     if reuse_validated:
         _verify_reusable_role(
-            Path(output), Path(gcc_root), Path(speckle), Path(qemu), role,
+            Path(spec_dir), Path(output), Path(gcc_root), Path(speckle), Path(qemu), role,
             benchmark, size, label, flags, vector_qemu, candidate_id,
         )
     else:
@@ -158,6 +163,12 @@ def run_role_task(repo: str, spec_dir: str, gcc_root: str, toolchain_root: str,
     log = Path(output) / f"{benchmark}-{size}-{label}-validate.log"
     if not validated(log.read_text(), benchmark, size):
         raise RuntimeError(f"{role} lacks SPEC's explicit success line; inspect {log}")
+    try:
+        output_validation = validate_exchange2_output(
+            Path(spec_dir), benchmark, size, label,
+        )
+    except ValueError as exc:
+        raise RuntimeError(f"{role} failed independent output validation: {exc}") from exc
     program = benchmark.split(".", 1)[1]
     binary = Path(spec_dir) / "benchspec/CPU" / benchmark / "exe" / f"{program}_base.{label}-64"
     tools = Path(toolchain_root) / "bin"
@@ -181,6 +192,7 @@ def run_role_task(repo: str, spec_dir: str, gcc_root: str, toolchain_root: str,
         "target_vlen": TARGET_VLEN,
         "target_dlen": TARGET_DLEN,
         "validated": True,
+        "output_validation": output_validation,
         "elf": audit,
         "qemu_correctness_only": True,
         "target_performance_result": False,
