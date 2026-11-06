@@ -1,5 +1,13 @@
 ## Current checkpoint: blocked on repeated role-2 execution fault
 
+Offline localization of the frozen ELF is now recorded in
+`ROLE2_FAULT_ANALYSIS.md`. At the first `0x11e80` execution under pinned QEMU,
+the four strided addresses are aligned, stay within
+`__brute_force_MOD_block`, and remain on one mapped page. This narrows the next
+step to a single core-dump diagnostic run that compares FPGA fault registers
+against the recorded QEMU values; another blind performance retry is not
+authorized.
+
 One role-1 sample is valid. The paired pilot is **not complete**: three fresh
 role-2 hardware stages passed the VLEN-256 full/tail probe, used the accepted
 platform and frozen ELF, then terminated with signal 11 at the same executable
