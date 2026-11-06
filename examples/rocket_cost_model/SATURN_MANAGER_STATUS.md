@@ -114,3 +114,33 @@ published `9c6331de...` archive identity. That archive's current packager omits
 the compiler/ISA/validated-invocation sidecars required for executable-ready
 intake; payload-only archive verification therefore remains quarantined until
 complete per-role metadata arrives. See the lane contract before transfer.
+
+## Complete directory intake and pilot staging passed
+
+Both complete per-role directories were received and verified against the
+operator-supplied manifest hashes:
+
+- Role 1: `72464d772d5afeace52483643605b4d0e0f48b67a29901858a5d0d29dc9702b2`.
+- Role 2: `44ac81c9cb45df7ccf2c87abfcfe8f6f8378a949a9963cb8fb9654683a90bf89`.
+
+Each passed all 8 file hashes, source/copy integrity, the accepted platform lock,
+pinned GCC-15 compiler/role checks, independent ELF audit, ISA/validation bindings,
+and the nonempty official Exchange2 reference oracle. Verified snapshots reside
+under `/home/ubuntu/cs262_compiler/saturn-spec-lane/verified/<manifest-sha256>`.
+Full per-file intake results are private at
+`/home/ubuntu/cs262_compiler/saturn-spec-lane/complete-directory-intake-results.json`.
+
+Exactly one pilot pair was staged under
+`/home/ubuntu/cs262_compiler/saturn-spec-lane/staging/paired-pilot-001/`, with
+`1-scalar` and `2-generic-vector` subdirectories. Both plans use 2-GiB capacity,
+1,024-MiB scratch, the same official inputs/invocation/expected output, platform
+and HWDB. Runtime settings match except unique workload/result names. Distinct
+nonces/image IDs enforce fresh-run identities. Stage verification and generated
+shell/Python syntax checks passed. The sanitized record is
+[saturn-spec-pilot-stage-review.json](saturn-spec-pilot-stage-review.json).
+
+**Current stop: staging and image-plan review only.** No final SPEC rootfs/guest
+was constructed, no image receipt or native-task marker exists, and no F2 run
+was launched. The private pair directory contains an explicit hold marker.
+Do not proceed to construction/execution or the repetition block without the
+operator's next instruction. No role-3 work was started.

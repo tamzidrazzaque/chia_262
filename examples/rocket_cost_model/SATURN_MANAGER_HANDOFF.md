@@ -15,6 +15,20 @@ The prepared SPEC intake/staging lane and sender contract are in
 [SATURN_SPEC_LANE.md](SATURN_SPEC_LANE.md). Wait for the immutable bundle and
 external manifest digest before final guest construction or execution.
 
+## Latest manager checkpoint: paired pilot staged, execution held
+
+Both complete per-role directories passed intake (8 files each) using the
+operator's manifest hashes `72464d77...` and `44ac81c9...`. Exactly one fresh
+role-1/role-2 pilot pair is staged with equal 2-GiB capacity and matching
+platform/input/runtime settings. See `SATURN_MANAGER_STATUS.md` and
+`saturn-spec-pilot-stage-review.json` for the complete identities and review.
+
+**The latest operator instruction stops after staging and image-plan review.**
+No final guests were constructed and no F2 runs were launched. Do not construct
+or execute from this checkpoint until the operator instructs continuation.
+The earlier archive-only quarantine notice below describes the old payload
+format; the subsequently delivered complete directories passed the full contract.
+
 ## Current roles 1/2 workload handoff
 
 The software-preparation host has produced a deterministic private archive for

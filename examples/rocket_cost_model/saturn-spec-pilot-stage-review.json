@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "state": "staged_only_not_constructed",
+  "source_revision": "29998a6",
+  "pilot_order": [
+    "1-scalar",
+    "2-generic-vector"
+  ],
+  "authorized_pair_count": 1,
+  "benchmark": "648.exchange2_s",
+  "size": "test",
+  "input_id": "exchange2-test-1",
+  "input_set_sha256": "236fc86215a1a1933dbdfc8708d00f152e85ef671efc039488d6f1c5b4a80cbf",
+  "expected_s_txt_sha256": "93c5882eda07b05bf277b4636f8a92cd16bf347e8cf5513fc578b8f60c12506e",
+  "common_rootfs_gib": 2,
+  "common_scratch_mib": 1024,
+  "platform_sha256": "326ab8d256ea40b60b7857d4d4013e76eca8035d55b751978041df9c6d63fbfc",
+  "review": {
+    "same_inputs": true,
+    "same_invocation": true,
+    "same_platform": true,
+    "same_hwdb": true,
+    "same_runtime_except_unique_workload_and_result_names": true,
+    "same_capacity": true,
+    "independent_nonce_and_image_id": true,
+    "runner_shell_syntax": true,
+    "adapter_python_syntax": true
+  },
+  "roles": {
+    "1-scalar": {
+      "manifest_sha256": "72464d772d5afeace52483643605b4d0e0f48b67a29901858a5d0d29dc9702b2",
+      "image_id": "c1278a89c65e2aa0a90cadec1b6e83e97f6e3d18274b7aa32b32e86408f3d1c3",
+      "plan_sha256": "bf7a577dcd6986657e478be35497cb3327a190cf4e3bd761fed43b162f1bc2c4",
+      "executable_sha256": "6500e7e82a183d11d5e83b0ff4b3ee79fc709127c849b8c2fca1675307d27e7d",
+      "static_rvv_instruction_count": 0,
+      "intake_status": "passed",
+      "verified_file_count": 8,
+      "intake_checks": {
+        "external_manifest_hash": true,
+        "platform_lock_verified": true,
+        "all_regular_files_listed_and_hashed": true,
+        "no_links_or_extra_files": true,
+        "copy_reverified": true,
+        "pinned_baseline_compiler_verified": true,
+        "role_flags_verified": true,
+        "independent_elf_audit_verified": true,
+        "producer_validation_bindings_verified": true,
+        "official_nonempty_exact_reference_verified": true
+      }
+    },
+    "2-generic-vector": {
+      "manifest_sha256": "44ac81c9cb45df7ccf2c87abfcfe8f6f8378a949a9963cb8fb9654683a90bf89",
+      "image_id": "4d325b2815ca6b2f1251f68602a259e66fa0c49d01c555bf706c9d38dcd970d6",
+      "plan_sha256": "d7d898909c92af1a63b0ac645723a84faf248d3717a1f769f04b171b55c0cec8",
+      "executable_sha256": "933c5062989468d8eba30c72a08dadb2e15bf39dfffff2532f5f2fed5cada541",
+      "static_rvv_instruction_count": 5452,
+      "intake_status": "passed",
+      "verified_file_count": 8,
+      "intake_checks": {
+        "external_manifest_hash": true,
+        "platform_lock_verified": true,
+        "all_regular_files_listed_and_hashed": true,
+        "no_links_or_extra_files": true,
+        "copy_reverified": true,
+        "pinned_baseline_compiler_verified": true,
+        "role_flags_verified": true,
+        "independent_elf_audit_verified": true,
+        "producer_validation_bindings_verified": true,
+        "official_nonempty_exact_reference_verified": true
+      }
+    }
+  },
+  "holds": {
+    "guest_construction": true,
+    "hardware_execution": true,
+    "full_repetition_block": true,
+    "role3": true
+  }
+}
