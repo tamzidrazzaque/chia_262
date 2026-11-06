@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "state": "role_1_validated_role_2_pending",
+  "state": "role_1_validated_role_2_rejected_retry_pending",
   "valid_samples": {
     "1-scalar": 1,
     "2-generic-vector": 0
@@ -18,5 +18,15 @@
   "rootfs_gib_each": 2,
   "protected_components_rebuilt": false,
   "timing_evidence": "private_only",
-  "speedup_claim": false
+  "speedup_claim": false,
+  "role_2_rejected": {
+    "job_signal": 11,
+    "collection_status": 0,
+    "vlen_bits": 256,
+    "probe_passed": true,
+    "expected_output_passed": false,
+    "output_empty": true,
+    "fault_instruction_class": "strided vector load",
+    "binary_substituted": false
+  }
 }

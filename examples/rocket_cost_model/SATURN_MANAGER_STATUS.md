@@ -1,3 +1,12 @@
+## Role 2 rejected; fresh retry pending
+
+Role 2 passed the VLEN-256 probe but its unchanged executable terminated with
+signal 11 at a strided vector load. It produced empty expected output. The
+prepared collector rejected the run despite successful manager exit and normal
+shutdown. No role-2 sample is accepted. A fresh role-2-only stage is being
+prepared with identical workload/platform/DRAM initialization; the accepted
+role-1 sample will not be repeated. Raw fault logs and disassembly stay private.
+
 ## First valid role-1 sample collected
 
 Role 1 completed on F2 and passed the prepared collector: exact ELF/output and
