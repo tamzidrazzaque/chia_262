@@ -1,5 +1,19 @@
 # Role-2 Saturn fault analysis
 
+## Current diagnosis: scalar MulDiv replay side effects
+
+Manager-side checkpoints localize the first observed address corruption to the
+first `mul a2,a2,a3` at `0x11e84` (`t2=9`, `VL=4`), which gives FPGA `0x5100`
+instead of QEMU `0x510`. Discriminating scalar controls and the pinned
+cancellation/writeback wiring support an iterative MulDiv replay integration
+cause. The following add is correct given its already corrupted operand.
+See [ROLE2_REPLAY_DIAGNOSIS.md](ROLE2_REPLAY_DIAGNOSIS.md) and
+`saturn-role2-replay-diagnosis.json` for evidence, inference limits and the
+protected-build correction boundary. Two bounded diagnostic boots completed;
+the worker was verified idle after each. No performance result or role 3.
+
+Earlier observations and the corrected final-loop comparison follow.
+
 ## Matched-iteration correction (2026-11-06)
 
 The initial report compared QEMU's first dynamic hit (`t2=9`) against FPGA's

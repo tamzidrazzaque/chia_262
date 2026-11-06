@@ -28,11 +28,11 @@ static void save(const char *dir, const char *name, const void *data, size_t siz
     if (fsync(fd) || close(fd)) fail("snapshot sync");
 }
 
-struct point { const char *name; unsigned long pc; unsigned short original; };
+struct point { const char *name; unsigned long pc; unsigned short original; unsigned int replacement; };
 static const struct point points[] = {
-    {"post_mul", 0x11e88, 0x83b3},
-    {"post_add", 0x11e96, 0x92e3},
-    {"pre_mul", 0x11e84, 0x0633}
+    {"post_mul", 0x11e88, 0x83b3, 0},
+    {"post_addi", 0x11e88, 0x83b3, 0x00160613},
+    {"mul_stable_source", 0x11e88, 0x83b3, 0x02d50633}
 };
 static void snapshot(pid_t child, const char *dir, int sig) {
     siginfo_t info; memset(&info, 0, sizeof(info));
@@ -58,6 +58,13 @@ static int run_point(const struct point *point, const char *dir, char **command)
     int status;
     if (waitpid(child,&status,0)!=child || !WIFSTOPPED(status) || WSTOPSIG(status)!=SIGTRAP) fail("exec stop");
     if (ptrace(PTRACE_SETOPTIONS,child,0,PTRACE_O_EXITKILL)) fail("exitkill");
+    /* Alter only the child's private text mapping, never the ELF file. */
+    if (point->replacement) {
+        errno=0; unsigned long old=ptrace(PTRACE_PEEKTEXT,child,(void *)0x11e80,0);
+        if (errno || (old >> 32) != 0x02d60633) fail("unexpected original multiply");
+        unsigned long changed=(old & 0xffffffffUL) | ((unsigned long)point->replacement << 32);
+        if (ptrace(PTRACE_POKETEXT,child,(void *)0x11e80,(void *)changed)) fail("diagnostic instruction variant");
+    }
     unsigned long aligned=point->pc & ~7UL, shift=(point->pc & 7UL)*8;
     errno=0; unsigned long word=ptrace(PTRACE_PEEKTEXT,child,(void *)aligned,0);
     if (errno || ((word >> shift) & 0xffff) != point->original) fail("unexpected frozen instruction");

@@ -1,3 +1,14 @@
+## Latest checkpoint: credible MulDiv replay diagnosis; hardware work stopped
+
+Read `ROLE2_REPLAY_DIAGNOSIS.md` before any continuation. The scalar multiply
+at `0x11e84` first corrupts the address-chain state; hardware controls plus the
+pinned replay/cancellation wiring support surviving iterative MulDiv side
+effects during vector replay. The accepted hardware was not modified and no
+fix has been applied or validated. The worker was verified idle after both
+bounded diagnostic attempts. Raw/private evidence and the frozen role-2 ELF
+remain preserved. No further diagnostic, role 3 or repetition run is queued.
+A protected-build correction needs an operator methodological decision.
+
 ## Current checkpoint: replacement comparison completed; stopped
 
 The separately authorized replacement diagnostic captured a private core and

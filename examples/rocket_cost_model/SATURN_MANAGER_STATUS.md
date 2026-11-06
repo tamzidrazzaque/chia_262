@@ -1,3 +1,28 @@
+## Current checkpoint: address corruption localized; credible replay cause isolated
+
+The first observed address-chain mismatch is the first scalar multiply at
+`0x11e84`: expected `a2=0x510`, observed `0x5100`, before the address add.
+The observed value equals three successive multiplies by four. A scalar ADDI
+control updates once correctly; a stable-source multiply produces the correct
+result. The pinned implementation replays scalar work on vector-side stalls
+but omits those conditions from iterative MulDiv cancellation, while surviving
+responses can still use long-latency RF writeback. Together these observations
+support a Rocket/Saturn replay integration defect, not vector arithmetic or a
+false fault on the original valid load addresses.
+
+Stopped after two bounded diagnostic boots, five valid checkpoint captures and
+one preserved failed capture. Both attempts passed platform/probe/shutdown
+checks and post-attempt idle verification. The frozen worker ELF was read back
+unchanged. No protected component, baseline definition, performance campaign or
+role 3 changed. The diagnosis is hardware-control plus source/RTL evidence,
+not a cycle-exact internal waveform or an applied hardware fix. A correction to
+the accepted image/RTL requires a methodological decision.
+
+Read `ROLE2_REPLAY_DIAGNOSIS.md` and `saturn-role2-replay-diagnosis.json`.
+Raw evidence, failed reference setups, licensed files and logs remain private
+in `saturn-spec-lane/debug-010/` and `debug-011/`; prior evidence is preserved.
+Focused tests: 60 passed. Earlier checkpoints below are historical.
+
 ## Current checkpoint: replacement diagnostic comparison complete
 
 The one authorized replacement diagnostic captured SIGSEGV and a private core
