@@ -8,12 +8,12 @@ explicitly authorized continuous MegaBOOM loops until stopped; a collaborator
 must obtain authorization for their own cluster. Reading this handoff does not
 authorize provisioning or modifying shared-host networking.
 
-## Current result (November 5)
+## Current result (November 7)
 
 The follow-up data is in `data/progress-20261103.json`, alongside the older
 `spec-estimates.json` covering the first two scalar searches (all ten trials)
-and the coordinated/paired studies. The follow-up export includes 20 completed
-campaigns, full cost/move/policy settings, 72 compiler identities and 170 saved
+and the coordinated/paired studies. The follow-up export includes 29 completed
+campaigns, full cost/move/policy settings, 99 compiler identities and 224 saved
 successful timing observations, with validated reuses explicitly labeled. Cached observations are explicitly marked and
 must not be counted as additional independent measurements.
 
@@ -31,7 +31,7 @@ must not be counted as additional independent measurements.
 * The winner raises branch cost from 4 to 12 while preserving the earlier
   ordinary-unroll and pressure-aware scheduling/allocation settings and other
   costs. This is a combined compiler-policy result, not an isolated cache win.
-  Follow-up rounds 10–19 tested larger/smaller unrolling, inlining, interactions,
+  Follow-up rounds 10–28 tested larger/smaller unrolling, inlining, interactions,
   allocation/memory choices and separate compiler passes; none passed promotion.
 * The independent-mechanism portfolio measured control76.82 s, multiply4 77.15 s,
   pre-allocation scheduling disabled78.94 s, tail duplication78.10 s and their
@@ -43,6 +43,11 @@ must not be counted as additional independent measurements.
   with original pressure-scheduling defaults; load6/store8 measured77.13 s.
   Later branch/inlining/unroll/load interactions measured77.54,77.63 and77.65 s.
   All passed correctness, retained the76.82 s anchor and produced no new win.
+* Rounds20–28 added27 correct challengers without a promotion. The best new
+  screening observation was76.62 s (branch cost2 and smaller unroll budgets),
+  only0.261% faster than76.82 s, below the0.5% incremental rule. It has no repeat
+  confirmation or held-out reference validation. A later load-cost4 screen was
+  76.65 s. Neither replaces the confirmed result or its reference evidence.
 * An earlier compiler, `11f4c099...`, measured **889.39 s versus
   919.62 s on reference inputs**, a **3.40% speedup**. Each physical worker ran
   both compilers once, with opposite orders. This is limited repeat evidence,
