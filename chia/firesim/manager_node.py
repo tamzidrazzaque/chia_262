@@ -49,14 +49,23 @@ python - "$task"
 # shell in its home, as over ssh; put/get/rsync_project copy in the instance's
 # home, which the container mounts at the same path.
 _MANAGER = r"""
-import os, runpy, shlex, sys
+import os, re, runpy, shlex, sys
 import fabric.api, fabric.contrib.project
 from fabric.api import abort, env, local, settings
 from fabric.operations import _prefix_commands, _prefix_env_vars
 from fabric.state import output
 
 
+def sparse_slot_copy(command):
+    # The pinned manager copies every accumulated transfer file into the slot.
+    # Preserve zero extents even if an older transfer copy was fully allocated.
+    if re.fullmatch(r"cp -r (?P<slot>/home/ubuntu/sim_slot_[0-9]+/)rsyncdir/+\* (?P=slot)", command):
+        return command.replace("cp -r ", "cp -r --sparse=always ", 1)
+    return command
+
+
 def run_on_host(command, **kw):
+    command = sparse_slot_copy(command)
     command = _prefix_env_vars(_prefix_commands(command, "remote"))
     with settings(command_prefixes=[], warn_only=True):
         out = local(f"sudo nsenter -t 1 -a -- sudo -H -u {os.environ['USER']} /bin/bash -l -c "
@@ -71,11 +80,11 @@ def run_on_host(command, **kw):
 
 
 def put_in_home(local_path, remote_path, **kw):
-    return local(f"cp -r {local_path} {remote_path}")
+    return local(f"cp -r --sparse=always {local_path} {remote_path}")
 
 
 def get_from_home(remote_path, local_path, **kw):
-    return local(f"cp -r {remote_path} {local_path}")
+    return local(f"cp -r --sparse=always {remote_path} {local_path}")
 
 
 def rsync_in_home(remote_dir, local_dir, exclude=(), delete=False, extra_opts="",
@@ -83,7 +92,7 @@ def rsync_in_home(remote_dir, local_dir, exclude=(), delete=False, extra_opts=""
     exclude = [exclude] if isinstance(exclude, str) else exclude
     options = ("--delete" if delete else "") + "".join(f' --exclude "{e}"' for e in exclude)
     src, dst = (local_dir, remote_dir) if upload else (remote_dir, local_dir)
-    return local(f"rsync {options} {default_opts} {extra_opts} {src} {dst}", capture=capture)
+    return local(f"rsync {options} {default_opts} --sparse {extra_opts} {src} {dst}", capture=capture)
 
 
 fabric.api.run = run_on_host
@@ -182,12 +191,16 @@ class FireSimManagerNode:
         for task in ("infrasetup", "runworkload"):
             report("FPGA", host, job=name, state=task)
             self.logger.info(f"firesim {task} for {name}")
+            started_at = time.time()
             rc, out = self._firesim(task)
             log += f"=== {task} (rc={rc}) ===\n{out[-4000:]}\n"
             if rc != 0:
                 report("FPGA", host, detail=f"{task} rc={rc}")
                 slot = Path("/home/ubuntu/sim_slot_0/uartlog")
-                uart = slot.read_text(errors="replace") if slot.exists() else ""
+                # Setup can fail before launching a driver. Its slot may still
+                # contain a successful UART log from a previous workload.
+                uart = (slot.read_text(errors="replace") if task == "runworkload"
+                        and slot.exists() and slot.stat().st_mtime >= started_at else "")
                 return SimJobResult(name, success=False, log=log, uartlog=uart,
                                     duration_seconds=time.monotonic() - t0)
 

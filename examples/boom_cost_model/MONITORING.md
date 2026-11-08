@@ -43,3 +43,19 @@ and do not establish successful execution or a new independent timing sample.
 Monitoring reduces unattended downtime. Browser authentication, failed
 correctness/hardware gates, host outages and normal preparation/round barriers
 can still leave hardware idle; a30-minute audit is not a zero-downtime guarantee.
+
+## Sparse workload transfers
+
+Large guest images can contain mostly zero-filled space. Copying them without
+sparse-file handling allocates those zeroes on the host. The pinned FireSim
+manager also recopies accumulated transfer inputs into the slot; this can undo
+post-run compaction of older images. The local adapter now preserves sparse
+allocation in rsync, put/get and the pinned slot-copy command. Logical image
+contents and simulation settings stay unchanged. Integration tests compare
+content hashes and physical allocation using real copies.
+
+If storage maintenance is required, preserve failure logs and input archives,
+verify drivers are idle, restrict operations to owned regular files, and verify
+logical hashes before/after compaction. Do not prune live Ray objects or other
+users' Docker resources. Setup failures carry no UART result from an earlier
+workload; failed runworkload steps retain UART only when its timestamp is fresh.
