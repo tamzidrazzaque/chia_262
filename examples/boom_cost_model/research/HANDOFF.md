@@ -12,8 +12,8 @@ authorize provisioning or modifying shared-host networking.
 
 The follow-up data is in `data/progress-20261103.json`, alongside the older
 `spec-estimates.json` covering the first two scalar searches (all ten trials)
-and the coordinated/paired studies. The follow-up export includes 29 completed
-campaigns, full cost/move/policy settings, 99 compiler identities and 224 saved
+and the coordinated/paired studies. The follow-up export includes 30 completed
+campaigns, full cost/move/policy settings, 102 compiler identities and 230 saved
 successful timing observations, with validated reuses explicitly labeled. Cached observations are explicitly marked and
 must not be counted as additional independent measurements.
 
@@ -48,6 +48,12 @@ must not be counted as additional independent measurements.
   only0.261% faster than76.82 s, below the0.5% incremental rule. It has no repeat
   confirmation or held-out reference validation. A later load-cost4 screen was
   76.65 s. Neither replaces the confirmed result or its reference evidence.
+* Round29 completed correctly at77.03,77.63 and77.30 s versus76.82 s control.
+  Round30 subsequently failed during infrastructure copying when host storage
+  filled; its failed candidate has no valid benchmark time. The stale UART left
+  by an earlier run is not a result for that candidate. Sparse transfers and
+  failure-log attribution are fixed; recovery preserves the original failure
+  and rechecks all ordinary gates. Its unfinished results are not exported here.
 * An earlier compiler, `11f4c099...`, measured **889.39 s versus
   919.62 s on reference inputs**, a **3.40% speedup**. Each physical worker ran
   both compilers once, with opposite orders. This is limited repeat evidence,
