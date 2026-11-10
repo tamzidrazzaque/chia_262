@@ -166,6 +166,20 @@ def test_structural_round_has_six_ablations_control_and_feedback(tmp_path,monkey
     assert len(planned['policy_axes']['growth_budget'])==9
 
 
+def test_optimization_portfolio_waits_for_all_five_ablations_before_interactions(tmp_path,monkeypatch):
+    directory=source(tmp_path);review=autopilot.review(directory);cfg=config()
+    review['selected']['proposal']['policy']['growth_budget']='unroll'
+    monkeypatch.setattr(autopilot,'confirmed_anchor',lambda *_:(None,review['selected']))
+    monkeypatch.setattr(autopilot.pressure_proposals,'request_json',lambda *_:pytest.fail('structured seeds are not LLM proposals'))
+    planned=autopilot.plan(cfg,[review],tmp_path/'next',{'deadline_mode':True,
+        'round_overrides':{'1':{'target':'648.exchange2_s','family':'optimization-portfolio'}}})
+    seeds=AdaptiveProposals(planned).seed_profiles()
+    assert len(seeds)==6 and planned['campaign_budget']==9
+    assert planned['prepare_seed_count']==planned['feedback_min_completed']==6
+    assert len(planned['policy_axes']['growth_budget'])==10
+    assert all(p['costs']==seeds[0]['costs'] and p['move_profile']==seeds[0]['move_profile'] for p in seeds)
+
+
 def test_mechanistic_portfolio_has_three_isolated_treatments_and_one_feedback_slot(tmp_path,monkeypatch):
     directory=source(tmp_path);review=autopilot.review(directory);cfg=config()
     anchor=review['selected']['proposal'];anchor['policy']['growth_budget']='unroll'

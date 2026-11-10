@@ -135,6 +135,14 @@ def verify_policy_defaults(prefix: str, baseline_prefix: str, policy: dict) -> d
         extra_options['flag_schedule_insns2'] = ('-fschedule-insns2', '[disabled]')
     if 'flag_tracer' in extras:
         extra_options['flag_tracer'] = ('-ftracer', '[disabled]')
+    for name, option, override in [
+            ('flag_live_range_shrinkage', '-flive-range-shrinkage', '[disabled]'),
+            ('flag_unswitch_loops', '-funswitch-loops', '[enabled]'),
+            ('flag_ipa_cp_clone', '-fipa-cp-clone', '[enabled]'),
+            ('param_max_unswitch_insns', '--param=max-unswitch-insns', '50'),
+            ('flag_ira_region', '-fira-region', 'one')]:
+        if name in extras:
+            extra_options[name] = (option, override)
     if extras:
         keys += [option for option, _ in extra_options.values()]
 
@@ -166,7 +174,9 @@ def verify_policy_defaults(prefix: str, baseline_prefix: str, policy: dict) -> d
     if growth is not None:
         expected.update({"--param=max-completely-peeled-insns": str(growth[0]), "--param=unroll-jam-max-unroll": str(growth[1])})
     for name, value in extras.items():
-        expected[extra_options[name][0]] = ('[enabled]' if value else '[disabled]') if name.startswith('flag_') else str(value)
+        expected[extra_options[name][0]] = (
+            {'IRA_REGION_ALL': 'all'}[value] if name == 'flag_ira_region'
+            else ('[enabled]' if value else '[disabled]') if name.startswith('flag_') else str(value))
     actual, rocket = query(prefix), query(prefix, ["-mtune=rocket"])
     overrides = ["-fno-sched-pressure", "-fno-ira-loop-pressure", "--param=sched-pressure-algorithm=1",
                  "--param=max-completely-peeled-insns=123", "--param=unroll-jam-max-unroll=3"]
@@ -174,7 +184,7 @@ def verify_policy_defaults(prefix: str, baseline_prefix: str, policy: dict) -> d
     if extras:
         for name,(option,value) in extra_options.items():
             overrides.append((option if value == '[enabled]' else option.replace('-f', '-fno-', 1))
-                             if name.startswith('flag_') else option+'='+value)
+                             if name.startswith('flag_') and name != 'flag_ira_region' else option+'='+value)
             explicit_expected[option] = value
     explicit = query(prefix, overrides)
     if actual != expected or rocket != baseline or explicit != explicit_expected:

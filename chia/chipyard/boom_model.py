@@ -78,6 +78,28 @@ for _base in tuple(GROWTH_PRESETS):
         EXTRA_POLICY_DEFAULTS[_name] = {**EXTRA_POLICY_DEFAULTS.get(_base, {}),
                                       _option: _value}
 
+# New structural tests inherit the existing anchor without changing historical
+# fragments or identities. IRA enum tokens come from pinned GCC common.opt.
+PORTFOLIO_DEFAULTS = {
+    'shrink_live': {'flag_live_range_shrinkage': 1},
+    'ira_all': {'flag_ira_region': 'IRA_REGION_ALL'},
+    'unswitch_large': {'param_max_unswitch_insns': 400},
+    'no_unswitch': {'flag_unswitch_loops': 0},
+    'no_clone': {'flag_ipa_cp_clone': 0},
+}
+for _name, _parts in {
+        'ira_all_shrink': ('ira_all', 'shrink_live'),
+        'unswitch_large_shrink': ('unswitch_large', 'shrink_live'),
+        'no_clone_ira_all': ('no_clone', 'ira_all'),
+        'no_clone_shrink': ('no_clone', 'shrink_live')}.items():
+    PORTFOLIO_DEFAULTS[_name] = {key: value for part in _parts
+                               for key, value in PORTFOLIO_DEFAULTS[part].items()}
+for _base in ('unroll', *STRUCTURAL_DEFAULTS):
+    for _suffix, _options in PORTFOLIO_DEFAULTS.items():
+        _name = _base + '_' + _suffix
+        GROWTH_PRESETS[_name] = GROWTH_PRESETS[_base]
+        EXTRA_POLICY_DEFAULTS[_name] = {**EXTRA_POLICY_DEFAULTS[_base], **_options}
+
 
 def validate_policy(policy):
     """Bound the BOOM-only scheduling/allocation and loop-growth experiment."""

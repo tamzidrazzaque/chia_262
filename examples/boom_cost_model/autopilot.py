@@ -60,6 +60,9 @@ FAMILIES = {
         "cost_axes": {"int_mul": [3, 4]},
         "policy_axes": {},
         "hypothesis": "Compare three independent interventions at the latest confirmed anchor: multiply profitability, removal of pre-register-allocation scheduling (post-RA retained), and tail duplication for straighter control flow. Inspect actual arithmetic sequences, live ranges/static stack traffic and code footprint/branches respectively. Source capacities and static counts do not prove a dynamic bottleneck. No ISA, external flags, libraries, DFA or baseline changes. Combine interventions only after measured single-intervention feedback."},
+    "optimization-portfolio": {
+        "cost_axes": {}, "policy_axes": {},
+        "hypothesis": "Break the cost-neighborhood plateau with five isolated compiler-policy tests: live-range shrinkage, loop-based register allocation, larger loop-unswitch budget, unswitch removal, and IPA-clone removal. The current solver has a large static footprint, but no cache bottleneck is established. Compare actual code, stack traffic and native-correct FPGA train time. Costs, existing loop/inlining defaults, baseline, ISA, libraries, DFA and hardware remain fixed. Select bounded combinations only after all isolated tests finish; do not use held-out reference feedback."},
 }
 MICROARCH = {
     "BOOM_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -95,6 +98,24 @@ def mechanistic_seeds(anchor):
     tracing['policy']['growth_budget'] = growth + '_tracer'
     tracing['rationale'] = ('Enable only GCC tail duplication using its existing estimated branch probabilities; no PGO data. Hypothesis: straighter superblocks expose useful scheduling opportunities. Compare duplicated blocks, unconditional transfers and function bytes. More bytes can hurt the32KiB instruction cache; static size is not a measured miss rate. An unchanged binary gives no test of the mechanism, and slower hardware time rejects the benefit.')
     return [multiply, scheduling, tracing]
+
+
+def optimization_seeds(anchor):
+    """Test five different mechanisms before proposing bounded interactions."""
+    explanations = {
+        'shrink_live': 'Enable live-range shrinkage. Compare allocation and static stack references in the same solver functions; unchanged code or slower correct hardware execution rejects the benefit. Physical renaming does not remove architectural register pressure.',
+        'ira_all': 'Allocate all loops as IRA regions instead of the measured function-wide default. Compare allocation and stack traffic, not just ELF hashes. Extra moves or slower correct execution rejects the benefit.',
+        'unswitch_large': 'Raise the unswitch instruction budget from the measured50 to400. Check whether invariant branch specialization actually changes solver loops; larger footprint or slower correct hardware execution rejects the benefit.',
+        'no_unswitch': 'Disable loop unswitching as the counterpoint to larger specialization. Compare duplicated loop bodies, transfers and code bytes; unchanged relevant code or slower hardware execution rejects the benefit.',
+        'no_clone': 'Disable IPA constant-propagation cloning while retaining existing inlining and unrolling. Check solver clones and call sites; smaller code alone is insufficient and slower correct hardware execution rejects the benefit.',
+    }
+    result = []
+    for suffix, explanation in explanations.items():
+        value = deepcopy(anchor)
+        value['policy']['growth_budget'] += '_' + suffix
+        value['rationale'] = explanation
+        result.append(value)
+    return result
 
 
 def write(path, value):
@@ -250,6 +271,11 @@ def plan(base, reviews, directory, settings=None):
     if family == 'mechanistic-portfolio':
         growth = selected['proposal']['policy']['growth_budget']
         cfg['policy_axes'] = {'growth_budget': [growth, growth+'_no_presched', growth+'_tracer']}
+    if family == 'optimization-portfolio':
+        from chia.chipyard.boom_model import PORTFOLIO_DEFAULTS
+        growth = selected['proposal']['policy']['growth_budget']
+        cfg['policy_axes'] = {'growth_budget': [growth, *[growth+'_'+suffix
+            for suffix in PORTFOLIO_DEFAULTS]]}
     for name, choices in cfg['cost_axes'].items():
         group = 'move_profile' if name.startswith('gpr_') else 'costs'
         value = selected['proposal'][group][name]
@@ -314,12 +340,14 @@ def plan(base, reviews, directory, settings=None):
             'source patches, flags, ISA/ABI changes or RVV. Source-derived capacities are not measured occupancy. '
             'Do not invent cycle bottlenecks or register parking. Scores from other targets/policies do not transfer. '
             'A generic microkernel proxy failed validation. Propose alternatives instead of endlessly refining one idea.'}
-    if family == 'mechanistic-portfolio':
-        seeds = [p for p in mechanistic_seeds(anchor) if api.identity(p) not in tested]
+    if family in ('mechanistic-portfolio', 'optimization-portfolio'):
+        treatments = mechanistic_seeds if family == 'mechanistic-portfolio' else optimization_seeds
+        seeds = [p for p in treatments(anchor) if api.identity(p) not in tested]
         if not seeds:
             raise ValueError('mechanistic ablations already measured at this anchor; choose a different family')
         proposal = {'hypothesis': cfg['hypothesis'], 'seeds': seeds}
-        cfg.update(campaign_budget=len(seeds)+2, iterations=len(seeds)+2,
+        budget = len(seeds) + (4 if family == 'optimization-portfolio' else 2)
+        cfg.update(campaign_budget=budget, iterations=budget,
                    feedback_min_completed=len(seeds)+1)
     elif family in ('codegen-growth','structural-frontier'):
         seeds = []
