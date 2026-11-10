@@ -54,25 +54,28 @@ workload set.
 
 ## Stages
 
-### Stage 0: local Saturn simulation (no F2)
+### Stage 0: local SPEC/QEMU and ELF screen (no F2)
 
-Start with the exact pinned Chipyard/Saturn/Rocket revisions and the matching
-Saturn configuration in a local Chipyard Verilator simulation. This stage is a
-development screen, not an FPGA performance claim:
+Start with the private SPEC installation and pinned compiler/QEMU path. This
+stage is a development screen, not a Saturn execution or FPGA performance
+claim:
 
 1. Compile the scalar and stock-GCC RVV versions from the unchanged SPEC
    source.
 2. Confirm that the role-2 ELF actually contains RVV instructions.
-3. Run both binaries functionally in the local Saturn simulator.
-4. Require exact SPEC output and a clean simulator exit.
-5. Collect target `mcycle`/`minstret` only as local screening data; never use
-   host Verilator wall time as performance.
-6. Preserve the simulator revision, generated RTL/configuration identity,
-   compiler identity, ELF hashes, input identity, and output checks.
+3. Run both binaries functionally under pinned QEMU with the RVV CPU enabled
+   for role 2.
+4. Require SPEC's explicit correctness success and a clean exit.
+5. Audit role 2's final ELF/disassembly and require actual RVV instructions.
+6. Preserve compiler identity, ELF hashes, input identity, QEMU identity, and
+   output checks. QEMU time is never a Saturn performance result.
 
 Only workloads whose role 1 and role 2 pass Stage 0 move to private FireSim
-staging. A local pass does not prove F2 equivalence, but it prevents spending
-F2 time on workloads that already fail functionally or do not vectorize.
+staging. A local pass does not prove Saturn or F2 equivalence, but it prevents
+spending F2 time on workloads that already fail functionally or do not
+vectorize. An exact Linux-capable Saturn Verilator backend may be added later;
+the retained Verilator artifact currently covers only the earlier bare-metal
+smoke configuration.
 
 ### Stage A: private build and static screening
 
@@ -154,8 +157,8 @@ workloads.
 
 ## Immediate next actions
 
-1. Prepare the exact pinned local Saturn Verilator configuration and toolchain.
-2. Compile and run the first small SPEC batch locally, beginning with
+1. Run the local SPEC/QEMU and ELF screen with the pinned toolchain.
+2. Compile and validate the first small SPEC batch locally, beginning with
    `605.mcf_s`, `625.x264_s`, `631.deepsjeng_s`, and `641.leela_s`.
 3. Report which workloads pass local correctness and contain real RVV code.
 4. Only then have the manager prepare private role-1/role-2 bundles for the
