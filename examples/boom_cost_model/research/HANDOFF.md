@@ -8,12 +8,12 @@ explicitly authorized continuous MegaBOOM loops until stopped; a collaborator
 must obtain authorization for their own cluster. Reading this handoff does not
 authorize provisioning or modifying shared-host networking.
 
-## Current result (November 7)
+## Current result (November 10)
 
 The follow-up data is in `data/progress-20261103.json`, alongside the older
 `spec-estimates.json` covering the first two scalar searches (all ten trials)
-and the coordinated/paired studies. The follow-up export includes 30 completed
-campaigns, full cost/move/policy settings, 102 compiler identities and 230 saved
+and the coordinated/paired studies. The follow-up export includes 43 completed
+campaigns, full cost/move/policy settings, 142 compiler identities and 309 saved
 successful timing observations, with validated reuses explicitly labeled. Cached observations are explicitly marked and
 must not be counted as additional independent measurements.
 
@@ -53,7 +53,21 @@ must not be counted as additional independent measurements.
   filled; its failed candidate has no valid benchmark time. The stale UART left
   by an earlier run is not a result for that candidate. Sparse transfers and
   failure-log attribution are fixed; recovery preserves the original failure
-  and rechecks all ordinary gates. Its unfinished results are not exported here.
+  and rechecks all ordinary gates. Recovery completed; only its validated results
+  are exported. Original failed infrastructure samples remain excluded.
+* Rounds30 recovery through42 retained the confirmed incumbent. The larger
+  policy portfolio measured77.83s with live-range shrinkage,77.86s with a larger
+  unswitch budget,78.03s with unswitching disabled, and118.98s with IPA cloning
+  disabled. Larger unswitching plus shrinkage measured77.13s. IRA-all and two
+  related combinations had duplicate application executables and were skipped.
+  No performance gain or hardware correctness fault is established by those
+  skips.
+* Round43 is a new cloning factorial, testing growth10->50, threshold500->125,
+  and their interaction against the unchanged control. It has no result yet.
+  Planner retries now receive older tested knobs and bounded novel examples;
+  invalid retries can use explicitly labeled deterministic contrasts. A stale
+  process stop flag is cleared on explicit coordinator restart while actual
+  STOP controls remain enforced. Both fixes have targeted tests.
 * An earlier compiler, `11f4c099...`, measured **889.39 s versus
   919.62 s on reference inputs**, a **3.40% speedup**. Each physical worker ran
   both compilers once, with opposite orders. This is limited repeat evidence,
