@@ -32,7 +32,7 @@ def test_isolated_seeds_preserve_costs_and_all_other_policy_fields():
     assert seeds[1]['costs']['int_mul'][0] != 999
 
 
-@pytest.mark.parametrize('suffix', list(boom_model.PORTFOLIO_DEFAULTS))
+@pytest.mark.parametrize('suffix', list(boom_model.PORTFOLIO_DEFAULTS)+list(boom_model.CLONING_DEFAULTS))
 def test_real_cpp_option_defaults_are_boom_only_and_explicit_values_win(tmp_path, suffix):
     compiler = shutil.which('g++')
     if not compiler:

@@ -9,6 +9,7 @@ import argparse
 from copy import deepcopy
 import fcntl
 import hashlib
+import itertools
 import json
 import os
 from pathlib import Path
@@ -63,6 +64,9 @@ FAMILIES = {
     "optimization-portfolio": {
         "cost_axes": {}, "policy_axes": {},
         "hypothesis": "Break the cost-neighborhood plateau with five isolated compiler-policy tests: live-range shrinkage, loop-based register allocation, larger loop-unswitch budget, unswitch removal, and IPA-clone removal. The current solver has a large static footprint, but no cache bottleneck is established. Compare actual code, stack traffic and native-correct FPGA train time. Costs, existing loop/inlining defaults, baseline, ISA, libraries, DFA and hardware remain fixed. Select bounded combinations only after all isolated tests finish; do not use held-out reference feedback."},
+    "cloning-frontier": {
+        "cost_axes": {}, "policy_axes": {},
+        "hypothesis": "Removing IPA constant-propagation cloning regressed Exchange2 train118.98 versus76.82s at this anchor. Preserve the pass; test a larger cloning growth budget, a lower profitability threshold, and their interaction. Compare actual solver clones, call sites and footprint; neither more clones nor smaller code alone establishes a benefit. Costs, prior growth/pressure defaults, baseline, ISA/ABI, libraries, DFA and hardware remain fixed. This is a compiler-policy factorial; no reference feedback enters selection."},
 }
 MICROARCH = {
     "BOOM_revision": "5223e44cfeb26f41380057a2eb4d651197475f69",
@@ -116,6 +120,44 @@ def optimization_seeds(anchor):
         value['rationale'] = explanation
         result.append(value)
     return result
+
+
+def cloning_seeds(anchor):
+    """Return two isolated profitability changes and their factorial interaction."""
+    result = []
+    for suffix, treatment in [
+            ('clone_growth', 'Raise only IPA cloning unit growth10 to50'),
+            ('clone_threshold', 'Lower only IPA cloning evaluation threshold500 to125'),
+            ('clone_growth_threshold', 'Combine the larger growth budget and lower threshold')]:
+        value = deepcopy(anchor)
+        value['policy']['growth_budget'] += '_' + suffix
+        value['rationale'] = (treatment + '. Preserve the pass and all other defaults. '
+            'Compare solver clones and call sites against the unchanged control; unchanged relevant code '
+            'or slower native-correct FPGA execution rejects the benefit. More code can hurt footprint; '
+            'do not infer cache misses or a bottleneck from static size.')
+        result.append(value)
+    return result
+
+
+def untested_knobs(api, tested, limit=32):
+    """Offer bounded novel profiles; nearest contrasts precede interactions."""
+    axes = {**api.cost_axes, **api.policy_axes}
+    count = 1
+    for choices in axes.values():
+        count *= len(choices)
+    if count > 100000:
+        raise ValueError('adaptive grid exceeds bounded planner enumeration')
+    result = []
+    for values in itertools.product(*axes.values()):
+        knobs = dict(zip(axes, values))
+        profile = api.project(knobs, 'Compare this bounded contrast against the immutable control; slower correct execution rejects a benefit.')
+        if api.identity(profile) in tested or api.identity(profile) == api.identity(api.anchor):
+            continue
+        changes = sum(profile[group][name] != api.anchor[group][name]
+            for group in ('costs', 'move_profile', 'policy') for name in profile[group])
+        result.append((changes, knobs))
+    result.sort(key=lambda item: item[0])
+    return [knobs for _, knobs in result[:limit]]
 
 
 def write(path, value):
@@ -276,6 +318,11 @@ def plan(base, reviews, directory, settings=None):
         growth = selected['proposal']['policy']['growth_budget']
         cfg['policy_axes'] = {'growth_budget': [growth, *[growth+'_'+suffix
             for suffix in PORTFOLIO_DEFAULTS]]}
+    if family == 'cloning-frontier':
+        from chia.chipyard.boom_model import CLONING_DEFAULTS
+        growth = selected['proposal']['policy']['growth_budget']
+        cfg['policy_axes'] = {'growth_budget': [growth, *[growth+'_'+suffix
+            for suffix in CLONING_DEFAULTS]]}
     for name, choices in cfg['cost_axes'].items():
         group = 'move_profile' if name.startswith('gpr_') else 'costs'
         value = selected['proposal'][group][name]
@@ -340,13 +387,15 @@ def plan(base, reviews, directory, settings=None):
             'source patches, flags, ISA/ABI changes or RVV. Source-derived capacities are not measured occupancy. '
             'Do not invent cycle bottlenecks or register parking. Scores from other targets/policies do not transfer. '
             'A generic microkernel proxy failed validation. Propose alternatives instead of endlessly refining one idea.'}
-    if family in ('mechanistic-portfolio', 'optimization-portfolio'):
-        treatments = mechanistic_seeds if family == 'mechanistic-portfolio' else optimization_seeds
+    if family in ('mechanistic-portfolio', 'optimization-portfolio', 'cloning-frontier'):
+        treatments = {'mechanistic-portfolio': mechanistic_seeds,
+            'optimization-portfolio': optimization_seeds, 'cloning-frontier': cloning_seeds}[family]
         seeds = [p for p in treatments(anchor) if api.identity(p) not in tested]
         if not seeds:
             raise ValueError('mechanistic ablations already measured at this anchor; choose a different family')
         proposal = {'hypothesis': cfg['hypothesis'], 'seeds': seeds}
-        budget = len(seeds) + (4 if family == 'optimization-portfolio' else 2)
+        budget = len(seeds) + {'optimization-portfolio': 4, 'mechanistic-portfolio': 2,
+                              'cloning-frontier': 1}[family]
         cfg.update(campaign_budget=budget, iterations=budget,
                    feedback_min_completed=len(seeds)+1)
     elif family in ('codegen-growth','structural-frontier'):
@@ -369,6 +418,26 @@ def plan(base, reviews, directory, settings=None):
         budget = len(seeds) + (2 if family == 'structural-frontier' else 1)
         cfg.update(campaign_budget=budget,iterations=budget)
     else:
+        available = untested_knobs(api, tested, max(32, seed_count))
+        if len(available) < seed_count:
+            raise ValueError('hypothesis family has insufficient untested profiles; select another family')
+        prompt['untested_knob_examples'] = available
+        prompt['tested_knobs'] = []
+        for r in reviews:
+            if r['benchmarks'] != [target]:
+                continue
+            for h in r['observations']:
+                try:
+                    value = api.validate(h['proposal'])
+                except (KeyError, ValueError, TypeError):
+                    continue
+                knobs = {name: value['policy' if name in api.policy_axes else
+                    'move_profile' if name.startswith('gpr_') else 'costs'][name]
+                    for name in (*api.cost_axes, *api.policy_axes)}
+                knobs = {k: v[0] if isinstance(v, list) else v for k, v in knobs.items()}
+                if knobs not in prompt['tested_knobs']:
+                    prompt['tested_knobs'].append(knobs)
+        prompt['constraints'] += ' Never repeat tested_knobs, including older rounds. Prefer the untested examples. Keep each rationale below1200 characters.'
         for attempt in range(3):
             try:
                 proposal = pressure_proposals.request_json(cfg, prompt, directory / f'planner-{attempt}', validate)
@@ -376,7 +445,13 @@ def plan(base, reviews, directory, settings=None):
             except (ValueError, TypeError) as exc:
                 prompt['previous_validation_error'] = str(exc)
         else:
-            raise ValueError('planner produced no valid new tests after three attempts')
+            proposal = validate({'hypothesis': cfg['hypothesis'], 'seeds': [
+                {'knobs': knobs, 'rationale': 'Deterministic fallback after invalid planner retries, not a model proposal. '
+                    + cfg['hypothesis'] + ' Compare this bounded contrast against the unchanged control; '
+                    'unchanged relevant code or slower correct execution rejects the benefit.'}
+                for knobs in available[:seed_count]]})
+            write(directory/'planner-fallback.json', {'reason': prompt['previous_validation_error'],
+                'model_generated': False, 'selected_knobs': available[:seed_count]})
     cfg['adaptive_seeds'] = [anchor, *proposal['seeds']]
     if deadline:
         cfg['prepare_seed_count'] = len(cfg['adaptive_seeds'])
@@ -501,6 +576,10 @@ def supervise(initial, root, poll=30, settings=None, resume_run=None):
     stop = root / 'STOP'
     state_path = root / 'state.json'
     state = read(state_path) if state_path.exists() else {'reviews':[], 'current':str(initial), 'phase':'waiting'}
+    # An explicit new coordinator launch acknowledges the previous process's
+    # historical stop flag. Actual STOP files are still checked before dispatch.
+    for name in ('stop_requested', 'failure', 'blocker'):
+        state.pop(name, None)
     if resume_run is not None:
         if not controller_idle(resume_run) or (resume_run / 'result.json').exists():
             raise ValueError('resume run is active or already complete; preserve it')

@@ -100,6 +100,20 @@ for _base in ('unroll', *STRUCTURAL_DEFAULTS):
         GROWTH_PRESETS[_name] = GROWTH_PRESETS[_base]
         EXTRA_POLICY_DEFAULTS[_name] = {**EXTRA_POLICY_DEFAULTS[_base], **_options}
 
+# Preserve cloning after its removal regressed; vary its two independent
+# profitability limits instead. Pinned defaults: growth10, threshold500.
+CLONING_DEFAULTS = {
+    'clone_growth': {'param_ipa_cp_unit_growth': 50},
+    'clone_threshold': {'param_ipa_cp_eval_threshold': 125},
+    'clone_growth_threshold': {'param_ipa_cp_unit_growth': 50,
+                               'param_ipa_cp_eval_threshold': 125},
+}
+for _base in ('unroll', *STRUCTURAL_DEFAULTS):
+    for _suffix, _options in CLONING_DEFAULTS.items():
+        _name = _base + '_' + _suffix
+        GROWTH_PRESETS[_name] = GROWTH_PRESETS[_base]
+        EXTRA_POLICY_DEFAULTS[_name] = {**EXTRA_POLICY_DEFAULTS[_base], **_options}
+
 
 def validate_policy(policy):
     """Bound the BOOM-only scheduling/allocation and loop-growth experiment."""

@@ -180,6 +180,68 @@ def test_optimization_portfolio_waits_for_all_five_ablations_before_interactions
     assert all(p['costs']==seeds[0]['costs'] and p['move_profile']==seeds[0]['move_profile'] for p in seeds)
 
 
+def test_cloning_factorial_has_two_isolated_limits_and_their_interaction(tmp_path,monkeypatch):
+    directory=source(tmp_path);review=autopilot.review(directory);cfg=config()
+    review['selected']['proposal']['policy']['growth_budget']='unroll'
+    monkeypatch.setattr(autopilot,'confirmed_anchor',lambda *_:(None,review['selected']))
+    monkeypatch.setattr(autopilot.pressure_proposals,'request_json',lambda *_:pytest.fail('factorial seeds are deterministic'))
+    planned=autopilot.plan(cfg,[review],tmp_path/'next',{'deadline_mode':True,
+        'round_overrides':{'1':{'target':'648.exchange2_s','family':'cloning-frontier'}}})
+    seeds=AdaptiveProposals(planned).seed_profiles()
+    assert len(seeds)==planned['campaign_budget']==planned['feedback_min_completed']==4
+    assert [p['policy']['growth_budget'] for p in seeds[1:]]==[
+        'unroll_clone_growth','unroll_clone_threshold','unroll_clone_growth_threshold']
+    assert all(p['costs']==seeds[0]['costs'] and p['move_profile']==seeds[0]['move_profile'] for p in seeds)
+
+
+def test_novel_menu_excludes_known_profiles_and_preserves_frozen_fields():
+    api=AdaptiveProposals(config())
+    known={api.identity(p) for p in api.seed_profiles()}
+    menu=autopilot.untested_knobs(api,known)
+    assert menu
+    profiles=[api.project(k,'An isolated bounded contrast; unchanged code rejects the mechanism.') for k in menu]
+    ids=[api.identity(p) for p in profiles]
+    assert len(ids)==len(set(ids)) and not set(ids)&known
+    assert all(p['costs']['int_mul']==api.anchor['costs']['int_mul'] for p in profiles)
+
+
+def test_invalid_planner_retries_use_explicitly_labeled_valid_fallback(tmp_path,monkeypatch):
+    directory=source(tmp_path);review=autopilot.review(directory);cfg=config()
+    monkeypatch.setattr(autopilot,'confirmed_anchor',lambda *_:(None,review['selected']))
+    def request(config,prompt,destination,validator):
+        assert prompt['tested_knobs'] and prompt['untested_knob_examples']
+        assert 'reference_speedup' not in json.dumps(prompt)
+        return validator({'hypothesis':'A repeated invalid control',
+            'seeds':[prompt['example_profile']]*3})
+    monkeypatch.setattr(autopilot.pressure_proposals,'request_json',request)
+    planned=autopilot.plan(cfg,[review],tmp_path/'next',{'round_overrides':{
+        '1':{'target':'648.exchange2_s','family':'branch-growth'}}})
+    seeds=AdaptiveProposals(planned).seed_profiles()
+    assert len(seeds)==4 and len({autopilot.pressure_proposals.profile_identity(p) for p in seeds})==4
+    report=autopilot.read(tmp_path/'next/planner-fallback.json')
+    assert report['model_generated'] is False
+    assert all('not a model proposal' in p['rationale'] for p in seeds[1:])
+
+
+def test_explicit_coordinator_restart_clears_old_flags_and_still_honors_stop_files(tmp_path,monkeypatch):
+    directory=source(tmp_path);root=tmp_path/'supervisor';root.mkdir()
+    autopilot.write(root/'state.json',{'reviews':[autopilot.review(directory)],'current':str(directory),
+        'stop_requested':True,'failure':'historical','blocker':'historical'})
+    monkeypatch.setattr(autopilot.signal,'signal',lambda *_:None)
+    monkeypatch.setattr(autopilot,'plan',lambda *_:config())
+    monkeypatch.setattr(autopilot,'reuse_prepared',lambda *_:None)
+    checked=[]
+    def dispatch(_):
+        snapshot=autopilot.read(root/'state.json')
+        assert not any(k in snapshot for k in ('stop_requested','failure','blocker'))
+        (root/'STOP').touch();checked.append(True)
+    monkeypatch.setattr(autopilot,'dispatch_ready',dispatch)
+    monkeypatch.setattr(autopilot.subprocess,'Popen',lambda *_a,**_k:pytest.fail('STOP forbids launch'))
+    autopilot.supervise(directory,root,poll=0)
+    assert checked and (root/'STOP').exists()
+    assert autopilot.read(root/'state.json')['phase']=='stopped'
+
+
 def test_mechanistic_portfolio_has_three_isolated_treatments_and_one_feedback_slot(tmp_path,monkeypatch):
     directory=source(tmp_path);review=autopilot.review(directory);cfg=config()
     anchor=review['selected']['proposal'];anchor['policy']['growth_budget']='unroll'

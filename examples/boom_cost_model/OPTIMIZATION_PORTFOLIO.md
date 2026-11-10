@@ -35,3 +35,18 @@ The aim is not an observed result. Promotion requires existing repeat thresholds
 reference inputs remain validation-only and never feed the planner. Results are
 partial-suite research estimates, not official SPEC scores. Licensed artifacts
 and site configuration remain private.
+
+The completed five-treatment portfolio retained the control. Disabling cloning
+regressed from76.82 to118.98 seconds on Exchange2 train; larger unswitching plus
+live-range shrinkage gave77.13 seconds, still slower than the control. IRA-all
+and two related combinations produced duplicate application executables and
+were skipped, not measured as failures. This does not establish a cache or
+allocation bottleneck.
+
+The subsequent `cloning-frontier` is a four-point factorial: control, IPA cloning
+unit growth10 to50, evaluation threshold500 to125, and both. The actual pinned
+compiler reports defaults10 and500. The pass stays enabled; costs, existing
+unrolling/inlining and pressure settings remain fixed. Inspect actual clones
+and call sites, then test correctness and hardware time. More aggressive
+specialization is a hypothesis, not an achieved speedup. The initial factorial
+is deterministic and is not attributed to the LLM.

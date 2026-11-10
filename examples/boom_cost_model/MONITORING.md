@@ -44,6 +44,15 @@ Monitoring reduces unattended downtime. Browser authentication, failed
 correctness/hardware gates, host outages and normal preparation/round barriers
 can still leave hardware idle; a30-minute audit is not a zero-downtime guarantee.
 
+An explicitly launched replacement coordinator clears historical process stop
+and error fields; current root/external STOP files still prevent dispatch. This
+keeps a completed handoff's old stop flag from disabling future monitor recovery.
+The planner supplies compact previously tested knobs alongside untested bounded
+examples. After three invalid proposals it can choose deterministic novel
+contrasts in that same validated domain, recording `planner-fallback.json` and
+marking them as not model-generated. Frozen fields and all workload/security
+checks remain mandatory; an exhausted domain still requires a different family.
+
 ## Sparse workload transfers
 
 Large guest images can contain mostly zero-filled space. Copying them without

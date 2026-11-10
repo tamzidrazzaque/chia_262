@@ -140,6 +140,8 @@ def verify_policy_defaults(prefix: str, baseline_prefix: str, policy: dict) -> d
             ('flag_unswitch_loops', '-funswitch-loops', '[enabled]'),
             ('flag_ipa_cp_clone', '-fipa-cp-clone', '[enabled]'),
             ('param_max_unswitch_insns', '--param=max-unswitch-insns', '50'),
+            ('param_ipa_cp_unit_growth', '--param=ipa-cp-unit-growth', '10'),
+            ('param_ipa_cp_eval_threshold', '--param=ipa-cp-eval-threshold', '500'),
             ('flag_ira_region', '-fira-region', 'one')]:
         if name in extras:
             extra_options[name] = (option, override)
