@@ -140,6 +140,27 @@ def validate_exchange2_output(spec_dir: Path, benchmark: str, size: str,
     }
 
 
+def validate_spec_output(spec_dir: Path, benchmark: str, size: str,
+                         label: str, log: str) -> dict:
+    """Validate one private screening run without claiming native/F2 evidence.
+
+    Exchange2 has an additional exact-output hash check because an empty output
+    can otherwise pass ``specdiff``. Other benchmarks use SPEC's explicit
+    correctness-success line during this local screen; the FireSim/native lane
+    must perform its stronger per-workload output comparison before measuring.
+    """
+    if not validated(log, benchmark, size):
+        raise ValueError("SPEC did not report the required correctness success")
+    if benchmark == BENCHMARK:
+        return validate_exchange2_output(spec_dir, benchmark, size, label)
+    return {
+        "validator": "spec-success-line-only",
+        "benchmark": benchmark,
+        "size": size,
+        "note": "native per-workload output comparison required before F2 measurement",
+    }
+
+
 def validate_candidate_manifest(manifest: dict, candidate_id: str, gcc_root: Path) -> None:
     """Bind a role-3 label to its full content identity and compiler prefix."""
     full_id = manifest.get("candidate_id")
@@ -263,12 +284,9 @@ def main() -> int:
     if result.returncode:
         return result.returncode
     if args.action == "validate":
-        if not validated(log.read_text(), args.benchmark, args.size):
-            print("SPEC did not report the required success result; inspect the private log")
-            return 1
         try:
-            metadata["output_validation"] = validate_exchange2_output(
-                spec_dir, args.benchmark, args.size, label,
+            metadata["output_validation"] = validate_spec_output(
+                spec_dir, args.benchmark, args.size, label, log.read_text(),
             )
         except ValueError as exc:
             print(f"independent output validation failed: {exc}")

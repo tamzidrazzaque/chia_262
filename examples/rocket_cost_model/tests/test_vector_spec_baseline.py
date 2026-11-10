@@ -24,6 +24,7 @@ from examples.rocket_cost_model.spec_vector_baseline import (
     role_settings,
     validate_candidate_manifest,
     validate_exchange2_output,
+    validate_spec_output,
     validated,
 )
 
@@ -160,6 +161,18 @@ class VectorSpecBaselineTests(unittest.TestCase):
                                   "648.exchange2_s", "test"))
         self.assertFalse(validated(" Success 648.exchange2_s base train ratio=0\n",
                                    "648.exchange2_s", "test"))
+
+    def test_non_exchange2_screen_uses_spec_success_gate(self):
+        result = validate_spec_output(
+            Path("/private/spec"), "605.mcf_s", "test", "saturn_role2_generic_vector",
+            " Success 605.mcf_s base test ratio=0\n",
+        )
+        self.assertEqual(result["validator"], "spec-success-line-only")
+        with self.assertRaisesRegex(ValueError, "correctness success"):
+            validate_spec_output(
+                Path("/private/spec"), "605.mcf_s", "test",
+                "saturn_role2_generic_vector", "failed\n",
+            )
 
     def test_exchange2_requires_nonempty_exact_output(self):
         with tempfile.TemporaryDirectory() as directory:
