@@ -174,6 +174,27 @@ def validate_candidate_manifest(manifest: dict, candidate_id: str, gcc_root: Pat
         raise ValueError("candidate manifest does not use the pinned GCC 15 revision")
 
 
+def wrap_riscv_validation_helpers(spec_dir: Path, benchmark: str, label: str,
+                                  qemu: Path) -> list[str]:
+    """Wrap RISC-V helpers that SPEC invokes directly during comparison."""
+    run_root = spec_dir / "benchspec/CPU" / benchmark / "run"
+    wrapped: list[str] = []
+    for helper in run_root.glob(f"run_base_*_{label}-64.*/imagevalidate_*"):
+        if not helper.is_file() or not (helper.stat().st_mode & 0o111):
+            continue
+        original = helper.with_name(helper.name + ".riscv")
+        if original.exists():
+            continue
+        helper.rename(original)
+        helper.write_text(
+            "#!/bin/sh\n"
+            f"exec {shlex.quote(str(qemu))} {shlex.quote(str(original))} \"$@\"\n"
+        )
+        helper.chmod(0o755)
+        wrapped.append(str(helper))
+    return wrapped
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--spec-dir", type=Path, required=True)
@@ -283,6 +304,11 @@ def main() -> int:
     print(f"runcpu exit={result.returncode}; log={log}")
     if result.returncode:
         return result.returncode
+    if args.action == "build":
+        wrapped = wrap_riscv_validation_helpers(spec_dir, args.benchmark, label, qemu)
+        if wrapped:
+            metadata["qemu_wrapped_validation_helpers"] = wrapped
+            metadata_path.write_text(json.dumps(metadata, indent=2) + "\n")
     if args.action == "validate":
         try:
             metadata["output_validation"] = validate_spec_output(
