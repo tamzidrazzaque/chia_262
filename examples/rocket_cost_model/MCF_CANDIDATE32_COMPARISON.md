@@ -20,3 +20,16 @@ paired statistics remain better.
 The original role-3 boot failure was caused by a non-equivalent MCF guest
 layout (`inp.in`/`mcf.out` versus the accepted `input.in`/`stdout.txt`). The
 layout normalization is implemented by `produce_spec_workload_bundle.py`.
+
+## Confirmation pair
+
+A fresh order-balanced confirmation pair also passed exact-output validation:
+
+| run | role | guest seconds | whole-boot cycles |
+| --- | --- | ---: | ---: |
+| confirmation-1 | role 2 | 98.85 | 102,918,620,807 |
+| confirmation-1 | role 3.2 | 90.00 | 94,075,602,392 |
+
+The candidate is 8,843,018,415 cycles (8.592%) below this fresh role-2
+control. This is a strong confirmation result, but additional order-balanced
+repetitions are still required before treating 3.2 as the retained winner.
