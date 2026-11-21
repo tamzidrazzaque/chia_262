@@ -50,9 +50,9 @@ def main() -> None:
     for action in ("build", "validate"):
         common[common.index("--candidate-id") + 1] = compiler_id
         subprocess.run([*common, "--action", action], check=True)
-    bundle = work / "bundle"
+    bundle = work / "bundle" / "3-saturn-aware"
     subprocess.run([sys.executable, str(repo / "examples/rocket_cost_model/produce_spec_workload_bundle.py"),
-                    "--spec-dir", str(spec), "--evidence", str(out), "--out", str(bundle),
+                    "--spec-dir", str(spec), "--evidence", str(out), "--out", str(work / "bundle"),
                     "--toolchain", str(compiler["prefix"]), "--readelf",
                     str(toolchain / "bin/riscv64-unknown-linux-gnu-readelf"), "--objdump",
                     str(toolchain / "bin/riscv64-unknown-linux-gnu-objdump"), "--benchmark",
