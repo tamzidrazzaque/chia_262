@@ -36,3 +36,18 @@ process failure unlikely; the retry still has no workload timing result.
 
 The worker is idle again. Further retries require resolving or explicitly
 authorizing investigation of the deterministic Saturn/Linux boot fault.
+
+## Layout-matched retry
+
+The original role-3 image was not packaging-equivalent to roles 1/2: it used
+`inp.in`, redirected stdout to `mcf.out`, and used a different input ID. The
+producer now normalizes MCF role 3 to the accepted layout (`input.in`,
+`stdout.txt`, and `605-mcf-test`) while preserving the official input bytes.
+
+The fresh layout-matched image booted through Linux and completed the F2 task
+with return code 0. Collection passed exact-output validation (`status:
+correct`) and clean shutdown. The private receipt reports 98.09 seconds guest
+elapsed and 102,146,786,282 whole-boot simulation cycles. This is the first
+valid role-3 pilot; compare it only with paired role-2 runs using the same
+timing scope, and do not treat the raw whole-boot difference as a final
+speedup claim yet.
