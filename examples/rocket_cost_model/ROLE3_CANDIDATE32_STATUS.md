@@ -24,3 +24,15 @@ This candidate is therefore rejected for this run as an infrastructure/boot
 failure, not as a measured performance regression. A replacement F2 attempt
 requires a fresh authorization and should first reproduce the accepted baseline
 boot on the same worker/image path.
+
+## Retry diagnosis
+
+A fresh stage/image identity was tried after stopping the first hung FireSim
+process. The accepted driver hash and AGFI were reverified, and the worker was
+reflashed through the normal Saturn lane. The same kernel panic reproduced at
+the identical boot point (`kobject_get+0x30`, `badaddr=0x60e20207`) before the
+guest runner started. This makes a stale candidate image or one-off FireSim
+process failure unlikely; the retry still has no workload timing result.
+
+The worker is idle again. Further retries require resolving or explicitly
+authorizing investigation of the deterministic Saturn/Linux boot fault.
