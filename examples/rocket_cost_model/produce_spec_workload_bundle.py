@@ -132,6 +132,13 @@ def make_role(spec: Path, evidence: Path, out: Path, toolchain: Path,
         invocation = {"argv": ["./program", input_dest_name], "stdin": None,
                   "stdout": stdout_name, "stderr": "stderr.txt"}
         input_map = {input_dest_name: "payload/" + input_dest_name}
+    if benchmark == "605.mcf_s":
+        # Keep every MCF role image layout-identical.  Changing these names or
+        # the input identity changes the ext4 image layout and can reintroduce
+        # the deterministic Saturn boot failure seen in the first role-3 run.
+        if input_dest_name != "input.in" or stdout_name != "stdout.txt" \
+                or invocation["argv"] != ["./program", "input.in"]:
+            raise ValueError("MCF bundle violates the frozen guest layout contract")
     input_id = (f"{benchmark.split('.')[0]}-{benchmark.split('.')[1].rsplit('_', 1)[0]}-{size}"
                 if benchmark == "605.mcf_s" else f"{benchmark.replace('.', '-')}-{size}")
     validation = {"status": "passed", "spec_validation": "passed", "backend": "qemu",
