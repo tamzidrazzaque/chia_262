@@ -7,6 +7,7 @@ import hashlib
 import json
 import shutil
 from pathlib import Path
+from examples.rocket_cost_model.spec_vector_baseline import role_settings
 
 from examples.rocket_cost_model.saturn_spec.bundle import (
     BASELINE_GCC_SHA, GCC_REVISION, TARGET, inspect_elf, sha,
@@ -22,8 +23,9 @@ def write_json(path: Path, value: dict) -> None:
 
 
 def make_role(spec: Path, evidence: Path, out: Path, toolchain: Path,
-              readelf: Path, objdump: Path, benchmark: str, role: str, size: str) -> Path:
-    label = "saturn_role1_scalar" if role == "1-scalar" else "saturn_role2_generic_vector"
+              readelf: Path, objdump: Path, benchmark: str, role: str, size: str,
+              candidate_id: str | None = None, candidate_manifest: Path | None = None) -> Path:
+    label, flags, _ = role_settings(role, candidate_id)
     root = spec / "benchspec/CPU" / benchmark
     run = max((root / "run").glob(f"run_base_{size}_{label}-64.*"), key=lambda p: p.stat().st_mtime_ns)
     program = benchmark.split(".", 1)[1]
@@ -62,12 +64,26 @@ def make_role(spec: Path, evidence: Path, out: Path, toolchain: Path,
             oracle = scalar_runs[-1] / "hkrdenq.out" if scalar_runs else None
             if oracle is None or not oracle.is_file() or output_file.read_bytes() != oracle.read_bytes():
                 raise ValueError("NAB vector output differs from validated scalar oracle")
-    else:
+    elif (root / "data" / size / "output").is_dir():
         golden_dir = root / "data" / size / "output"
         golden_names = {p.name for p in golden_dir.iterdir() if p.is_file()}
         outputs = [p for p in run.glob("*.out") if p.name in golden_names]
         output_file = next((p for p in outputs if p.name != input_file.name), None)
         oracle = golden_dir / output_file.name if output_file is not None else None
+    else:
+        # Some SPEC installations retain the validated run tree but omit the
+        # benchmark data/output tree.  Use the independently validated scalar
+        # run as the paired oracle and require every non-scalar role to match
+        # it byte-for-byte; this does not invent or normalize output.
+        output_name = {"605.mcf_s": "mcf.out"}.get(benchmark)
+        if output_name is None:
+            raise ValueError(f"no trusted output layout for {benchmark}")
+        output_file = run / output_name
+        scalar_runs = sorted((root / "run").glob("run_base_" + size + "_saturn_role1_scalar-64.*"),
+                             key=lambda p: p.stat().st_mtime_ns)
+        oracle = scalar_runs[-1] / output_name if scalar_runs else None
+        if role != "1-scalar" and (oracle is None or not oracle.is_file() or output_file.read_bytes() != oracle.read_bytes()):
+            raise ValueError(f"{benchmark} output differs from validated scalar oracle")
     if output_file is None:
         raise ValueError(f"could not identify executable output in {run}")
     reference = oracle
@@ -89,9 +105,17 @@ def make_role(spec: Path, evidence: Path, out: Path, toolchain: Path,
         (out / dest).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, out / dest)
     flags = SCALAR_FLAGS if role == "1-scalar" else VECTOR_FLAGS
+    full_candidate = None
+    if candidate_manifest is not None:
+        full_candidate = json.loads(candidate_manifest.read_text())["candidate_id"]
     compiler = {"gcc_version": "15.1.0", "gcc_revision": GCC_REVISION,
-                "compiler_sha256": BASELINE_GCC_SHA, "role": role,
-                "target_flags": flags, "candidate_id": None, "snapshot_id": None}
+                "compiler_sha256": sha(toolchain / "bin/riscv64-unknown-linux-gnu-gcc"),
+                "role": role, "target_flags": flags,
+                "candidate_id": full_candidate, "snapshot_id": full_candidate}
+    if role != "3-saturn-aware":
+        compiler["compiler_sha256"] = BASELINE_GCC_SHA
+        compiler["candidate_id"] = None
+        compiler["snapshot_id"] = None
     write_json(out / "metadata/compiler.json", compiler)
     isa = {"elf_sha256": sha(out / "payload/program"), "riscv_arch": audit["riscv_arch"],
            "abi": "lp64d", "linkage": "static", "vlen_bits": 256,
@@ -119,7 +143,7 @@ def make_role(spec: Path, evidence: Path, out: Path, toolchain: Path,
                   "validation_log": "metadata/validation.log"}
     write_json(out / "metadata/validation.json", validation)
     files = {p.relative_to(out).as_posix(): sha(p) for p in out.rglob("*") if p.is_file()}
-    manifest = {"schema_version": 1, "role": role, "candidate_id": None,
+    manifest = {"schema_version": 1, "role": role, "candidate_id": candidate_id,
                 "benchmark": benchmark, "input_id": validation["input_id"], "size": size,
                 "source_variant": SOURCE, "target": TARGET,
                 "compiler_manifest": "metadata/compiler.json", "isa_metadata": "metadata/isa.json",
@@ -143,10 +167,17 @@ def main() -> None:
                     default=Path("/scratch/trazzaque/riscv-gnu-local/bin/riscv64-unknown-elf-objdump"))
     ap.add_argument("--benchmark", required=True)
     ap.add_argument("--size", default="test")
+    ap.add_argument("--role", choices=("1-scalar", "2-generic-vector", "3-saturn-aware"))
+    ap.add_argument("--candidate-id")
+    ap.add_argument("--candidate-manifest", type=Path)
     args = ap.parse_args()
-    for role in ("1-scalar", "2-generic-vector"):
+    roles = (args.role,) if args.role else ("1-scalar", "2-generic-vector")
+    if args.role == "3-saturn-aware" and (not args.candidate_id or not args.candidate_manifest):
+        ap.error("role 3 requires --candidate-id and --candidate-manifest")
+    for role in roles:
         make_role(args.spec_dir, args.evidence, args.out / role, args.toolchain,
-                  args.readelf, args.objdump, args.benchmark, role, args.size)
+                  args.readelf, args.objdump, args.benchmark, role, args.size,
+                  args.candidate_id, args.candidate_manifest)
 
 
 if __name__ == "__main__":
