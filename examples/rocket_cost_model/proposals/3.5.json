@@ -1,0 +1,7 @@
+{
+  "candidate_id": "3.5",
+  "changes": {
+    "vec_to_scalar": 2
+  },
+  "rationale": "Test Saturn's vector-to-scalar transfer cost while retaining all baseline vector costs."
+}

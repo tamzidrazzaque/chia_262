@@ -1,0 +1,7 @@
+{
+  "candidate_id": "3.6",
+  "changes": {
+    "permute": 2
+  },
+  "rationale": "Test Saturn's vector permute cost while retaining all baseline vector costs."
+}
