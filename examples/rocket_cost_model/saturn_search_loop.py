@@ -82,6 +82,10 @@ def run(args: argparse.Namespace) -> None:
     if state.get("baseline") != baseline:
         raise ValueError("baseline changed after loop initialization")
     done = {item["candidate_id"] for item in state.get("candidates", [])}
+    seen_elves = {item.get("executable_sha256") for item in state.get("candidates", [])
+                  if item.get("executable_sha256")}
+    if baseline.get("executable_sha256"):
+        seen_elves.add(baseline["executable_sha256"])
     while True:
       proposals = sorted(queue.glob("*.json"))
       progressed = False
@@ -103,11 +107,30 @@ def run(args: argparse.Namespace) -> None:
                       "SATURN_WORKDIR": str(candidate_work)})
           try:
               _run_hook(args.prepare_cmd, env, "prepare")
+              metadata_path = candidate_work / "candidate-metadata.json"
+              if metadata_path.exists():
+                  metadata = _read(metadata_path)
+                  executable = metadata.get("executable_sha256")
+                  if not isinstance(executable, str) or len(executable) != 64:
+                      raise ValueError("candidate metadata lacks executable_sha256")
+                  if executable in seen_elves:
+                      record.update(status="rejected", failure="duplicate executable",
+                                    executable_sha256=executable, finished_at=time.time())
+                      state["candidates"].append(record)
+                      state_path.parent.mkdir(parents=True, exist_ok=True)
+                      state_path.write_text(json.dumps(state, indent=2) + "\n")
+                      done.add(candidate_id)
+                      progressed = True
+                      if args.once:
+                          return
+                      continue
+                  record["executable_sha256"] = executable
               record["status"] = "measuring"
               _run_hook(args.measure_cmd, env, "measure")
               receipt = _read(candidate_work / "candidate-receipt.json")
               candidate = _validate_receipt(receipt, baseline, candidate_id)
               record.update(candidate, decision=_decision(candidate, baseline), status="complete")
+              seen_elves.add(candidate["executable_sha256"])
           except Exception as exc:  # record the failure and stop; never skip evidence
               record.update(status="rejected", failure=str(exc))
               state["candidates"].append(record)
