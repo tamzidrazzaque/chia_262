@@ -1,0 +1,8 @@
+{
+  "platform_sha256": "326ab8d256ea40b60b7857d4d4013e76eca8035d55b751978041df9c6d63fbfc",
+  "agfi": "agfi-012e92467d7d2149a",
+  "driver_sha256": "5d3353ea8e6bf2891555da3d7b29122b1143a2e3d8c61a2a55741f1fd0bc94bd",
+  "vlen_bits": 256,
+  "input_id": "605-mcf-test",
+  "cycles": 102918620807
+}
