@@ -27,6 +27,7 @@ def required(name: str) -> Path:
 def main() -> None:
     work = required("SATURN_WORKDIR")
     proposal = json.loads(required("SATURN_PROPOSAL").read_text())
+    proposal = {"changes": proposal["changes"], "rationale": proposal["rationale"]}
     candidate_id = os.environ["SATURN_CANDIDATE_ID"]
     repo = Path(os.environ.get("SATURN_REPO", Path(__file__).resolve().parents[2])).resolve()
     spec = required("SATURN_SPEC_DIR")
