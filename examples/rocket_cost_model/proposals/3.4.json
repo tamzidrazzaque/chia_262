@@ -1,0 +1,7 @@
+{
+  "candidate_id": "3.4",
+  "changes": {
+    "unalign_load": 4
+  },
+  "rationale": "Ablate the load-side component of 3.2 while retaining baseline unaligned-store cost 2."
+}
