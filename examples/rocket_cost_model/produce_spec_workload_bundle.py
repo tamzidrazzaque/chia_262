@@ -94,13 +94,15 @@ def make_role(spec: Path, evidence: Path, out: Path, toolchain: Path,
         raise ValueError(f"missing validation log: {log}")
     audit = inspect_elf(binary, readelf, objdump)
     out.mkdir(parents=True, mode=0o700, exist_ok=False)
+    input_dest_name = "input.in" if benchmark == "605.mcf_s" else (None if nab else input_file.name)
+    stdout_name = "stdout.txt" if benchmark == "605.mcf_s" else output_file.name
     sources = {"payload/program": binary, "reference/" + output_file.name: reference,
                "metadata/validation.log": log}
     if nab:
         sources.update({"payload/hkrdenq/" + p.relative_to(input_dir).as_posix(): p
                         for p in input_files})
     else:
-        sources["payload/" + input_file.name] = input_file
+        sources["payload/" + input_dest_name] = input_file
     for dest, src in sources.items():
         (out / dest).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, out / dest)
@@ -127,12 +129,14 @@ def make_role(spec: Path, evidence: Path, out: Path, toolchain: Path,
         input_map = {"hkrdenq/" + p.relative_to(input_dir).as_posix():
                      "payload/hkrdenq/" + p.relative_to(input_dir).as_posix() for p in input_files}
     else:
-        invocation = {"argv": ["./program", input_file.name], "stdin": None,
-                  "stdout": output_file.name, "stderr": "stderr.txt"}
-        input_map = {input_file.name: "payload/" + input_file.name}
+        invocation = {"argv": ["./program", input_dest_name], "stdin": None,
+                  "stdout": stdout_name, "stderr": "stderr.txt"}
+        input_map = {input_dest_name: "payload/" + input_dest_name}
+    input_id = (f"{benchmark.split('.')[0]}-{benchmark.split('.')[1].rsplit('_', 1)[0]}-{size}"
+                if benchmark == "605.mcf_s" else f"{benchmark.replace('.', '-')}-{size}")
     validation = {"status": "passed", "spec_validation": "passed", "backend": "qemu",
                   "role": role, "benchmark": benchmark, "size": size,
-                  "input_id": f"{benchmark.replace('.', '-')}-{size}",
+                  "input_id": input_id,
                   "source_variant": SOURCE, "target_vlen": 256, "target_dlen": 128,
                   "elf_sha256": sha(out / "payload/program"),
                   "invocation_sha256": hashlib.sha256(json.dumps(invocation, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
