@@ -46,7 +46,9 @@ def main() -> None:
               "--role", "3-saturn-aware", "--benchmark", "605.mcf_s", "--size", "test",
               "--candidate-id", candidate_id[:32], "--candidate-manifest",
               str(Path(compiler["prefix"]) / "cost-model.json")]
+    compiler_id = str(compiler["candidate_id"])[:32]
     for action in ("build", "validate"):
+        common[common.index("--candidate-id") + 1] = compiler_id
         subprocess.run([*common, "--action", action], check=True)
     bundle = work / "bundle"
     subprocess.run([sys.executable, str(repo / "examples/rocket_cost_model/produce_spec_workload_bundle.py"),
@@ -55,7 +57,7 @@ def main() -> None:
                     str(toolchain / "bin/riscv64-unknown-linux-gnu-readelf"), "--objdump",
                     str(toolchain / "bin/riscv64-unknown-linux-gnu-objdump"), "--benchmark",
                     "605.mcf_s", "--size", "test", "--role", "3-saturn-aware",
-                    "--candidate-id", candidate_id[:32], "--candidate-manifest",
+                    "--candidate-id", compiler_id, "--candidate-manifest",
                     str(Path(compiler["prefix"]) / "cost-model.json")], check=True)
     elf_hash = hashlib.sha256((bundle / "payload/program").read_bytes()).hexdigest()
     (work / "candidate-metadata.json").write_text(json.dumps({
