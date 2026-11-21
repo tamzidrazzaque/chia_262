@@ -77,48 +77,55 @@ def run(args: argparse.Namespace) -> None:
     required = ("platform_sha256", "agfi", "driver_sha256", "vlen_bits", "input_id", "cycles")
     if any(key not in baseline for key in required) or type(baseline["cycles"]) is not int:
         raise ValueError("baseline must contain frozen platform identity and cycles")
-    proposals = sorted(queue.glob("*.json"))
     state = _read(state_path) if state_path.exists() else {
         "schema_version": 1, "baseline": baseline, "candidates": []}
     if state.get("baseline") != baseline:
         raise ValueError("baseline changed after loop initialization")
     done = {item["candidate_id"] for item in state.get("candidates", [])}
-    for proposal_path in proposals:
-        proposal = _read(proposal_path)
-        candidate_id = proposal.get("candidate_id")
-        if not isinstance(candidate_id, str) or not candidate_id.startswith("3."):
-            raise ValueError(f"invalid candidate_id in {proposal_path}")
-        if candidate_id in done:
-            continue
-        candidate_work = work_root / candidate_id
-        candidate_work.mkdir(mode=0o700)
-        record = {"candidate_id": candidate_id, "proposal_sha256": _digest(proposal_path),
-                  "started_at": time.time(), "status": "preparing"}
-        (candidate_work / "proposal.json").write_text(json.dumps(proposal, indent=2) + "\n")
-        env = os.environ.copy()
-        env.update({"SATURN_CANDIDATE_ID": candidate_id,
-                    "SATURN_PROPOSAL": str(proposal_path),
-                    "SATURN_WORKDIR": str(candidate_work)})
-        try:
-            _run_hook(args.prepare_cmd, env, "prepare")
-            record["status"] = "measuring"
-            _run_hook(args.measure_cmd, env, "measure")
-            receipt = _read(candidate_work / "candidate-receipt.json")
-            candidate = _validate_receipt(receipt, baseline, candidate_id)
-            record.update(candidate, decision=_decision(candidate, baseline), status="complete")
-        except Exception as exc:  # record the failure and stop; never skip evidence
-            record.update(status="rejected", failure=str(exc))
-            state["candidates"].append(record)
-            state_path.parent.mkdir(parents=True, exist_ok=True)
-            state_path.write_text(json.dumps(state, indent=2) + "\n")
-            raise
-        record["finished_at"] = time.time()
-        state["candidates"].append(record)
-        state_path.parent.mkdir(parents=True, exist_ok=True)
-        state_path.write_text(json.dumps(state, indent=2) + "\n")
-        done.add(candidate_id)
-        if args.once:
-            break
+    while True:
+      proposals = sorted(queue.glob("*.json"))
+      progressed = False
+      for proposal_path in proposals:
+          proposal = _read(proposal_path)
+          candidate_id = proposal.get("candidate_id")
+          if not isinstance(candidate_id, str) or not candidate_id.startswith("3."):
+              raise ValueError(f"invalid candidate_id in {proposal_path}")
+          if candidate_id in done:
+              continue
+          candidate_work = work_root / candidate_id
+          candidate_work.mkdir(mode=0o700)
+          record = {"candidate_id": candidate_id, "proposal_sha256": _digest(proposal_path),
+                    "started_at": time.time(), "status": "preparing"}
+          (candidate_work / "proposal.json").write_text(json.dumps(proposal, indent=2) + "\n")
+          env = os.environ.copy()
+          env.update({"SATURN_CANDIDATE_ID": candidate_id,
+                      "SATURN_PROPOSAL": str(proposal_path),
+                      "SATURN_WORKDIR": str(candidate_work)})
+          try:
+              _run_hook(args.prepare_cmd, env, "prepare")
+              record["status"] = "measuring"
+              _run_hook(args.measure_cmd, env, "measure")
+              receipt = _read(candidate_work / "candidate-receipt.json")
+              candidate = _validate_receipt(receipt, baseline, candidate_id)
+              record.update(candidate, decision=_decision(candidate, baseline), status="complete")
+          except Exception as exc:  # record the failure and stop; never skip evidence
+              record.update(status="rejected", failure=str(exc))
+              state["candidates"].append(record)
+              state_path.parent.mkdir(parents=True, exist_ok=True)
+              state_path.write_text(json.dumps(state, indent=2) + "\n")
+              raise
+          record["finished_at"] = time.time()
+          state["candidates"].append(record)
+          state_path.parent.mkdir(parents=True, exist_ok=True)
+          state_path.write_text(json.dumps(state, indent=2) + "\n")
+          done.add(candidate_id)
+          progressed = True
+          if args.once:
+              return
+      if not args.watch:
+          return
+      if not progressed:
+          time.sleep(args.poll_seconds)
 
 
 def main() -> None:
@@ -130,6 +137,8 @@ def main() -> None:
     parser.add_argument("--prepare-cmd", required=True, help="hook that builds/stages a candidate")
     parser.add_argument("--measure-cmd", required=True, help="hook that runs F2 and writes candidate-receipt.json")
     parser.add_argument("--once", action="store_true", help="process one candidate and exit")
+    parser.add_argument("--watch", action="store_true", help="keep polling for newly queued proposals")
+    parser.add_argument("--poll-seconds", type=float, default=30.0)
     run(parser.parse_args())
 
 
