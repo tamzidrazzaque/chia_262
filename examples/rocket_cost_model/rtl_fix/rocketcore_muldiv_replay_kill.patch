@@ -1,0 +1,14 @@
+diff --git a/src/main/scala/rocket/RocketCore.scala b/src/main/scala/rocket/RocketCore.scala
+index 0000000..0000000 100644
+--- a/src/main/scala/rocket/RocketCore.scala
++++ b/src/main/scala/rocket/RocketCore.scala
+@@ -704,6 +704,7 @@
+   val vec_kill_mem = mem_reg_valid && mem_ctrl.mem && io.vector.map(_.mem.block_mem).getOrElse(false.B)
+   val vec_kill_all = mem_reg_valid && io.vector.map(_.mem.block_all).getOrElse(false.B)
+   val replay_mem  = dcache_kill_mem || mem_reg_replay || fpu_kill_mem || vec_kill_mem || vec_kill_all
+-  val killm_common = dcache_kill_mem || take_pc_wb || mem_reg_xcpt || !mem_reg_valid
+-  div.io.kill := killm_common && RegNext(div.io.req.fire)
++  val killm_common = dcache_kill_mem || take_pc_wb || mem_reg_xcpt || !mem_reg_valid
++  val killm_iterative = killm_common || fpu_kill_mem || vec_kill_mem || vec_kill_all
++  div.io.kill := killm_iterative && RegNext(div.io.req.fire)
+   val ctrl_killm = killm_common || mem_xcpt || fpu_kill_mem || vec_kill_mem
