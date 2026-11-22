@@ -107,6 +107,30 @@ class FeedbackTests(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         self.assertEqual(len(list(self.queue.glob('*.json'))), 1)
 
+    def test_active_and_blocked_work_count_toward_pending_bound(self):
+        self.state['candidates'].extend([
+            {'candidate_id': '3.3', 'status': 'preparing'},
+            {'candidate_id': '3.4', 'status': 'blocked'}])
+        with patch.object(feedback, 'codex_proposal') as model:
+            self.assertFalse(propose(self.queue, self.state, {}, 2, model))
+            model.assert_not_called()
+
+    def test_explicit_defaults_are_semantically_duplicate(self):
+        (self.queue / '3.2.json').write_text(json.dumps({
+            'candidate_id': '3.2', 'changes': {'int_stmt': 4}}))
+        def generate(*args):
+            return {'changes': {'int_stmt': 4, 'scalar_to_vec': feedback.BASE_COSTS['scalar_to_vec']},
+                    'rationale': 'same effective costs'}
+        with self.assertRaisesRegex(ValueError, 'repeated'):
+            propose(self.queue, self.state, {}, 4, generate)
+
+    def test_terminal_work_does_not_consume_pending_capacity(self):
+        (self.queue / '3.2.json').write_text(json.dumps({
+            'candidate_id': '3.2', 'changes': {'int_stmt': 4}}))
+        def generate(*args):
+            return {'changes': {'int_stmt': 6}, 'rationale': 'different effective costs'}
+        self.assertTrue(propose(self.queue, self.state, {}, 1, generate))
+
 
 if __name__ == '__main__':
     unittest.main()

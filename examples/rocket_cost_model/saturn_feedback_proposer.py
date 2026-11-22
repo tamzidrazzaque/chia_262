@@ -34,10 +34,15 @@ def existing(queue: Path) -> tuple[set[str], set[str]]:
             proposal = read(path)
             validate_proposal({'changes': proposal['changes'], 'rationale': 'Existing profile'})
             ids.add(str(proposal["candidate_id"]))
-            signatures.add(json.dumps(proposal["changes"], sort_keys=True))
+            signatures.add(profile_signature(proposal['changes']))
         except (OSError, KeyError, TypeError, ValueError):
             continue
     return ids, signatures
+
+
+def profile_signature(changes: dict) -> str:
+    """Compare effective costs, including defaults omitted from sparse edits."""
+    return json.dumps({**BASE_COSTS, **changes}, sort_keys=True)
 
 
 def next_id(ids: set[str]) -> str:
@@ -116,8 +121,14 @@ def _propose_locked(queue: Path, state: dict, memory: dict, max_pending: int,
     if len(used_ids) >= budget:
         return False
     ids, signatures = existing(queue)
-    done = {item.get("candidate_id") for item in state.get("candidates", [])}
-    pending = len(ids - done)
+    records = state.get('candidates', [])
+    done = {item.get('candidate_id') for item in records}
+    terminal = {item.get('candidate_id') for item in records
+                if item.get('status') in ('complete', 'rejected')}
+    active = {item.get('candidate_id') for item in records
+              if item.get('status') not in ('complete', 'rejected')}
+    pending = len((ids - terminal) | active)
+    signatures.update(profile_signature(item['proposal']['changes']) for item in reservations)
     if pending >= max_pending:
         return False
     handled = set(memory.get("feedback_proposals", [])) | {item['source_id'] for item in reservations}
@@ -137,7 +148,7 @@ def _propose_locked(queue: Path, state: dict, memory: dict, max_pending: int,
         'already_proposed': [json.loads(value) for value in sorted(signatures)],
         'instructions': 'Use measured outcomes to propose one untested profile. '
                         'Explain the expected code-generation effect and what would falsify it.'}, model))
-    signature = json.dumps(selected['changes'], sort_keys=True)
+    signature = profile_signature(selected['changes'])
     if signature in signatures:
         raise ValueError('model repeated an existing cost profile')
     candidate_id = next_id(ids | used_ids | {value for value in done if isinstance(value, str)})

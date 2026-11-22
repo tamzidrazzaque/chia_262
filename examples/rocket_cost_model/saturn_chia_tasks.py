@@ -1,7 +1,8 @@
 """CHIA scheduling boundaries for the admitted Saturn lane.
 
-Workers need the same private paths as the existing producer and transport.
-No credentials or licensed payloads are serialized in task arguments.
+The artifact tasks move validated private bundle bytes through Ray and use
+worker-local scratch. Legacy path-based tasks still require shared mounts.
+Credentials remain worker-local; licensed artifact bytes require a private cluster.
 Automatic task retries are disabled because F2 attempts have persistent IDs.
 """
 
@@ -17,13 +18,16 @@ import sys
 import tempfile
 
 from chia.base.ChiaFunction import ChiaFunction, get
+from examples.rocket_cost_model.saturn_bundle_artifact import SaturnBundle, pack, unpack
 
 
-def invoke(module: str, candidate: str, work: str, proposal: str) -> None:
+def invoke(module: str, candidate: str, work: str, proposal: str,
+           extra_environment: dict | None = None) -> None:
     """Run the admitted lane adapter using worker-local private configuration."""
     environment = os.environ.copy()
     environment.update(SATURN_CANDIDATE_ID=candidate, SATURN_WORKDIR=work,
                        SATURN_PROPOSAL=proposal)
+    environment.update(extra_environment or {})
     subprocess.run([sys.executable, "-m", module], env=environment, check=True)
 
 
@@ -43,6 +47,55 @@ def measure(candidate: str, work: str, proposal: str) -> dict:
     """
     invoke("examples.rocket_cost_model.saturn_measure_hook", candidate, work, proposal)
     return json.loads((Path(work) / 'candidate-receipt.json').read_text())
+
+
+def private_work() -> Path:
+    """Allocate worker-local private scratch without requiring shared mounts."""
+    root = Path(os.environ['SATURN_TASK_ROOT']).resolve()
+    root.mkdir(parents=True, mode=0o700, exist_ok=True)
+    return Path(tempfile.mkdtemp(prefix='saturn-task-', dir=root))
+
+
+@ChiaFunction(resources={"riscv_build": 1}, max_retries=0)
+def prepare_artifact(candidate: str, proposal: dict) -> SaturnBundle:
+    """Build on compiler worker; return transferable, hash-bound bundle bytes."""
+    from examples.rocket_cost_model.vector_cost_model import proposal as validate
+    if not isinstance(candidate, str) or not candidate.startswith('3.') or not candidate[2:].isdigit():
+        raise ValueError('invalid queue candidate ID')
+    validate({key: proposal[key] for key in ('changes', 'rationale')})
+    work = private_work()
+    proposal_path = work / 'proposal.json'
+    proposal_path.write_text(json.dumps(proposal))
+    invoke('examples.rocket_cost_model.saturn_prepare_hook', candidate, str(work), str(proposal_path))
+    return pack(work / 'bundle/3-saturn-aware')
+
+
+def receive_artifact(artifact: SaturnBundle) -> tuple[Path, dict]:
+    """Reconstruct a bundle into manager-local scratch with its bound identity."""
+    work = private_work()
+    metadata = unpack(artifact, work / 'bundle/3-saturn-aware')
+    (work / 'candidate-metadata.json').write_text(json.dumps(metadata))
+    return work, metadata
+
+
+@ChiaFunction(resources={"saturn_manager": 1}, max_retries=0)
+def validate_artifact(artifact: SaturnBundle) -> dict:
+    """Exercise real artifact transfer/reconstruction without manager execution."""
+    _, metadata = receive_artifact(artifact)
+    return metadata
+
+
+@ChiaFunction(resources={"saturn_manager": 1}, max_retries=0)
+def measure_artifact(candidate: str, artifact: SaturnBundle) -> dict:
+    """Execute the admitted lane locally on the manager; return its receipt."""
+    work, metadata = receive_artifact(artifact)
+    invoke('examples.rocket_cost_model.saturn_measure_hook', candidate, str(work),
+           str(work / 'unused-proposal.json'), {'SATURN_MANAGER_LOCAL': '1'})
+    receipt = json.loads((work / 'candidate-receipt.json').read_text())
+    if receipt.get('executable_sha256') != metadata['executable_sha256'] or \
+            receipt.get('identity', {}).get('bundle_sha256') != metadata['bundle_sha256']:
+        raise ValueError('manager receipt differs from transported artifact')
+    return receipt
 
 
 def select_worker(nodes: list[dict], resource: str) -> str:

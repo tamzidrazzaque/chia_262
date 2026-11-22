@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 from pathlib import Path
 import shlex
 import subprocess
@@ -27,6 +28,10 @@ def env(name: str, default: str | None = None) -> str:
 
 
 def ssh(host: str, key: str, command: str, capture: bool = False) -> str:
+    if os.environ.get('SATURN_MANAGER_LOCAL') == '1':
+        result = subprocess.run(['bash', '--noprofile', '--norc', '-c', command],
+                                check=True, text=True, capture_output=capture)
+        return result.stdout if capture else ''
     result = subprocess.run(
         ["ssh", "-T", "-i", key, "-o", "StrictHostKeyChecking=yes", host,
          "bash --noprofile --norc -c " + shlex.quote(command)],
@@ -43,9 +48,13 @@ def main() -> None:
     # The producer keeps role-specific payloads below ``bundle/<role>`` so a
     # single candidate work directory can hold more than one role.  The
     # search lane measures the Saturn-aware role-3 payload.
-    bundle = work / "bundle" / "3-saturn-aware"
+    role = os.environ.get('SATURN_ROLE', '3-saturn-aware')
+    if role not in ('2-generic-vector', '3-saturn-aware'):
+        raise ValueError('unsupported measurement role')
+    bundle = work / "bundle" / role
     manifest_sha = hashlib.sha256((bundle / "manifest.json").read_bytes()).hexdigest()
-    host, key = env("SATURN_MANAGER_HOST"), env("SATURN_MANAGER_KEY")
+    local = os.environ.get('SATURN_MANAGER_LOCAL') == '1'
+    host, key = ('local', '') if local else (env("SATURN_MANAGER_HOST"), env("SATURN_MANAGER_KEY"))
     root = env("SATURN_MANAGER_ROOT", "/home/ubuntu/cs262_compiler")
     lane = f"{root}/saturn-spec-lane"
     tag = "auto-" + candidate.replace(".", "-")
@@ -57,7 +66,10 @@ def main() -> None:
         archive.add(bundle, arcname="bundle")
     remote_tar = f"{incoming}/bundle.tar"
     ssh(host, key, f"test ! -e {shlex.quote(stage)} && mkdir -p -m 700 {shlex.quote(incoming)} {shlex.quote(verified)}")
-    with local_tar.open("rb") as source:
+    if local:
+        shutil.copyfile(local_tar, remote_tar)
+    else:
+      with local_tar.open("rb") as source:
         sender = subprocess.Popen(["ssh", "-T", "-i", key, "-o", "StrictHostKeyChecking=yes", host,
                                    f"bash --noprofile --norc -c {shlex.quote(f'cat > {remote_tar}')}"], stdin=source)
         if sender.wait():
