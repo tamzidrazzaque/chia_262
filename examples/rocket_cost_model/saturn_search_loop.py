@@ -62,7 +62,7 @@ def _validate_receipt(receipt: dict, baseline: dict, candidate_id: str) -> dict:
         raise ValueError("candidate receipt lacks positive cycle count")
     return {"cycles": cycles, "guest_seconds": receipt.get("target_guest_elapsed_seconds"),
             "bundle_sha256": identity.get("bundle_sha256"),
-            "executable_sha256": receipt.get("collected_sha256", {}).get("result/executable.sha256")}
+            "executable_sha256": receipt.get("executable_sha256")}
 
 
 def _decision(candidate: dict, baseline: dict) -> dict:
@@ -106,10 +106,15 @@ def run(args: argparse.Namespace) -> None:
           if candidate_id in done:
               continue
           candidate_work = work_root / candidate_id
+          if candidate_work.exists():
+              raise RuntimeError(f'interrupted work exists at {candidate_work}; revalidate before retry')
           candidate_work.mkdir(mode=0o700)
           record = {"candidate_id": candidate_id, "proposal_sha256": _digest(proposal_path),
                     "started_at": time.time(), "status": "preparing"}
           (candidate_work / "proposal.json").write_text(json.dumps(proposal, indent=2) + "\n")
+          # Persist active work before launching an expensive child. An interrupted
+          # attempt remains visible and is not silently rerun on restart.
+          (candidate_work / 'progress.json').write_text(json.dumps(record, indent=2) + '\n')
           env = os.environ.copy()
           env.update({"SATURN_CANDIDATE_ID": candidate_id,
                       "SATURN_PROPOSAL": str(proposal_path),
@@ -135,9 +140,16 @@ def run(args: argparse.Namespace) -> None:
                       continue
                   record["executable_sha256"] = executable
               record["status"] = "measuring"
+              (candidate_work / 'progress.json').write_text(json.dumps(record, indent=2) + '\n')
               _run_hook(args.measure_cmd, env, "measure")
               receipt = _read(candidate_work / "candidate-receipt.json")
               candidate = _validate_receipt(receipt, baseline, candidate_id)
+              if not metadata_path.exists() or candidate['executable_sha256'] != metadata.get('executable_sha256'):
+                  raise ValueError('receipt executable differs from prepared executable')
+              if candidate['bundle_sha256'] != metadata.get('bundle_sha256') or not candidate['bundle_sha256']:
+                  raise ValueError('receipt bundle differs from prepared bundle')
+              record['proposal'] = proposal
+              record['receipt_sha256'] = _digest(candidate_work / 'candidate-receipt.json')
               record.update(candidate, decision=_decision(candidate, baseline), status="complete")
               seen_elves.add(candidate["executable_sha256"])
           except Exception as exc:  # quarantine this candidate; watch mode continues
@@ -145,7 +157,9 @@ def run(args: argparse.Namespace) -> None:
               state["candidates"].append(record)
               state_path.parent.mkdir(parents=True, exist_ok=True)
               state_path.write_text(json.dumps(state, indent=2) + "\n")
-              if args.once:
+              # A transport/build exception may be shared infrastructure failure.
+              # Stop the campaign instead of exhausting every queued proposal.
+              if args.once or isinstance(exc, RuntimeError):
                   raise
               done.add(candidate_id)
               progressed = True

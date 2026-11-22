@@ -62,7 +62,9 @@ def propose(queue: Path, state: dict, memory: dict, max_pending: int) -> bool:
         return False
     handled = set(memory.get("feedback_proposals", []))
     completed = [item for item in state.get("candidates", [])
-                 if item.get("status") == "complete" and item.get("candidate_id") not in handled]
+                 if item.get("status") == "complete"
+                 and type(item.get("cycles")) is int and item['cycles'] > 0
+                 and item.get("candidate_id") not in handled]
     if not completed:
         return False
     source = completed[-1]

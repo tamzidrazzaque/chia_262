@@ -83,6 +83,7 @@ def collect(stage, image_path, completion_path, preflight_path, collected, desti
     if not all(math.isfinite(n) and n >= 0 for n in times.values()) or times['real'] <= 0:
         raise ValueError('nonpositive or nonfinite guest elapsed time')
     evidence = {'schema_version': 1, 'status': 'correct', 'backend': 'fpga',
+                'executable_sha256': actual_sha[0],
                 'identity': p['identity'], 'image_id': p['image_id'], 'probe': probe,
                 'target_guest_elapsed_seconds': times['real'], 'raw_posix_seconds': times,
                 'whole_boot_simulation_cycles': int(simulation[0]),

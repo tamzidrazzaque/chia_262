@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shlex
 import subprocess
@@ -36,6 +37,8 @@ def ssh(host: str, key: str, command: str, capture: bool = False) -> str:
 def main() -> None:
     work = Path(env("SATURN_WORKDIR")).resolve()
     candidate = env("SATURN_CANDIDATE_ID")
+    if not re.fullmatch(r"3\.[0-9]+", candidate):
+        raise ValueError("invalid queue candidate ID")
     # The producer keeps role-specific payloads below ``bundle/<role>`` so a
     # single candidate work directory can hold more than one role.  The
     # search lane measures the Saturn-aware role-3 payload.
@@ -52,7 +55,7 @@ def main() -> None:
     with tarfile.open(local_tar, "w") as archive:
         archive.add(bundle, arcname="bundle")
     remote_tar = f"{incoming}/bundle.tar"
-    ssh(host, key, f"mkdir -p -m 700 {shlex.quote(incoming)} {shlex.quote(verified)} {shlex.quote(stage)}")
+    ssh(host, key, f"test ! -e {shlex.quote(stage)} && mkdir -p -m 700 {shlex.quote(incoming)} {shlex.quote(verified)}")
     with local_tar.open("rb") as source:
         sender = subprocess.Popen(["ssh", "-T", "-i", key, "-o", "StrictHostKeyChecking=yes", host,
                                    f"bash --noprofile --norc -c {shlex.quote(f'cat > {remote_tar}')}"], stdin=source)
@@ -71,7 +74,9 @@ cd {shlex.quote(root + '/chipyard-saturn-19a07f6/software/firemarshal')}
 export PATH={shlex.quote(root + '/chipyard-saturn-19a07f6/.conda-env/bin')}:$PATH
 python {shlex.quote(lane + '/guarded-marshal.py')} build -I {shlex.quote(stage + '/workload.json')}
 python {shlex.quote(lane + '/guarded-marshal.py')} install {shlex.quote(stage + '/workload.json')}
-IMG=$(find {shlex.quote(root + '/chipyard-saturn-19a07f6/software/firemarshal/images/firechip')} -maxdepth 2 -type f -name '*.img' -printf '%T@ %p\\n' | sort -n | tail -n1 | cut -d' ' -f2-)
+NAME=$($PY -c 'import json,sys; print(json.load(open(sys.argv[1]))["name"])' {shlex.quote(stage + '/plan.json')})
+IMG={shlex.quote(root + '/chipyard-saturn-19a07f6/software/firemarshal/images/firechip')}/$NAME/$NAME.img
+test -f "$IMG"
 cd {shlex.quote(root)}
 $PY -m examples.rocket_cost_model.saturn_spec verify-image --stage {shlex.quote(stage)} --rootfs "$IMG" --bootbinary {shlex.quote(root + '/chipyard-saturn-19a07f6/software/firemarshal/images/firechip/br-base/br-base-bin')} --out {shlex.quote(stage + '/image-receipt.json')}
 cd {shlex.quote(root + '/chipyard-saturn-19a07f6/sims/firesim')}
@@ -79,16 +84,14 @@ source sourceme-manager.sh --skip-ssh-setup
 $PY -m examples.rocket_cost_model.saturn_spec preflight --platform {shlex.quote(lane + '/platform-lock.json')} --out {shlex.quote(stage + '/preflight.json')}
 python {shlex.quote(stage + '/native-manager-staged.py')} infrasetup
 python {shlex.quote(stage + '/native-manager-staged.py')} runworkload
-R=$(find {shlex.quote(root + '/chipyard-saturn-19a07f6/sims/firesim/deploy/results-workload')} -mindepth 1 -maxdepth 1 -type d -name '20*' -printf '%T@ %p\\n' | sort -n | tail -n1 | cut -d' ' -f2-)
-COL=$(find "$R" -mindepth 1 -maxdepth 1 -type d | head -n1)
-$PY -m examples.rocket_cost_model.saturn_spec collect --stage {shlex.quote(stage)} --image {shlex.quote(stage + '/image-receipt.json')} --completion {shlex.quote(stage + '/runworkload-completion.json')} --preflight {shlex.quote(stage + '/preflight.json')} --collected "$COL" --out {shlex.quote(stage + '/candidate-receipt.json')}
-cat {shlex.quote(stage + '/candidate-receipt.json')}
+COL=$($PY -c 'from pathlib import Path; import sys; hits=list(Path(sys.argv[1]).glob("*"+sys.argv[2]+"*/**/uartlog")); assert len(hits)==1, "ambiguous or missing run evidence"; print(hits[0].parent)' {shlex.quote(root + '/chipyard-saturn-19a07f6/sims/firesim/deploy/results-workload')} "$NAME")
+$PY -m examples.rocket_cost_model.saturn_spec collect --stage {shlex.quote(stage)} --image {shlex.quote(stage + '/image-receipt.json')} --completion {shlex.quote(stage + '/runworkload-completion.json')} --preflight {shlex.quote(stage + '/preflight.json')} --collected "$COL" --out {shlex.quote(stage + '/collection')}
 """
-    receipt = ssh(host, key, remote, capture=True)
-    start = receipt.find("{\n")
-    if start < 0:
-        raise RuntimeError("manager did not return a collection receipt")
-    (work / "candidate-receipt.json").write_text(receipt[start:])
+    ssh(host, key, remote)
+    receipt = json.loads(ssh(host, key, "cat " + shlex.quote(stage + '/collection/result.json'), capture=True))
+    if receipt.get('identity', {}).get('bundle_sha256') != manifest_sha:
+        raise ValueError('manager returned a different bundle receipt')
+    (work / "candidate-receipt.json").write_text(json.dumps(receipt, indent=2) + '\n')
 
 
 if __name__ == "__main__":

@@ -25,11 +25,12 @@ def test_failed_measurement_can_be_retried(tmp_path):
         calls.append(label)
         work = loop.Path(env["SATURN_WORKDIR"])
         if label == "prepare":
-            (work / "candidate-metadata.json").write_text(json.dumps({"executable_sha256": elf}))
+            (work / "candidate-metadata.json").write_text(json.dumps({"executable_sha256": elf, "bundle_sha256": "b" * 64}))
         else:
             (work / "candidate-receipt.json").write_text(json.dumps({
-                "status": "correct", "identity": {**baseline, "role": "3-saturn-aware"},
+                "status": "correct", "identity": {**baseline, "role": "3-saturn-aware", "bundle_sha256": "b" * 64},
                 "whole_boot_simulation_cycles": 90,
+                "executable_sha256": elf,
                 "collected_sha256": {"result/executable.sha256": elf}}))
 
     args = argparse.Namespace(queue=queue, baseline=baseline_path, state=state,

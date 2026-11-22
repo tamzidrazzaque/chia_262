@@ -78,6 +78,7 @@ def main() -> None:
     (work / "candidate-metadata.json").write_text(json.dumps({
         "candidate_id": candidate_id, "executable_sha256": elf_hash,
         "bundle": str(bundle), "compiler_prefix": str(compiler["prefix"]),
+        "bundle_sha256": hashlib.sha256((bundle / 'manifest.json').read_bytes()).hexdigest(),
     }, indent=2) + "\n")
 
 
