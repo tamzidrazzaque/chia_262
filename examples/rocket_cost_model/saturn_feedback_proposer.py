@@ -10,7 +10,9 @@ Only validated, previously untested cost profiles can enter the queue.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
+import os
 from pathlib import Path
 import time
 import tempfile
@@ -74,18 +76,51 @@ def codex_proposal(payload: dict, model: str | None = None) -> dict:
         return validate_proposal(json.loads(result.result))
 
 
+def publish_json(path: Path, value: dict) -> None:
+    """Durably publish a JSON record while the queue-local lock is held."""
+    temporary = path.with_name('.' + path.name + '.pending')
+    with temporary.open('w') as stream:
+        stream.write(json.dumps(value, indent=2) + '\n')
+        stream.flush()
+        os.fsync(stream.fileno())
+    temporary.replace(path)
+    directory = os.open(str(path.parent), os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
+
+
 def propose(queue: Path, state: dict, memory: dict, max_pending: int,
             generate=codex_proposal, model: str | None = None, budget: int = 12) -> bool:
+    """Serialize proposers and reserve each measured source before publication.
+
+    A durable reservation consumes budget even if a crash prevents publication.
+    Recovery skips that source; an operator can inspect the saved reservation
+    rather than risk publishing a second proposal for the same measurement.
+    """
+    queue.mkdir(mode=0o700, parents=True, exist_ok=True)
+    with (queue / '.feedback.lock').open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        return _propose_locked(queue, state, memory, max_pending, generate, model, budget)
+
+
+def _propose_locked(queue: Path, state: dict, memory: dict, max_pending: int,
+                    generate, model: str | None, budget: int) -> bool:
     if not 1 <= max_pending <= 16 or not 1 <= budget <= 100:
         raise ValueError('invalid proposal queue bound or total budget')
-    if len(memory.get('generated', [])) >= budget:
+    journal_path = queue / '.feedback-journal.state'
+    journal = read(journal_path) if journal_path.exists() else {'reservations': []}
+    reservations = journal['reservations']
+    used_ids = set(memory.get('generated', [])) | {item['candidate_id'] for item in reservations}
+    if len(used_ids) >= budget:
         return False
     ids, signatures = existing(queue)
     done = {item.get("candidate_id") for item in state.get("candidates", [])}
     pending = len(ids - done)
     if pending >= max_pending:
         return False
-    handled = set(memory.get("feedback_proposals", []))
+    handled = set(memory.get("feedback_proposals", [])) | {item['source_id'] for item in reservations}
     completed = [item for item in state.get("candidates", [])
                  if item.get("status") == "complete"
                  and type(item.get("cycles")) is int and item['cycles'] > 0
@@ -105,13 +140,15 @@ def propose(queue: Path, state: dict, memory: dict, max_pending: int,
     signature = json.dumps(selected['changes'], sort_keys=True)
     if signature in signatures:
         raise ValueError('model repeated an existing cost profile')
-    candidate_id = next_id(ids | {value for value in done if isinstance(value, str)})
+    candidate_id = next_id(ids | used_ids | {value for value in done if isinstance(value, str)})
     output = {'candidate_id': candidate_id, **selected}
-    queue.mkdir(mode=0o700, parents=True, exist_ok=True)
-    # Publish a complete file atomically; the consumer must never see partial JSON.
-    temporary = queue / f'.{candidate_id}.pending'
-    temporary.write_text(json.dumps(output, indent=2) + '\n')
-    temporary.replace(queue / f'{candidate_id}.json')
+    reservations.append({'source_id': source['candidate_id'],
+                         'receipt_sha256': source.get('receipt_sha256'),
+                         'candidate_id': candidate_id, 'proposal': output})
+    # This is the authoritative source/budget ledger, independent of --memory.
+    # Reserve first so a crash after publishing cannot duplicate this source.
+    publish_json(journal_path, journal)
+    publish_json(queue / f'{candidate_id}.json', output)
     memory.setdefault("feedback_proposals", []).append(source["candidate_id"])
     memory.setdefault('generated', []).append(candidate_id)
     return True

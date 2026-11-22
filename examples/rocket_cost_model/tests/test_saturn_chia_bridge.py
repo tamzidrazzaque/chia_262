@@ -31,6 +31,22 @@ class WorkerAdmissionTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'no live'):
             self.bridge.select_worker([], 'saturn_manager')
 
+    def test_task_timeout_drains_same_reference_without_redispatch(self):
+        class Timeout(Exception):
+            pass
+        calls = []
+        reference = object()
+        def get(ref, **kwargs):
+            calls.append((ref, kwargs))
+            if kwargs:
+                raise Timeout()
+            return {'status': 'correct'}
+        stub = types.SimpleNamespace(get=get, exceptions=types.SimpleNamespace(GetTimeoutError=Timeout))
+        with patch.dict(sys.modules, {'ray': stub}):
+            result = self.bridge.await_task(reference, 1)
+        self.assertEqual(result, {'status': 'correct'})
+        self.assertEqual(calls, [(reference, {'timeout': 1}), (reference, {})])
+
     def test_manager_resource_requires_singleton(self):
         node = {'Alive': True, 'Resources': {'saturn_manager': 1}, 'NodeID': 'one'}
         self.assertEqual(self.bridge.select_worker([node], 'saturn_manager'), 'one')

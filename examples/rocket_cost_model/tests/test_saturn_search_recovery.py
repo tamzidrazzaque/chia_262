@@ -1,6 +1,7 @@
 """Controller recovery and pre-dispatch identity checks; no target execution."""
 
 import argparse
+import fcntl
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -51,6 +52,18 @@ class RecoveryTests(unittest.TestCase):
         with patch.object(loop, '_run_hook', hook), self.assertRaises(RuntimeError):
             loop.run(self.args)
         self.assertEqual(json.loads(self.state.read_text())['candidates'][0]['status'], 'blocked')
+
+    def test_second_controller_is_refused_before_dispatch(self):
+        lease_path = self.state.with_name(self.state.name + '.lock')
+        with lease_path.open('a') as lease:
+            fcntl.flock(lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            with patch.object(loop, '_run_hook') as hook, self.assertRaisesRegex(RuntimeError, 'another Saturn controller'):
+                loop.run(self.args)
+            hook.assert_not_called()
+        # Releasing the first lease permits a new controller to acquire it.
+        with patch.object(loop, '_run_locked') as run_locked:
+            loop.run(self.args)
+        run_locked.assert_called_once_with(self.args)
 
     def test_missing_metadata_never_dispatches(self):
         calls = []

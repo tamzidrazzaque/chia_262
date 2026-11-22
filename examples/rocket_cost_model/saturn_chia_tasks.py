@@ -56,6 +56,21 @@ def select_worker(nodes: list[dict], resource: str) -> str:
     return eligible[0]['NodeID']
 
 
+def await_task(ref, timeout: float):
+    """Drain the original task after a timeout; never abandon a hardware attempt.
+
+    The timeout is an alert threshold. Once dispatch has happened, completing
+    or recovering that same task takes precedence over disconnecting the driver.
+    """
+    import ray
+    try:
+        return ray.get(ref, timeout=timeout)
+    except ray.exceptions.GetTimeoutError:
+        print('CHIA task exceeded its alert timeout; draining the same task before shutdown.',
+              file=sys.stderr, flush=True)
+        return ray.get(ref)
+
+
 @ChiaFunction(num_cpus=0, max_retries=0)
 def verify_worker(stage: str, marker: str, marker_sha: str, proposal: str,
                   proposal_sha: str) -> dict:
@@ -102,7 +117,7 @@ def main() -> None:
         task = prepare if args.stage == "prepare" else measure
         ref = task.options(scheduling_strategy=affinity).chia_remote(
             os.environ['SATURN_CANDIDATE_ID'], str(work), str(proposal))
-        result = ray.get(ref, timeout=args.task_timeout)
+        result = await_task(ref, args.task_timeout)
         print(json.dumps(result, sort_keys=True))
     finally:
         ray.shutdown()

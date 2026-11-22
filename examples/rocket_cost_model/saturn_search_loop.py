@@ -9,6 +9,7 @@ SPEC files, binaries, credentials, and raw logs never enter the state file.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import os
@@ -109,6 +110,23 @@ def _decision(candidate: dict, baseline: dict) -> dict:
 
 
 def run(args: argparse.Namespace) -> None:
+    """Hold one controller lease for this state, including all child dispatches."""
+    state_path = Path(args.state).resolve()
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    lease_path = state_path.with_name(state_path.name + '.lock')
+    # Never unlink a flock file: another process could still hold its inode.
+    with lease_path.open('a') as lease:
+        try:
+            fcntl.flock(lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise RuntimeError(f'another Saturn controller holds {lease_path}') from exc
+        try:
+            _run_locked(args)
+        finally:
+            fcntl.flock(lease, fcntl.LOCK_UN)
+
+
+def _run_locked(args: argparse.Namespace) -> None:
     queue = Path(args.queue).resolve()
     state_path = Path(args.state).resolve()
     work_root = Path(args.work_root).resolve()
