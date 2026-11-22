@@ -87,7 +87,12 @@ def run(args: argparse.Namespace) -> None:
     if baseline.get("executable_sha256"):
         seen_elves.add(baseline["executable_sha256"])
     while True:
-      proposals = sorted(queue.glob("*.json"))
+      proposals = sorted(
+          queue.glob("*.json"),
+          key=lambda path: (int(path.stem.split(".", 1)[1])
+                            if path.stem.startswith("3.") and path.stem.split(".", 1)[1].isdigit()
+                            else 10**9, path.name),
+      )
       progressed = False
       for proposal_path in proposals:
           proposal = _read(proposal_path)
