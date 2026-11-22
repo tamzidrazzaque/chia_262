@@ -87,7 +87,7 @@ def run(args: argparse.Namespace) -> None:
         raise ValueError("baseline changed after loop initialization")
     done = {item["candidate_id"] for item in state.get("candidates", [])}
     seen_elves = {item.get("executable_sha256") for item in state.get("candidates", [])
-                  if item.get("executable_sha256")}
+                  if item.get("executable_sha256") and item.get("status") == "complete"}
     if baseline.get("executable_sha256"):
         seen_elves.add(baseline["executable_sha256"])
     while True:

@@ -48,3 +48,22 @@ silently falling back to a second infrastructure implementation.
 The current shell controller remains active only as a bounded transition path
 while this CHIA campaign is validated. It must not be used concurrently with a
 CHIA F2 controller on the same worker.
+
+## Implemented scheduling adapter
+
+`saturn_chia_tasks.py` exposes preparation on `riscv_build` and manager transport
+on a singleton `saturn_manager` resource, with automatic retries disabled. It
+connects to an existing Ray cluster only. Workers must share the private work
+directory and have worker-local SATURN environment configuration. Substitute
+these commands for the controller hooks after provisioning those resources:
+
+```text
+python -m examples.rocket_cost_model.saturn_chia_tasks prepare
+python -m examples.rocket_cost_model.saturn_chia_tasks measure
+```
+
+This first adapter reuses the admitted preparation/transport implementations;
+it does not yet provide BOOM's producer/consumer overlap or full artifact
+transport. Do not describe the migration as complete until a real Chia task
+has passed on the configured workers. `chia.models.codex.CodexLLM` is already
+available for the eventual proposal stage; no new API integration is needed.
