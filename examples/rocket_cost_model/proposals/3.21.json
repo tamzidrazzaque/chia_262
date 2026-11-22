@@ -1,0 +1,5 @@
+{
+  "candidate_id": "3.21",
+  "changes": {"vec_to_scalar": 2, "scalar_to_vec": 8},
+  "rationale": "Jointly test the scalar/vector boundary costs because MCF contains both vmv.x.s and scalar-to-vector setup around vector loops."
+}

@@ -1,0 +1,5 @@
+{
+  "candidate_id": "3.20",
+  "changes": {"int_stmt": 16},
+  "rationale": "Probe a stronger integer-statement penalty to test whether GCC changes MCF vector loop selection beyond int_stmt=8/12."
+}

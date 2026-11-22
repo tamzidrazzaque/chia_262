@@ -1,0 +1,5 @@
+{
+  "candidate_id": "3.22",
+  "changes": {"unalign_load": 4, "unalign_store": 4},
+  "rationale": "Pair moderate unaligned load/store costs to reflect MCF byte and 64-bit stream accesses without changing unrelated operations."
+}

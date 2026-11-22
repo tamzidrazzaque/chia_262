@@ -1,0 +1,5 @@
+{
+  "candidate_id": "3.23",
+  "changes": {"unalign_load": 8, "unalign_store": 8},
+  "rationale": "Stress the unaligned-memory penalty at a higher but bounded value; retain only if GCC materially changes the emitted MCF ELF."
+}
