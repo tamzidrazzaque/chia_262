@@ -61,6 +61,10 @@ def main() -> None:
     incoming = f"{lane}/incoming/{tag}"
     verified = f"{lane}/verified/{tag}"
     stage = f"{lane}/staging/{tag}"
+    phase = os.environ.get('SATURN_PHASE', 'search')
+    sample = os.environ.get('SATURN_SAMPLE', '0')
+    if phase not in ('baseline', 'search', 'confirmation', 'holdout') or not sample.isdigit():
+        raise ValueError('invalid paired measurement phase/sample')
     local_tar = work / "bundle.tar"
     with tarfile.open(local_tar, "w") as archive:
         archive.add(bundle, arcname="bundle")
@@ -82,7 +86,7 @@ PY={shlex.quote(root + '/.venv/bin/python')}
 tar -xf {shlex.quote(remote_tar)} -C {shlex.quote(incoming)}
 $PY -m examples.rocket_cost_model.saturn_spec intake --bundle {shlex.quote(incoming + '/bundle')} --manifest-sha256 {manifest_sha} --verified-root {shlex.quote(verified)} --platform {shlex.quote(lane + '/platform-lock.json')}
 SNAP={shlex.quote(verified + '/' + manifest_sha)}
-$PY -m examples.rocket_cost_model.saturn_spec stage --snapshot "$SNAP" --platform {shlex.quote(lane + '/platform-lock.json')} --out {shlex.quote(stage)} --phase search --sample 0 --scratch-mib 1024
+$PY -m examples.rocket_cost_model.saturn_spec stage --snapshot "$SNAP" --platform {shlex.quote(lane + '/platform-lock.json')} --out {shlex.quote(stage)} --phase {phase} --sample {sample} --scratch-mib 1024
 cd {shlex.quote(root + '/chipyard-saturn-19a07f6/software/firemarshal')}
 export PATH={shlex.quote(root + '/chipyard-saturn-19a07f6/.conda-env/bin')}:$PATH
 python {shlex.quote(lane + '/guarded-marshal.py')} build -I {shlex.quote(stage + '/workload.json')}

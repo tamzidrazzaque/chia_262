@@ -65,7 +65,7 @@ class BundleTransportTests(unittest.TestCase):
     def test_manager_receipt_must_bind_transported_artifact(self):
         bridge = load_bridge()
         def invoke(module, candidate, work, proposal, extra_environment):
-            self.assertEqual(extra_environment, {'SATURN_MANAGER_LOCAL': '1'})
+            self.assertEqual(extra_environment, {'SATURN_MANAGER_LOCAL': '1', 'SATURN_ROLE': '3-saturn-aware'})
             receipt = {'executable_sha256': '0' * 64,
                        'identity': {'bundle_sha256': self.artifact.manifest_sha256}}
             (Path(work) / 'candidate-receipt.json').write_text(json.dumps(receipt))
@@ -73,6 +73,24 @@ class BundleTransportTests(unittest.TestCase):
                 patch.object(bridge, 'invoke', invoke):
             with self.assertRaisesRegex(ValueError, 'receipt differs'):
                 bridge.measure_artifact('3.99', self.artifact)
+
+    def test_vector_baseline_receives_role_specific_directory_and_manager_environment(self):
+        path = self.bundle / 'manifest.json'
+        manifest = json.loads(path.read_text())
+        manifest['role'] = '2-generic-vector'
+        path.write_text(json.dumps(manifest))
+        baseline = pack(self.bundle)
+        bridge = load_bridge()
+        def invoke(module, candidate, work, proposal, extra_environment):
+            self.assertEqual(extra_environment, {'SATURN_MANAGER_LOCAL': '1', 'SATURN_ROLE': '2-generic-vector'})
+            self.assertTrue((Path(work) / 'bundle/2-generic-vector/manifest.json').is_file())
+            receipt = {'executable_sha256': baseline.executable_sha256,
+                       'identity': {'role': '2-generic-vector', 'bundle_sha256': baseline.manifest_sha256}}
+            (Path(work) / 'candidate-receipt.json').write_text(json.dumps(receipt))
+        with patch.dict(bridge.os.environ, {'SATURN_TASK_ROOT': str(self.root / 'manager')}), \
+                patch.object(bridge, 'invoke', invoke):
+            receipt = bridge.measure_artifact('3.99', baseline)
+        self.assertEqual(receipt['identity']['role'], '2-generic-vector')
 
 
 if __name__ == '__main__':

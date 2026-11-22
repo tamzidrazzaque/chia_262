@@ -18,7 +18,7 @@ import sys
 import tempfile
 
 from chia.base.ChiaFunction import ChiaFunction, get
-from examples.rocket_cost_model.saturn_bundle_artifact import SaturnBundle, pack, unpack
+from examples.rocket_cost_model.saturn_bundle_artifact import SaturnBundle, artifact_role, pack, unpack
 
 
 def invoke(module: str, candidate: str, work: str, proposal: str,
@@ -73,7 +73,8 @@ def prepare_artifact(candidate: str, proposal: dict) -> SaturnBundle:
 def receive_artifact(artifact: SaturnBundle) -> tuple[Path, dict]:
     """Reconstruct a bundle into manager-local scratch with its bound identity."""
     work = private_work()
-    metadata = unpack(artifact, work / 'bundle/3-saturn-aware')
+    role = artifact_role(artifact)
+    metadata = unpack(artifact, work / 'bundle' / role)
     (work / 'candidate-metadata.json').write_text(json.dumps(metadata))
     return work, metadata
 
@@ -86,14 +87,17 @@ def validate_artifact(artifact: SaturnBundle) -> dict:
 
 
 @ChiaFunction(resources={"saturn_manager": 1}, max_retries=0)
-def measure_artifact(candidate: str, artifact: SaturnBundle) -> dict:
+def measure_artifact(candidate: str, artifact: SaturnBundle, request: dict | None = None) -> dict:
     """Execute the admitted lane locally on the manager; return its receipt."""
     work, metadata = receive_artifact(artifact)
     invoke('examples.rocket_cost_model.saturn_measure_hook', candidate, str(work),
-           str(work / 'unused-proposal.json'), {'SATURN_MANAGER_LOCAL': '1'})
+           str(work / 'unused-proposal.json'), {'SATURN_MANAGER_LOCAL': '1', 'SATURN_ROLE': metadata['role'],
+               'SATURN_PHASE': (request or {}).get('phase', 'search'),
+               'SATURN_SAMPLE': str((request or {}).get('sample', 0))})
     receipt = json.loads((work / 'candidate-receipt.json').read_text())
     if receipt.get('executable_sha256') != metadata['executable_sha256'] or \
-            receipt.get('identity', {}).get('bundle_sha256') != metadata['bundle_sha256']:
+            receipt.get('identity', {}).get('bundle_sha256') != metadata['bundle_sha256'] or \
+            receipt.get('identity', {}).get('role') != metadata['role']:
         raise ValueError('manager receipt differs from transported artifact')
     return receipt
 

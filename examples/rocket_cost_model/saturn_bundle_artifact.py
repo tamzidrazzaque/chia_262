@@ -55,9 +55,14 @@ def _members(artifact: SaturnBundle) -> dict[str, bytes]:
     executable = manifest.get('executable')
     if executable not in expected or expected[executable] != artifact.executable_sha256:
         raise ValueError('bundle transport executable changed')
-    if manifest.get('role') != '3-saturn-aware':
-        raise ValueError('bundle transport requires role 3')
+    if manifest.get('role') not in ('2-generic-vector', '3-saturn-aware'):
+        raise ValueError('bundle transport requires vector baseline or candidate')
     return files
+
+
+def artifact_role(artifact: SaturnBundle) -> str:
+    """Return the role only after verifying the complete transported bundle."""
+    return json.loads(_members(artifact)['manifest.json'])['role']
 
 
 def pack(bundle: Path) -> SaturnBundle:
@@ -91,6 +96,7 @@ def unpack(artifact: SaturnBundle, destination: Path) -> dict:
     executable = json.loads(files['manifest.json'])['executable']
     (destination / executable).chmod(0o500)
     return {'bundle_sha256': artifact.manifest_sha256,
+            'role': json.loads(files['manifest.json'])['role'],
             'executable_sha256': artifact.executable_sha256,
             'archive_sha256': artifact.archive_sha256,
             'member_count': len(files)}
