@@ -71,7 +71,8 @@ def run(root: Path, proposals: list[dict], policy: Policy, prepare, measure,
     """Execute a bounded campaign.
 
     prepare(proposal-or-None, scope, directory) returns an immutable artifact
-    containing role, scope, bundle_sha256, executable_sha256, input_id and
+    containing role, scope, bundle_sha256, executable_sha256, input_id,
+    workload_sha256 (input/reference bytes plus invocation identity) and
     fingerprint. measure(artifact, request, directory) returns the admitted
     collector's receipt. Each request carries a fresh sample ID and phase.
     Setting stop drains current preparation/measurement and prevents new work.
@@ -116,7 +117,7 @@ def _run(root, proposals, policy, prepare, measure, stop):
         role = '2-generic-vector' if proposal is None else '3-saturn-aware'
         if artifact.get('role') != role or artifact.get('scope') != scope:
             raise ValueError('prepared role/input scope mismatch')
-        for key in ('bundle_sha256', 'executable_sha256', 'input_id', 'fingerprint'):
+        for key in ('bundle_sha256', 'executable_sha256', 'input_id', 'workload_sha256', 'fingerprint'):
             if not artifact.get(key):
                 raise ValueError('incomplete prepared artifact')
         return artifact
@@ -145,6 +146,8 @@ def _run(root, proposals, policy, prepare, measure, stop):
     def pair(baseline, candidate, phase, reverse=False):
         if baseline['input_id'] != candidate['input_id']:
             raise ValueError('paired input mismatch')
+        if baseline.get('workload_sha256') != candidate.get('workload_sha256'):
+            raise ValueError('paired invocation or input/reference bytes differ')
         values = {}
         for order, (name, artifact) in enumerate((('candidate', candidate), ('baseline', baseline))
                 if reverse else (('baseline', baseline), ('candidate', candidate))):

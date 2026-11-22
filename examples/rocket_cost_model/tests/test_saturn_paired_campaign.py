@@ -22,7 +22,8 @@ class CampaignTests(unittest.TestCase):
         name = 'base' if proposal is None else str(proposal['cost'])
         return {'role': '2-generic-vector' if proposal is None else '3-saturn-aware',
                 'scope': scope, 'bundle_sha256': scope + name, 'executable_sha256': name,
-                'input_id': 'input-' + scope, 'fingerprint': {'filesystem': {'sha256': scope + name}}}
+                'input_id': 'input-' + scope, 'workload_sha256': 'workload-' + scope,
+                'fingerprint': {'filesystem': {'sha256': scope + name}}}
 
     def measure(self, artifact, request, directory):
         self.calls.append((artifact['role'], request['phase'], artifact['scope']))
@@ -68,6 +69,16 @@ class CampaignTests(unittest.TestCase):
             run(self.root, [{'cost': 4}], self.policy, self.prepare, wrong)
         with self.assertRaisesRegex(RuntimeError, 'receipt recovery'):
             run(self.root, [{'cost': 4}], self.policy, self.prepare, self.measure)
+
+    def test_paired_input_bytes_must_match_even_with_same_input_id(self):
+        def prepare(proposal, scope, directory):
+            artifact = self.prepare(proposal, scope, directory)
+            if proposal is not None:
+                artifact['workload_sha256'] = 'different-input-bytes'
+            return artifact
+        with self.assertRaisesRegex(ValueError, 'input/reference bytes differ'):
+            run(self.root, [{'cost': 4}], self.policy, prepare, self.measure)
+        self.assertEqual(self.calls, [])
 
     def test_stop_drains_and_prevents_measurement(self):
         stop = threading.Event()
