@@ -65,7 +65,8 @@ class BundleTransportTests(unittest.TestCase):
     def test_manager_receipt_must_bind_transported_artifact(self):
         bridge = load_bridge()
         def invoke(module, candidate, work, proposal, extra_environment):
-            self.assertEqual(extra_environment, {'SATURN_MANAGER_LOCAL': '1', 'SATURN_ROLE': '3-saturn-aware'})
+            self.assertEqual(extra_environment, {'SATURN_MANAGER_LOCAL': '1', 'SATURN_ROLE': '3-saturn-aware',
+                                                'SATURN_PHASE': 'search', 'SATURN_SAMPLE': '0'})
             receipt = {'executable_sha256': '0' * 64,
                        'identity': {'bundle_sha256': self.artifact.manifest_sha256}}
             (Path(work) / 'candidate-receipt.json').write_text(json.dumps(receipt))
@@ -82,14 +83,15 @@ class BundleTransportTests(unittest.TestCase):
         baseline = pack(self.bundle)
         bridge = load_bridge()
         def invoke(module, candidate, work, proposal, extra_environment):
-            self.assertEqual(extra_environment, {'SATURN_MANAGER_LOCAL': '1', 'SATURN_ROLE': '2-generic-vector'})
+            self.assertEqual(extra_environment, {'SATURN_MANAGER_LOCAL': '1', 'SATURN_ROLE': '2-generic-vector',
+                                                'SATURN_PHASE': 'confirmation', 'SATURN_SAMPLE': '7'})
             self.assertTrue((Path(work) / 'bundle/2-generic-vector/manifest.json').is_file())
             receipt = {'executable_sha256': baseline.executable_sha256,
                        'identity': {'role': '2-generic-vector', 'bundle_sha256': baseline.manifest_sha256}}
             (Path(work) / 'candidate-receipt.json').write_text(json.dumps(receipt))
         with patch.dict(bridge.os.environ, {'SATURN_TASK_ROOT': str(self.root / 'manager')}), \
                 patch.object(bridge, 'invoke', invoke):
-            receipt = bridge.measure_artifact('3.99', baseline)
+            receipt = bridge.measure_artifact('3.99', baseline, {'phase': 'confirmation', 'sample': 7})
         self.assertEqual(receipt['identity']['role'], '2-generic-vector')
 
 
