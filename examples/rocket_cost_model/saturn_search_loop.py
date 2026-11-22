@@ -12,10 +12,46 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shlex
 import subprocess
 import time
+
+
+def _write(path: Path, value: dict) -> None:
+    """Publish complete state atomically so readers never see truncated JSON."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + '.tmp')
+    temporary.write_text(json.dumps(value, indent=2) + '\n')
+    temporary.replace(path)
+
+
+def _prepared(work: Path) -> dict:
+    """Revalidate prepared bytes before initial dispatch or a safe resume."""
+    metadata = _read(work / 'candidate-metadata.json')
+    bundle = work / 'bundle/3-saturn-aware'
+    manifest_path = bundle / 'manifest.json'
+    manifest = _read(manifest_path)
+    if _digest(manifest_path) != metadata.get('bundle_sha256'):
+        raise ValueError('prepared bundle manifest changed')
+    files = manifest.get('files_sha256')
+    if not isinstance(files, dict) or not files:
+        raise ValueError('prepared bundle lacks file identities')
+    for name, expected in files.items():
+        relative = Path(name)
+        if relative.is_absolute() or '..' in relative.parts:
+            raise ValueError('unsafe prepared bundle member')
+        member = bundle / relative
+        if not member.resolve().is_relative_to(bundle.resolve()) or member.is_symlink() or not member.is_file() or _digest(member) != expected:
+            raise ValueError('prepared bundle member changed')
+    executable = manifest.get('executable')
+    if executable not in files or files[executable] != metadata.get('executable_sha256'):
+        raise ValueError('prepared executable identity mismatch')
+    for key in ('bundle_sha256', 'executable_sha256'):
+        if not isinstance(metadata.get(key), str) or not re.fullmatch('[0-9a-f]{64}', metadata[key]):
+            raise ValueError(f'invalid prepared {key}')
+    return metadata
 
 
 def _read(path: Path) -> dict:
@@ -45,7 +81,7 @@ def _run_hook(command: str, env: dict[str, str], label: str) -> None:
 
 
 def _validate_receipt(receipt: dict, baseline: dict, candidate_id: str) -> dict:
-    if receipt.get("status") != "correct":
+    if receipt.get("status") != "correct" or receipt.get('backend') != 'fpga':
         raise ValueError("candidate receipt is not marked correct")
     identity = receipt.get("identity")
     if not isinstance(identity, dict):
@@ -79,13 +115,14 @@ def run(args: argparse.Namespace) -> None:
     work_root.mkdir(parents=True, exist_ok=True)
     baseline = _read(Path(args.baseline))
     required = ("platform_sha256", "agfi", "driver_sha256", "vlen_bits", "input_id", "cycles")
-    if any(key not in baseline for key in required) or type(baseline["cycles"]) is not int:
+    if any(key not in baseline for key in required) or type(baseline["cycles"]) is not int or baseline['cycles'] <= 0:
         raise ValueError("baseline must contain frozen platform identity and cycles")
     state = _read(state_path) if state_path.exists() else {
         "schema_version": 1, "baseline": baseline, "candidates": []}
     if state.get("baseline") != baseline:
         raise ValueError("baseline changed after loop initialization")
-    done = {item["candidate_id"] for item in state.get("candidates", [])}
+    done = {item["candidate_id"] for item in state.get("candidates", [])
+            if item.get('status') in ('complete', 'rejected')}
     seen_elves = {item.get("executable_sha256") for item in state.get("candidates", [])
                   if item.get("executable_sha256") and item.get("status") == "complete"}
     if baseline.get("executable_sha256"):
@@ -101,47 +138,63 @@ def run(args: argparse.Namespace) -> None:
       for proposal_path in proposals:
           proposal = _read(proposal_path)
           candidate_id = proposal.get("candidate_id")
-          if not isinstance(candidate_id, str) or not candidate_id.startswith("3."):
+          if not isinstance(candidate_id, str) or not re.fullmatch(r'3\.[0-9]+', candidate_id):
               raise ValueError(f"invalid candidate_id in {proposal_path}")
           if candidate_id in done:
               continue
           candidate_work = work_root / candidate_id
-          if candidate_work.exists():
-              raise RuntimeError(f'interrupted work exists at {candidate_work}; revalidate before retry')
-          candidate_work.mkdir(mode=0o700)
-          record = {"candidate_id": candidate_id, "proposal_sha256": _digest(proposal_path),
-                    "started_at": time.time(), "status": "preparing"}
-          (candidate_work / "proposal.json").write_text(json.dumps(proposal, indent=2) + "\n")
-          # Persist active work before launching an expensive child. An interrupted
-          # attempt remains visible and is not silently rerun on restart.
-          (candidate_work / 'progress.json').write_text(json.dumps(record, indent=2) + '\n')
+          previous = [item for item in state['candidates'] if item['candidate_id'] == candidate_id]
+          resume = bool(previous)
+          if resume:
+              record = previous[-1]
+              if record.get('proposal_sha256') != _digest(proposal_path):
+                  raise RuntimeError('queued proposal changed after an attempt started')
+              if not candidate_work.is_dir():
+                  raise RuntimeError('active candidate work directory is missing')
+          else:
+              if candidate_work.exists():
+                  raise RuntimeError(f'unrecorded interrupted work exists at {candidate_work}; inspect before retry')
+              candidate_work.mkdir(mode=0o700)
+              record = {"candidate_id": candidate_id, "proposal_sha256": _digest(proposal_path),
+                        "started_at": time.time(), "status": "preparing", "proposal": proposal}
+              _write(candidate_work / 'proposal.json', proposal)
+              state['candidates'].append(record)
+          _write(state_path, state)
+          _write(candidate_work / 'progress.json', record)
           env = os.environ.copy()
           env.update({"SATURN_CANDIDATE_ID": candidate_id,
                       "SATURN_PROPOSAL": str(proposal_path),
                       "SATURN_WORKDIR": str(candidate_work)})
           try:
-              _run_hook(args.prepare_cmd, env, "prepare")
+              if not resume:
+                  _run_hook(args.prepare_cmd, env, "prepare")
               metadata_path = candidate_work / "candidate-metadata.json"
+              if not metadata_path.exists():
+                  raise RuntimeError('preparation is incomplete; inspect logs and explicitly reprepare before resuming')
+              metadata = _prepared(candidate_work)
               if metadata_path.exists():
-                  metadata = _read(metadata_path)
                   executable = metadata.get("executable_sha256")
                   if not isinstance(executable, str) or len(executable) != 64:
                       raise ValueError("candidate metadata lacks executable_sha256")
                   if executable in seen_elves:
                       record.update(status="rejected", failure="duplicate executable",
                                     executable_sha256=executable, finished_at=time.time())
-                      state["candidates"].append(record)
-                      state_path.parent.mkdir(parents=True, exist_ok=True)
-                      state_path.write_text(json.dumps(state, indent=2) + "\n")
+                      _write(state_path, state)
                       done.add(candidate_id)
                       progressed = True
                       if args.once:
                           return
                       continue
                   record["executable_sha256"] = executable
+              receipt_path = candidate_work / 'candidate-receipt.json'
+              if resume and record.get('dispatch_started') and not receipt_path.exists():
+                  raise RuntimeError('measurement may have dispatched; recover its receipt before resuming')
               record["status"] = "measuring"
-              (candidate_work / 'progress.json').write_text(json.dumps(record, indent=2) + '\n')
-              _run_hook(args.measure_cmd, env, "measure")
+              record['dispatch_started'] = True
+              _write(state_path, state)
+              _write(candidate_work / 'progress.json', record)
+              if not (resume and receipt_path.exists()):
+                  _run_hook(args.measure_cmd, env, "measure")
               receipt = _read(candidate_work / "candidate-receipt.json")
               candidate = _validate_receipt(receipt, baseline, candidate_id)
               if not metadata_path.exists() or candidate['executable_sha256'] != metadata.get('executable_sha256'):
@@ -152,22 +205,17 @@ def run(args: argparse.Namespace) -> None:
               record['receipt_sha256'] = _digest(candidate_work / 'candidate-receipt.json')
               record.update(candidate, decision=_decision(candidate, baseline), status="complete")
               seen_elves.add(candidate["executable_sha256"])
-          except Exception as exc:  # quarantine this candidate; watch mode continues
-              record.update(status="rejected", failure=str(exc))
-              state["candidates"].append(record)
-              state_path.parent.mkdir(parents=True, exist_ok=True)
-              state_path.write_text(json.dumps(state, indent=2) + "\n")
-              # A transport/build exception may be shared infrastructure failure.
-              # Stop the campaign instead of exhausting every queued proposal.
-              if args.once or isinstance(exc, RuntimeError):
-                  raise
-              done.add(candidate_id)
-              progressed = True
-              continue
+          except Exception as exc:
+              record.update(status="blocked", failure=str(exc), finished_at=time.time())
+              _write(state_path, state)
+              _write(candidate_work / 'progress.json', record)
+              # Any adapter or receipt error can indicate shared infrastructure
+              # failure. Preserve evidence and require a validated recovery.
+              raise
           record["finished_at"] = time.time()
-          state["candidates"].append(record)
-          state_path.parent.mkdir(parents=True, exist_ok=True)
-          state_path.write_text(json.dumps(state, indent=2) + "\n")
+          record.pop('failure', None)
+          _write(state_path, state)
+          _write(candidate_work / 'progress.json', record)
           done.add(candidate_id)
           progressed = True
           if args.once:

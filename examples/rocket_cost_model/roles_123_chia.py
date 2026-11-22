@@ -28,7 +28,7 @@ from examples.rocket_cost_model.spec_vector_baseline import (
     render_config,
     role_settings,
     sha256,
-    validate_exchange2_output,
+    validate_spec_output,
     validated,
 )
 from examples.rocket_cost_model.vector_cost_model import build_candidate, proposal
@@ -122,7 +122,7 @@ def _verify_reusable_role(spec_dir: Path, output: Path, gcc_root: Path, speckle:
     if not validated(validate_log.read_text(), benchmark, size):
         raise RuntimeError(f"cannot resume {role}; SPEC validation evidence is absent")
     try:
-        validate_exchange2_output(spec_dir, benchmark, size, label)
+        validate_spec_output(spec_dir, benchmark, size, label, validate_log.read_text())
     except ValueError as exc:
         raise RuntimeError(f"cannot resume {role}; {exc}") from exc
 
@@ -164,8 +164,8 @@ def run_role_task(repo: str, spec_dir: str, gcc_root: str, toolchain_root: str,
     if not validated(log.read_text(), benchmark, size):
         raise RuntimeError(f"{role} lacks SPEC's explicit success line; inspect {log}")
     try:
-        output_validation = validate_exchange2_output(
-            Path(spec_dir), benchmark, size, label,
+        output_validation = validate_spec_output(
+            Path(spec_dir), benchmark, size, label, log.read_text(),
         )
     except ValueError as exc:
         raise RuntimeError(f"{role} failed independent output validation: {exc}") from exc

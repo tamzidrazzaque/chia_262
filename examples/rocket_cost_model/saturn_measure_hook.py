@@ -16,6 +16,7 @@ import shlex
 import subprocess
 import tarfile
 import tempfile
+import uuid
 
 
 def env(name: str, default: str | None = None) -> str:
@@ -79,16 +80,27 @@ IMG={shlex.quote(root + '/chipyard-saturn-19a07f6/software/firemarshal/images/fi
 test -f "$IMG"
 cd {shlex.quote(root)}
 $PY -m examples.rocket_cost_model.saturn_spec verify-image --stage {shlex.quote(stage)} --rootfs "$IMG" --bootbinary {shlex.quote(root + '/chipyard-saturn-19a07f6/software/firemarshal/images/firechip/br-base/br-base-bin')} --out {shlex.quote(stage + '/image-receipt.json')}
+$PY -m examples.rocket_cost_model.saturn_manager_contract install-descriptor --stage {shlex.quote(stage)} --deploy {shlex.quote(root + '/chipyard-saturn-19a07f6/sims/firesim/deploy')}
 cd {shlex.quote(root + '/chipyard-saturn-19a07f6/sims/firesim')}
 source sourceme-manager.sh --skip-ssh-setup
 $PY -m examples.rocket_cost_model.saturn_spec preflight --platform {shlex.quote(lane + '/platform-lock.json')} --out {shlex.quote(stage + '/preflight.json')}
 python {shlex.quote(stage + '/native-manager-staged.py')} infrasetup
+# Each task requires its own fresh preflight. Preserve the infrastructure check.
+mv {shlex.quote(stage + '/preflight.json')} {shlex.quote(stage + '/infrasetup-preflight.json')}
+$PY -m examples.rocket_cost_model.saturn_spec preflight --platform {shlex.quote(lane + '/platform-lock.json')} --out {shlex.quote(stage + '/preflight.json')}
 python {shlex.quote(stage + '/native-manager-staged.py')} runworkload
 COL=$($PY -c 'from pathlib import Path; import sys; hits=list(Path(sys.argv[1]).glob("*"+sys.argv[2]+"*/**/uartlog")); assert len(hits)==1, "ambiguous or missing run evidence"; print(hits[0].parent)' {shlex.quote(root + '/chipyard-saturn-19a07f6/sims/firesim/deploy/results-workload')} "$NAME")
 $PY -m examples.rocket_cost_model.saturn_spec collect --stage {shlex.quote(stage)} --image {shlex.quote(stage + '/image-receipt.json')} --completion {shlex.quote(stage + '/runworkload-completion.json')} --preflight {shlex.quote(stage + '/preflight.json')} --collected "$COL" --out {shlex.quote(stage + '/collection')}
 """
     ssh(host, key, remote)
-    receipt = json.loads(ssh(host, key, "cat " + shlex.quote(stage + '/collection/result.json'), capture=True))
+    marker = 'SATURN_RECEIPT_' + uuid.uuid4().hex
+    output = ssh(host, key, "printf '%s\\n' " + shlex.quote(marker) + "; cat "
+                 + shlex.quote(stage + '/collection/result.json'), capture=True)
+    # Some manager login shells print ssh-agent banners. A per-call marker
+    # delimits only the dedicated receipt transfer, never mixed manager logs.
+    if output.count(marker + '\n') != 1:
+        raise ValueError('missing or ambiguous receipt transfer marker')
+    receipt = json.loads(output.split(marker + '\n', 1)[1])
     if receipt.get('identity', {}).get('bundle_sha256') != manifest_sha:
         raise ValueError('manager returned a different bundle receipt')
     (work / "candidate-receipt.json").write_text(json.dumps(receipt, indent=2) + '\n')
