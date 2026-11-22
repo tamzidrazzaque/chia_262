@@ -21,13 +21,29 @@ Implemented after the second review:
 * CHIA bridge tasks return data, check shared mounts/configuration, require
   advertised resources and pin their workers. MCF screening is benchmark-aware.
 
-Still pending, and not claimed as implemented:
+Additional implementation and deployment:
 
-* Register and validate actual CHIA worker resources and mounts.
-* Move the transitional shared-path hooks to transferable FireMarshal artifacts.
-* Adopt BOOM's producer/consumer overlap and validated measurement caches.
-* Run worker-specific paired fresh baselines, order-balanced repetitions,
-  confirmation thresholds and train/ref holdout policy.
+* The existing manager Ray environment now hosts a singleton Saturn resource.
+  A real Chia task successfully transported and reconstructed the private SPEC
+  bundle and verified its hashes (`saturn_artifact_pilot.py`).
+* `SaturnBundle` transfers workload bytes between workers without shared mounts.
+  FireMarshal image construction remains on the admitted manager.
+* `saturn_paired_campaign.py` supplies a bounded producer/consumer policy with
+  fresh AB/BA controls, thresholds, confirmation repeats, optional ref validation,
+  measurement keys, and persisted evidence. The live CLI packages existing
+  bundles; compiler rebuilding can be connected via its preparation callback.
+* The hardware pilot is executing its admitted manager setup path. The paired
+  controller waits for an exact candidate/worker/platform correctness receipt
+  before dispatch. Deployment does not yet establish a passing hardware result.
+
+Still pending, and not claimed as validated:
+
+* Connect the compiler preparation callback to an admitted compiler worker.
+  A user-owned existing Docker image was verified to contain Python 3.10.19
+  and Ray 2.54.0; the other user's visible workers are not used.
+* Complete the live end-to-end pilot and fresh paired confirmation.
+* Expand validated bundles to train/ref inputs before train/ref optimization.
+* Validate cache reuse; current measurements deliberately use fresh controls.
 * Validate an authenticated Codex proposal call and end-to-end CHIA/F2 pilot.
 
 The original role-3.2 receipt was located on the manager and copied privately.
@@ -35,5 +51,5 @@ Its cycles, proposal, receipt hash, and source identity were restored to the
 private controller history from that receipt and the compiler manifest. A historical
 single measurement cannot replace fresh paired confirmation.
 
-The old watcher/proposer were stopped before these changes. No replacement
-controller should be described as live until worker admission and the pilot pass.
+The old watcher/proposer remain stopped. The replacement paired controller is
+live behind its exact pilot receipt gate, and has no new performance result yet.
