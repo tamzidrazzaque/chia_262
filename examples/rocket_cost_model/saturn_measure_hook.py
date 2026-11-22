@@ -87,6 +87,7 @@ tar -xf {shlex.quote(remote_tar)} -C {shlex.quote(incoming)}
 $PY -m examples.rocket_cost_model.saturn_spec intake --bundle {shlex.quote(incoming + '/bundle')} --manifest-sha256 {manifest_sha} --verified-root {shlex.quote(verified)} --platform {shlex.quote(lane + '/platform-lock.json')}
 SNAP={shlex.quote(verified + '/' + manifest_sha)}
 $PY -m examples.rocket_cost_model.saturn_spec stage --snapshot "$SNAP" --platform {shlex.quote(lane + '/platform-lock.json')} --out {shlex.quote(stage)} --phase {phase} --sample {sample} --scratch-mib 1024
+source {shlex.quote(root + '/chipyard-saturn-19a07f6/env.sh')}
 cd {shlex.quote(root + '/chipyard-saturn-19a07f6/software/firemarshal')}
 export PATH={shlex.quote(root + '/chipyard-saturn-19a07f6/.conda-env/bin')}:$PATH
 python {shlex.quote(lane + '/guarded-marshal.py')} build -I {shlex.quote(stage + '/workload.json')}
