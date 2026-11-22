@@ -1,0 +1,5 @@
+{
+  "candidate_id": "3.13",
+  "changes": {"unalign_store": 4},
+  "rationale": "Fresh rerun of the previously failed unaligned-store candidate after fixing hook diagnostics."
+}

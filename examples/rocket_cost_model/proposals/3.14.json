@@ -1,0 +1,5 @@
+{
+  "candidate_id": "3.14",
+  "changes": {"unalign_load": 4},
+  "rationale": "Fresh rerun of the previously failed unaligned-load candidate after fixing hook diagnostics."
+}

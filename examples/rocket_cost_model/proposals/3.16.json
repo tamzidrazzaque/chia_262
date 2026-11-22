@@ -1,0 +1,5 @@
+{
+  "candidate_id": "3.16",
+  "changes": {"permute": 2},
+  "rationale": "Fresh rerun of the previously failed permute candidate after fixing hook diagnostics."
+}

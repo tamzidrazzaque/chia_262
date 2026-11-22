@@ -1,0 +1,5 @@
+{
+  "candidate_id": "3.17",
+  "changes": {"int_stmt": 8},
+  "rationale": "Fresh rerun of the distinct int_stmt=8 candidate after correcting the bundle-path adapter bug."
+}

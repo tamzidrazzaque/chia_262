@@ -1,0 +1,5 @@
+{
+  "candidate_id": "3.11",
+  "changes": {"int_stmt": 12},
+  "rationale": "Explore a stronger vector integer statement cost after the int_stmt=8 candidate produced a distinct executable."
+}

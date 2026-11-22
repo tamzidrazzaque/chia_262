@@ -1,0 +1,5 @@
+{
+  "candidate_id": "3.12",
+  "changes": {"scalar_to_vec": 8},
+  "rationale": "Explore a larger scalar-to-vector cost; MCF contains scalar/vector boundary operations."
+}

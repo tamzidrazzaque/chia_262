@@ -1,0 +1,5 @@
+{
+  "candidate_id": "3.15",
+  "changes": {"vec_to_scalar": 2},
+  "rationale": "Fresh rerun of the previously failed vector-to-scalar candidate after fixing hook diagnostics."
+}
