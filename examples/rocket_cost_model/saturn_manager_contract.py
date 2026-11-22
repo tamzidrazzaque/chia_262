@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 
 
@@ -26,7 +27,9 @@ def install_descriptor(stage: Path, deploy: Path) -> None:
                 digest.update(chunk)
         if digest.hexdigest() != image[field + '_sha256']:
             raise ValueError('admitted image changed')
-        value[key] = str(source)
+        # FireSim concatenates workload_dir and descriptor paths as strings.
+        # Relative paths also satisfy the execution guard's exact resolve check.
+        value[key] = os.path.relpath(source, deploy / 'workloads' / name)
     descriptor.write_text(json.dumps(value, indent=2) + '\n')
 
 

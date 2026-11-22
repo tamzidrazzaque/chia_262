@@ -57,8 +57,10 @@ def test_descriptor_uses_admitted_bytes(tmp_path):
     descriptor.write_text(json.dumps({'benchmark_name': name}))
     install_descriptor(stage, deploy)
     value = json.loads(descriptor.read_text())
-    assert value['common_rootfs'] == image['rootfs']
-    assert value['common_bootbinary'] == image['bootbinary']
+    base = deploy / 'workloads' / name
+    assert (base / value['common_rootfs']).resolve() == hook.Path(image['rootfs'])
+    assert (base / value['common_bootbinary']).resolve() == hook.Path(image['bootbinary'])
+    assert not hook.Path(value['common_rootfs']).is_absolute()
     (tmp_path / 'bootbinary').write_bytes(b'changed')
     try:
         install_descriptor(stage, deploy)
