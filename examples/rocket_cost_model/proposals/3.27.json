@@ -1,0 +1,1 @@
+{"candidate_id":"3.27","changes":{"unalign_load":4,"unalign_store":4},"rationale":"Rerun the paired unaligned-memory probe after fixing bundle production imports."}

@@ -51,6 +51,11 @@ def main() -> None:
         common[common.index("--candidate-id") + 1] = compiler_id
         subprocess.run([*common, "--action", action], check=True)
     bundle = work / "bundle" / "3-saturn-aware"
+    bundle_env = os.environ.copy()
+    # The producer imports sibling modules; when invoked by absolute path the
+    # repository root is not automatically placed on Python's import path.
+    prior_path = bundle_env.get("PYTHONPATH")
+    bundle_env["PYTHONPATH"] = str(repo) + ((os.pathsep + prior_path) if prior_path else "")
     subprocess.run([sys.executable, str(repo / "examples/rocket_cost_model/produce_spec_workload_bundle.py"),
                     "--spec-dir", str(spec), "--evidence", str(out), "--out", str(work / "bundle"),
                     "--toolchain", str(compiler["prefix"]), "--readelf",
@@ -58,7 +63,8 @@ def main() -> None:
                     str(toolchain / "bin/riscv64-unknown-linux-gnu-objdump"), "--benchmark",
                     "605.mcf_s", "--size", "test", "--role", "3-saturn-aware",
                     "--candidate-id", compiler_id, "--candidate-manifest",
-                    str(Path(compiler["prefix"]) / "cost-model.json")], check=True)
+                    str(Path(compiler["prefix"]) / "cost-model.json")], check=True,
+                   env=bundle_env)
     elf_hash = hashlib.sha256((bundle / "payload/program").read_bytes()).hexdigest()
     (work / "candidate-metadata.json").write_text(json.dumps({
         "candidate_id": candidate_id, "executable_sha256": elf_hash,

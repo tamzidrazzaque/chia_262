@@ -1,0 +1,1 @@
+{"candidate_id":"3.24","changes":{"int_stmt":8},"rationale":"Rerun the distinct int_stmt=8 candidate after fixing bundle production imports."}

@@ -1,0 +1,1 @@
+{"candidate_id":"3.26","changes":{"scalar_to_vec":8},"rationale":"Rerun the scalar-to-vector boundary probe after fixing bundle production imports."}

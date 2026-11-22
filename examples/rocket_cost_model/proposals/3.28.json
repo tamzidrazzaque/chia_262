@@ -1,0 +1,1 @@
+{"candidate_id":"3.28","changes":{"int_stmt":16},"rationale":"Rerun the stronger integer-statement penalty after fixing bundle production imports."}
