@@ -1,0 +1,7 @@
+{
+  "candidate_id": "3.7",
+  "changes": {
+    "int_stmt": 4
+  },
+  "rationale": "Increase vector integer statement cost for MCF's vmadd/vmul/vadd operations while retaining other costs."
+}

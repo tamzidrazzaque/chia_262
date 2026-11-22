@@ -1,0 +1,7 @@
+{
+  "candidate_id": "3.10",
+  "changes": {
+    "int_stmt": 8
+  },
+  "rationale": "Test a larger vector integer statement cost to cross a possible GCC vectorization threshold."
+}

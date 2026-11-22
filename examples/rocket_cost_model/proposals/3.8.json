@@ -1,0 +1,7 @@
+{
+  "candidate_id": "3.8",
+  "changes": {
+    "scalar_to_vec": 4
+  },
+  "rationale": "Increase scalar-to-vector transfer cost; MCF emits multiple vmv.v.x operations in its vectorized loops."
+}

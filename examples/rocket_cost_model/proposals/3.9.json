@@ -1,0 +1,8 @@
+{
+  "candidate_id": "3.9",
+  "changes": {
+    "unalign_load": 6,
+    "unalign_store": 6
+  },
+  "rationale": "Test a stronger Saturn vector-memory cost hypothesis after the 4/4 candidate changed MCF code."
+}
