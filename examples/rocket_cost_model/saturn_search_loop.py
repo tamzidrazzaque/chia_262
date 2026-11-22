@@ -35,9 +35,13 @@ def _run_hook(command: str, env: dict[str, str], label: str) -> None:
         proposal=shlex.quote(env["SATURN_PROPOSAL"]),
         workdir=shlex.quote(env["SATURN_WORKDIR"]),
     )
-    result = subprocess.run(rendered, shell=True, env=env, text=True)
+    workdir = Path(env["SATURN_WORKDIR"])
+    log = workdir / f"{label}.log"
+    with log.open("w") as stream:
+        result = subprocess.run(rendered, shell=True, env=env, text=True,
+                                stdout=stream, stderr=subprocess.STDOUT)
     if result.returncode:
-        raise RuntimeError(f"{label} hook failed with exit {result.returncode}")
+        raise RuntimeError(f"{label} hook failed with exit {result.returncode}; see {log}")
 
 
 def _validate_receipt(receipt: dict, baseline: dict, candidate_id: str) -> dict:
