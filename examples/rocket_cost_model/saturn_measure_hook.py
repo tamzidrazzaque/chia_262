@@ -36,7 +36,10 @@ def ssh(host: str, key: str, command: str, capture: bool = False) -> str:
 def main() -> None:
     work = Path(env("SATURN_WORKDIR")).resolve()
     candidate = env("SATURN_CANDIDATE_ID")
-    bundle = work / "bundle"
+    # The producer keeps role-specific payloads below ``bundle/<role>`` so a
+    # single candidate work directory can hold more than one role.  The
+    # search lane measures the Saturn-aware role-3 payload.
+    bundle = work / "bundle" / "3-saturn-aware"
     manifest_sha = hashlib.sha256((bundle / "manifest.json").read_bytes()).hexdigest()
     host, key = env("SATURN_MANAGER_HOST"), env("SATURN_MANAGER_KEY")
     root = env("SATURN_MANAGER_ROOT", "/home/ubuntu/cs262_compiler")

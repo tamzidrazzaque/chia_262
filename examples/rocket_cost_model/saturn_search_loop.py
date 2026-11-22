@@ -136,12 +136,16 @@ def run(args: argparse.Namespace) -> None:
               candidate = _validate_receipt(receipt, baseline, candidate_id)
               record.update(candidate, decision=_decision(candidate, baseline), status="complete")
               seen_elves.add(candidate["executable_sha256"])
-          except Exception as exc:  # record the failure and stop; never skip evidence
+          except Exception as exc:  # quarantine this candidate; watch mode continues
               record.update(status="rejected", failure=str(exc))
               state["candidates"].append(record)
               state_path.parent.mkdir(parents=True, exist_ok=True)
               state_path.write_text(json.dumps(state, indent=2) + "\n")
-              raise
+              if args.once:
+                  raise
+              done.add(candidate_id)
+              progressed = True
+              continue
           record["finished_at"] = time.time()
           state["candidates"].append(record)
           state_path.parent.mkdir(parents=True, exist_ok=True)
