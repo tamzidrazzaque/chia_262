@@ -1,0 +1,1 @@
+{"candidate_id":"3.31","changes":{"scalar_to_vec":4},"rationale":"Rerun the scalar-to-vector boundary cost after the bundle import-path fix."}

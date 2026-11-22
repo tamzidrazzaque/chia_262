@@ -1,0 +1,1 @@
+{"candidate_id":"3.34","changes":{"int_stmt":12},"rationale":"Rerun the int_stmt=12 candidate after the bundle import-path fix."}

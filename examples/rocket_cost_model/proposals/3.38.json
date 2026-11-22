@@ -1,0 +1,1 @@
+{"candidate_id":"3.38","changes":{"unalign_load":8,"unalign_store":8},"rationale":"Rerun the paired high unaligned-memory probe after the bundle import-path fix."}

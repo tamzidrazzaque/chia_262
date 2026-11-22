@@ -1,0 +1,1 @@
+{"candidate_id":"3.36","changes":{"vec_to_scalar":2,"scalar_to_vec":8},"rationale":"Rerun the joint scalar/vector boundary probe after the bundle import-path fix."}

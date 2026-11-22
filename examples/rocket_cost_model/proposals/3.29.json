@@ -1,0 +1,1 @@
+{"candidate_id":"3.29","changes":{"unalign_store":4},"rationale":"Rerun unaligned-store cost after the bundle import-path fix; the original attempt never produced a bundle."}

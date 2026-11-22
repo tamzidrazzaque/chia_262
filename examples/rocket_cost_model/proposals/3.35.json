@@ -1,0 +1,1 @@
+{"candidate_id":"3.35","changes":{"scalar_to_vec":8},"rationale":"Rerun the scalar-to-vector=8 candidate after the bundle import-path fix."}
