@@ -37,6 +37,15 @@ def main() -> None:
     speckle = required("SATURN_SPECKLE")
     toolchain = required("SATURN_TOOLCHAIN")
     jobs = int(os.environ.get("SATURN_BUILD_JOBS", "8"))
+    # Fail before the expensive GCC build if the child bundle producer cannot
+    # import the repository modules it needs.
+    preflight_env = os.environ.copy()
+    prior_path = preflight_env.get("PYTHONPATH")
+    preflight_env["PYTHONPATH"] = str(repo) + ((os.pathsep + prior_path) if prior_path else "")
+    subprocess.run(
+        [sys.executable, "-c", "from examples.rocket_cost_model.spec_vector_baseline import role_settings"],
+        check=True, env=preflight_env,
+    )
     compiler = build_candidate(compiler_root, baseline, proposal, jobs)
     out = work / "spec"
     out.mkdir(mode=0o700)
