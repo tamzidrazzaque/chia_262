@@ -5,6 +5,23 @@ bundle transport, and `saturn_paired_campaign.py` measurement policy. They have
 separate physical F2 workers, manager lanes, Ray manager addresses, private
 queues, output directories and measured histories.
 
+## Read-only terminal monitor
+
+On the producer machine, run:
+
+```bash
+watch -n 30 'python3 /scratch/trazzaque/Corey/examples/rocket_cost_model/saturn_status.py --config /scratch/trazzaque/spec-loop/status.json'
+```
+
+Omit `watch -n 30` for a single snapshot. Add `--local` to skip manager SSH.
+The private configuration maps each label to `run` (its loop output directory)
+and `manager_config` (its existing private runner configuration). The command
+reads state and the active candidate's dispatched campaign; it never launches
+tasks, acquires worker leases, changes files or sends signals. Ctrl-C stops
+only the display. State age is time since the last state transition, not a
+heartbeat or proof that a long measurement is stalled. Recorded state alone
+does not establish that a runner process is alive.
+
 Shared GCC preparation is serialized by its existing build lock and publishes
 immutable snapshots. FireMarshal commands share a manager-wide lock; FPGA
 execution remains parallel on independent physical-worker leases. Generated
