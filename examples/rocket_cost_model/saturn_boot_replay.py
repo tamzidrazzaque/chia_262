@@ -17,7 +17,7 @@ from examples.rocket_cost_model.saturn_spec.execution import guard, ssh_args
 from examples.rocket_cost_model.saturn_spec.platform import preflight, verify_platform
 from examples.rocket_cost_model.saturn_spec.staging import verify_stage
 from examples.rocket_cost_model.saturn_manager_contract import install_descriptor
-from examples.rocket_cost_model.saturn_run_watchdog import GuestFailure, run as watch_run
+from examples.rocket_cost_model.saturn_run_watchdog import DiagnosticEnd, GuestFailure, run as watch_run
 
 
 def diagnostic_runtime(original, start_pc, end_pc, suffix, trace=True):
@@ -26,9 +26,8 @@ def diagnostic_runtime(original, start_pc, end_pc, suffix, trace=True):
     if trace:
         result['tracing'] = {'enable': True, 'output_format': 0, 'selector': 2,
                              'start': hex(start_pc), 'end': hex(end_pc)}
-    # Includes firmware time before Linux's uptime clock starts. This run only
-    # diagnoses boot and cannot finish a normal SPEC timing sample.
-    result['target_config']['plusarg_passthrough'] = '+max-cycles=6000000000'
+    # The accepted driver parses +max-cycles with atoi (32-bit). Do not pass a
+    # large cycle bound; the explicitly diagnostic watchdog limits host time.
     result['workload']['suffix_tag'] = suffix
     return result
 
@@ -63,7 +62,7 @@ def replay(stage, out, start_pc, end_pc, trace=True):
     provenance = {'diagnostic_only': True, 'source_stage': str(stage),
         'source_plan_sha256': sha(stage / 'plan.json'), 'rootfs_sha256': image['rootfs_sha256'],
         'bootbinary_sha256': image['bootbinary_sha256'], 'runtime_sha256': sha(runtime),
-        'adapter_sha256': sha(native), 'tracing_enabled': trace,
+        'adapter_sha256': sha(native), 'tracing_enabled': trace, 'host_time_limit_seconds': 300,
         'trace_start_pc': hex(start_pc), 'trace_end_pc': hex(end_pc)}
     (out / 'provenance.json').write_text(json.dumps(provenance, indent=2) + '\n')
     codes = {}
@@ -77,11 +76,12 @@ def replay(stage, out, start_pc, end_pc, trace=True):
                     environment = {**os.environ, 'PYTHONPATH': str(Path(__file__).resolve().parents[2])}
                     if task == 'runworkload':
                         watch_run(stage, command, interval=1, evidence_directory=out / 'guest-failure-evidence',
-                                  process_kwargs={'stdout': log, 'stderr': subprocess.STDOUT, 'env': environment})
+                                  process_kwargs={'stdout': log, 'stderr': subprocess.STDOUT, 'env': environment},
+                                  diagnostic_seconds=300)
                     else:
                         subprocess.run(command, check=True, stdout=log, stderr=subprocess.STDOUT, env=environment)
-        except (subprocess.CalledProcessError, GuestFailure) as exc:
-            codes[task] = exc.returncode if isinstance(exc, subprocess.CalledProcessError) else 2
+        except (subprocess.CalledProcessError, GuestFailure, DiagnosticEnd) as exc:
+            codes[task] = exc.returncode if isinstance(exc, subprocess.CalledProcessError) else (3 if isinstance(exc, DiagnosticEnd) else 2)
             if task == 'infrasetup':
                 raise
         else:

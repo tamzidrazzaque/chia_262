@@ -71,22 +71,36 @@ def stop_failed_guest(site, job, destination):
     Must be called by the controller for this stage, never by the status view.
     A quiet UART alone cannot authorize termination.
     """
+    return _stop_owned_driver(site, job, destination, diagnostic=False)
+
+
+def stop_diagnostic_guest(site, job, destination):
+    """End an explicitly diagnostic replay at its host time budget, archiving UART.
+
+    This is never invoked by the read-only monitor or normal measurement path.
+    Diagnostic completion records are excluded from performance collection.
+    """
+    return _stop_owned_driver(site, job, destination, diagnostic=True)
+
+
+def _stop_owned_driver(site, job, destination, diagnostic):
     script = WORKER_SNAPSHOT.rsplit('print(json.dumps(', 1)[0] + r'''
 import base64,hashlib,subprocess
 expected=sys.argv[2]
+diagnostic=bool(int(sys.argv[3]))
 if len(matched)!=1: raise RuntimeError('exactly one admitted driver required')
-if b'Kernel panic' not in data and b'*** FAILED ***' not in data:
+if not diagnostic and b'Kernel panic' not in data and b'*** FAILED ***' not in data:
     raise RuntimeError('no conclusive fatal guest evidence')
 pid=matched[0]
 if hashlib.sha256((Path('/proc')/str(pid)/'exe').read_bytes()).hexdigest()!=expected:
     raise RuntimeError('driver identity differs')
-print(json.dumps({'pid':pid,'job':job,'uart':base64.b64encode(uart.read_bytes()).decode()}),flush=True)
+print(json.dumps({'pid':pid,'job':job,'diagnostic_stop':diagnostic,'uart':base64.b64encode(uart.read_bytes()).decode()}),flush=True)
 '''
     args = ['ssh', '-i', site['ssh_key'], '-o', 'BatchMode=yes',
         '-o', 'StrictHostKeyChecking=yes', '-o', 'UserKnownHostsFile=' + site['known_hosts'],
         '-o', 'ConnectTimeout=10', 'ubuntu@' + site['worker_ip']]
     result = subprocess.run(args + ['sudo -n python3 -c ' + shlex.quote(script) + ' ' +
-        shlex.quote(job) + ' ' + site['artifacts']['driver']['sha256']],
+        shlex.quote(job) + ' ' + site['artifacts']['driver']['sha256'] + ' ' + str(int(diagnostic))],
         capture_output=True, text=True, check=True, timeout=30)
     evidence = json.loads(result.stdout)
     dest = Path(destination)
@@ -97,11 +111,11 @@ print(json.dumps({'pid':pid,'job':job,'uart':base64.b64encode(uart.read_bytes())
     (dest / 'failure.json').write_text(json.dumps(evidence, indent=2) + '\n')
     # Revalidate process ownership and fatal evidence immediately before SIGTERM.
     terminate = script[:script.index('print(json.dumps(')] + r'''
-if pid!=int(sys.argv[3]): raise RuntimeError('driver PID changed')
+if pid!=int(sys.argv[4]): raise RuntimeError('driver PID changed')
 subprocess.run(['sudo','-n','kill','-TERM',str(pid)],check=True)
 '''
     subprocess.run(args + ['sudo -n python3 -c ' + shlex.quote(terminate) + ' ' + shlex.quote(job) +
-        ' ' + site['artifacts']['driver']['sha256'] + ' ' + str(evidence['pid'])],
+        ' ' + site['artifacts']['driver']['sha256'] + ' ' + str(int(diagnostic)) + ' ' + str(evidence['pid'])],
         capture_output=True, text=True, check=True, timeout=30)
     return evidence
 

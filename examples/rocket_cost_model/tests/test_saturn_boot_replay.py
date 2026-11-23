@@ -18,6 +18,7 @@ class BootReplayTests(unittest.TestCase):
             'host_debug': {'zero_out_dram': True}, 'run_farm': {'worker': 'accepted'}}
         saved = copy.deepcopy(original)
         result = diagnostic_runtime(original, 0x100, 0x120, 'new')
+        self.assertNotIn('max-cycles', result['target_config']['plusarg_passthrough'])
         self.assertEqual(original, saved)
         result['tracing'] = original['tracing']
         result['target_config']['plusarg_passthrough'] = ''

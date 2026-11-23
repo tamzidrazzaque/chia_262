@@ -14,6 +14,21 @@ from examples.rocket_cost_model import saturn_guest_health as h
 
 
 class WatchdogTests(unittest.TestCase):
+    def test_explicit_diagnostic_deadline_is_separate_from_fatal_guest(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'platform.json').write_text('{}')
+            (root / 'plan.json').write_text(json.dumps({'platform': str(root / 'platform.json'), 'name': 'job'}))
+            child = MagicMock(); child.poll.side_effect = [None, 0]; child.wait.return_value = 0
+            with patch.object(w.subprocess, 'Popen', return_value=child), \
+                 patch.object(w.time, 'sleep'), patch.object(w.time, 'monotonic', side_effect=[0, 301]), \
+                 patch.object(w, 'inspect', return_value={'matching_driver_pids': [42]}), \
+                 patch.object(w, 'stop_failed_guest') as fatal, \
+                 patch.object(w, 'stop_diagnostic_guest') as diagnostic:
+                with self.assertRaises(w.DiagnosticEnd):
+                    w.run(root, ['native'], evidence_directory=root / 'diagnostic', diagnostic_seconds=300)
+                fatal.assert_not_called(); diagnostic.assert_called_once_with({}, 'job', root / 'diagnostic')
+
     def test_fatal_evidence_archived_before_signal(self):
         with TemporaryDirectory() as directory:
             destination = Path(directory) / 'evidence'

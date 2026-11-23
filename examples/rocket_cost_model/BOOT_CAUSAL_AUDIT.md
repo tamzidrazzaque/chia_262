@@ -44,8 +44,8 @@ admitted worker, kernel, driver, FPGA image and memory model:
 
 Do not rebuild the guest or change filenames between these attempts. Each
 replay gets a separate guarded audit directory, fresh preflight and worker
-lease. A diagnostic cycle limit bounds the boot test. Changing only a diagnostic
-suffix and the end-of-test bound is common to untraced controls. Tracing is
+lease. A diagnostic host-time limit bounds the boot test. Changing only a diagnostic
+suffix is common to untraced controls. Tracing is
 introduced separately so its effect is observable.
 
 `saturn_boot_replay.py` reuses the accepted native adapter and execution guard.
@@ -60,3 +60,20 @@ correctly. NAB's current scalar/vector qualification continues, while candidate
 auto-start is held for this diagnosis. Its fresh scalar qualification already
 passed at exactly 36,937,795,127 cycles, matching its earlier pilot. Successful
 qualification alone will not be described as a repair of the kernel fault.
+
+## Rejected initial replay setup and separate correctness failure
+
+The first four replay attempts stopped before the relevant boot interval.
+The accepted FireSim scheduler parses `+max-cycles` using 32-bit `atoi`.
+The requested 6,000,000,000 wrapped to 1,705,032,704, and UART reports timeout
+after 1,705,032,705 cycles. Those attempts and the header-only trace are retained
+but provide no A/B boot conclusion. Replay now leaves target plusargs unchanged
+and uses an explicit 300-second host budget with guarded evidence capture.
+Normal performance runs do not use that diagnostic deadline.
+
+The fresh NAB vector qualification completed but failed output validation.
+The installed official SPEC comparator independently rejected it using
+`--reltol 0.01 --skipreltol 2` (without missing-line relaxation). Five numeric
+values differ; four exceed 1%, with a maximum relative difference of about
+7.68%. This is separate from the kernel panic and is not merely the stricter
+local validator rejecting an official pass. Its raw output remains private.
