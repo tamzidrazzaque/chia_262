@@ -90,8 +90,8 @@ $PY -m examples.rocket_cost_model.saturn_spec stage --snapshot "$SNAP" --platfor
 source {shlex.quote(root + '/chipyard-saturn-19a07f6/env.sh')}
 cd {shlex.quote(root + '/chipyard-saturn-19a07f6/software/firemarshal')}
 export PATH={shlex.quote(root + '/chipyard-saturn-19a07f6/.conda-env/bin')}:$PATH
-python {shlex.quote(lane + '/guarded-marshal.py')} build -I {shlex.quote(stage + '/workload.json')}
-python {shlex.quote(lane + '/guarded-marshal.py')} install {shlex.quote(stage + '/workload.json')}
+flock {shlex.quote(root + '/saturn-firemarshal.lock')} python {shlex.quote(lane + '/guarded-marshal.py')} build -I {shlex.quote(stage + '/workload.json')}
+flock {shlex.quote(root + '/saturn-firemarshal.lock')} python {shlex.quote(lane + '/guarded-marshal.py')} install {shlex.quote(stage + '/workload.json')}
 NAME=$($PY -c 'import json,sys; print(json.load(open(sys.argv[1]))["name"])' {shlex.quote(stage + '/plan.json')})
 IMG={shlex.quote(root + '/chipyard-saturn-19a07f6/software/firemarshal/images/firechip')}/$NAME/$NAME.img
 test -f "$IMG"
