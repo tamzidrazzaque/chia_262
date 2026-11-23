@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
+import types
 
 from examples.rocket_cost_model.saturn_feedback_proposer import propose
 from examples.rocket_cost_model import saturn_feedback_proposer as feedback
@@ -21,6 +22,21 @@ class FeedbackTests(unittest.TestCase):
             {'candidate_id': '3.2', 'status': 'complete', 'cycles': 90,
              'proposal': {'changes': {'int_stmt': 4}},
              'private_log': 'must never enter prompt'}]}
+
+    def test_proposer_pins_model_and_reasoning_without_global_cli_changes(self):
+        selected = []
+        class FakeCodex:
+            def __init__(self, **kwargs):
+                selected.append(kwargs)
+            def prompt(self, *args, **kwargs):
+                return types.SimpleNamespace(success=True,
+                    result=json.dumps({'changes': {'int_stmt': 6}, 'rationale': 'fixture'}))
+        with patch.dict('sys.modules', {'chia.models.codex': types.SimpleNamespace(CodexLLM=FakeCodex)}), \
+                patch('builtins.print'):
+            feedback.codex_proposal({'measured_history': []})
+        self.assertEqual(selected[0]['model'], 'gpt-6.2-sol')
+        self.assertEqual(selected[0]['reasoning_effort'], 'high')
+        self.assertFalse(selected[0]['dangerously_bypass_approvals_and_sandbox'])
 
     def test_measured_feedback_reaches_model_and_is_bounded(self):
         memory = {}

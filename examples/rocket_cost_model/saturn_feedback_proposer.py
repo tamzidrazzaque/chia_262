@@ -121,8 +121,13 @@ def paired_feedback_state(root: Path, profiles: Path) -> dict:
 def codex_proposal(payload: dict, model: str | None = None) -> dict:
     """Call the existing CHIA CLI backend; imports remain lazy for offline tests."""
     from chia.models.codex import CodexLLM
+    settings = read(Path(__file__).with_name('saturn_proposer_model.json'))
+    selected_model = model or settings['model']
+    effort = settings['reasoning_effort']
+    print(f'Saturn proposal model={selected_model} reasoning={effort}', flush=True)
     with tempfile.TemporaryDirectory(prefix='saturn-proposal-') as scratch:
-        llm = CodexLLM(model=model, work_dir=scratch, sandbox='read-only',
+        llm = CodexLLM(model=selected_model, reasoning_effort=effort,
+            work_dir=scratch, sandbox='read-only',
             dangerously_bypass_approvals_and_sandbox=False, approval_policy='never',
             extra_cli_args=['--disable', 'shell_tool', '--disable', 'unified_exec'],
             resume_session=False, ephemeral=True, retries=1,
