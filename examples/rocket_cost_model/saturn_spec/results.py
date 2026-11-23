@@ -8,6 +8,7 @@ import re
 from examples.rocket_cost_model.rvv_gate.validate import validate as validate_probe
 from .bundle import DRIVER_SHA, AGFI, read_json, regular_tree, sha
 from .staging import verify_stage
+from .output_validation import validate_output
 
 
 def validate_completion(plan, image, completion, preflight):
@@ -71,9 +72,11 @@ def collect(stage, image_path, completion_path, preflight_path, collected, desti
     for name in {m['stdout'], m['stderr'], *m['expected_outputs']}:
         if not (result / 'outputs' / name).is_file():
             raise ValueError('incomplete collected stdout/stderr/output files')
+    output_validation = {}
     for dest, source in m['expected_outputs'].items():
-        if sha(result / 'outputs' / dest) != m['files_sha256'][source]:
-            raise ValueError('SPEC exact expected-output mismatch')
+        output_validation[dest] = validate_output(m, dest,
+            stage / 'overlay/root/saturn-spec/bundle' / source,
+            result / 'outputs' / dest)
     times = {}
     for key in ('real', 'user', 'sys'):
         values = re.findall(r'^' + key + r'\s+([0-9]+(?:\.[0-9]+)?)\s*$', text('time.txt'), re.M)
@@ -85,6 +88,7 @@ def collect(stage, image_path, completion_path, preflight_path, collected, desti
     evidence = {'schema_version': 1, 'status': 'correct', 'backend': 'fpga',
                 'executable_sha256': actual_sha[0],
                 'identity': p['identity'], 'image_id': p['image_id'], 'probe': probe,
+                'output_validation': output_validation,
                 'target_guest_elapsed_seconds': times['real'], 'raw_posix_seconds': times,
                 'whole_boot_simulation_cycles': int(simulation[0]),
                 'timing_scope': 'guest process including startup and IO; cycles include boot',

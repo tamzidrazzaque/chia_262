@@ -47,6 +47,7 @@ candidate count. The deployed regression suite passed 141 tests and 12 subtests.
 
 Subsequent baseline check: NAB scalar passed at 36,937,795,127 whole-boot cycles.
 Its vector run exited successfully but two numeric output values differed from
-the exact reference, so activation stopped. Official SPEC tolerance validation
-is still needed; neither a hardware defect nor an acceptable result has been
-established. MCF retries now use the explicitly selected GPT-5.6 Sol/high.
+the exact reference, so activation stopped. Subsequent official SPEC comparison
+passed: the exact-hash policy was inappropriate for NAB's tolerated numeric
+output. See `NAB_OUTPUT_DIAGNOSIS.md` for the evidence and conservative collector
+policy. MCF retries now use the explicitly selected GPT-5.6 Sol/high.
