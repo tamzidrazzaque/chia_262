@@ -34,7 +34,7 @@ class FeedbackTests(unittest.TestCase):
         with patch.dict('sys.modules', {'chia.models.codex': types.SimpleNamespace(CodexLLM=FakeCodex)}), \
                 patch('builtins.print'):
             feedback.codex_proposal({'measured_history': []})
-        self.assertEqual(selected[0]['model'], 'gpt-6.2-sol')
+        self.assertEqual(selected[0]['model'], 'gpt-5.6-sol')
         self.assertEqual(selected[0]['reasoning_effort'], 'high')
         self.assertFalse(selected[0]['dangerously_bypass_approvals_and_sandbox'])
 
