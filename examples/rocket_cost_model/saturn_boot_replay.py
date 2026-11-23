@@ -3,6 +3,7 @@
 import argparse
 import copy
 import json
+import os
 from pathlib import Path
 import shlex
 import subprocess
@@ -72,7 +73,8 @@ def replay(stage, out, start_pc, end_pc, trace=True):
             with guard(stage, task, diagnostic_audit=out, diagnostic_runtime=runtime):
                 with (out / (task + '.log')).open('w') as log:
                     command = [str(Path(site['chipyard_root']) / '.conda-env/bin/python'), str(native), task]
-                    subprocess.run(command, check=True, stdout=log, stderr=subprocess.STDOUT)
+                    environment = {**os.environ, 'PYTHONPATH': str(Path(__file__).resolve().parents[2])}
+                    subprocess.run(command, check=True, stdout=log, stderr=subprocess.STDOUT, env=environment)
         except subprocess.CalledProcessError as exc:
             codes[task] = exc.returncode
             if task == 'infrasetup':
