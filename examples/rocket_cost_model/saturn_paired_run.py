@@ -46,6 +46,27 @@ def workload_identity(manifest):
     return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
 
 
+def wait_for_pilot(path, config, stop, interval=10, timeout=28800):
+    """Wait for an atomic success receipt, propagate failure, and bound the wait."""
+    deadline = time.monotonic() + timeout
+    while not stop.is_set():
+        failure = path.parent / 'failed.json'
+        if failure.exists():
+            raise RuntimeError('pilot failed; inspect its private failed.json before retrying')
+        if path.exists():
+            try:
+                pilot = json.loads(path.read_text())
+            except json.JSONDecodeError:
+                pass  # tolerate a receipt from the older non-atomic publisher
+            else:
+                validate_pilot(pilot, config)
+                return True
+        if time.monotonic() >= deadline:
+            raise TimeoutError('pilot did not publish a receipt before the gate deadline')
+        stop.wait(interval)
+    return False
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', type=Path, required=True)
@@ -58,11 +79,8 @@ def main():
         signal.signal(sig, lambda *_: stop.set())
     if args.after_pilot:
         print('Waiting for the pilot receipt before campaign dispatch', flush=True)
-        while not args.after_pilot.exists():
-            if stop.wait(10):
-                return
-        pilot = json.loads(args.after_pilot.read_text())
-        validate_pilot(pilot, config)
+        if not wait_for_pilot(args.after_pilot, config, stop):
+            return
     import ray
     from ray.util.scheduling_strategies import NodeAffinitySchedulingStrategy
     from examples.rocket_cost_model.saturn_chia_tasks import measure_artifact, select_worker, await_task

@@ -4,6 +4,8 @@ import argparse
 import json
 from pathlib import Path
 
+from examples.rocket_cost_model.saturn_feedback_proposer import publish_json
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -16,6 +18,16 @@ def main():
     args = parser.parse_args()
     # Exclusive run directory is an attempt guard, including driver crashes.
     args.out.mkdir(mode=0o700, parents=True, exist_ok=False)
+    try:
+        execute(args)
+    except BaseException as exc:
+        publish_json(args.out / 'failed.json', {
+            'status': 'failed', 'exception_type': type(exc).__name__,
+            'message': str(exc), 'candidate': args.candidate})
+        raise
+
+
+def execute(args):
     from examples.rocket_cost_model.saturn_bundle_artifact import pack
     from examples.rocket_cost_model.saturn_chia_tasks import (
         validate_artifact, measure_artifact, select_worker, await_task)
@@ -29,14 +41,14 @@ def main():
         options = {'scheduling_strategy': NodeAffinitySchedulingStrategy(node, soft=False)}
         artifact = pack(args.bundle)
         admission = await_task(validate_artifact.options(**options).chia_remote(artifact), 60)
-        (args.out / 'artifact-admission.json').write_text(json.dumps(admission, indent=2))
+        publish_json(args.out / 'artifact-admission.json', admission)
         if args.execute:
-            (args.out / 'dispatch.json').write_text(json.dumps({
+            publish_json(args.out / 'dispatch.json', {
                 'candidate': args.candidate, 'bundle_sha256': artifact.manifest_sha256,
-                'executable_sha256': artifact.executable_sha256, 'node_id': node}))
+                'executable_sha256': artifact.executable_sha256, 'node_id': node})
             receipt = await_task(measure_artifact.options(**options).chia_remote(
                 args.candidate, artifact), 28800)
-            (args.out / 'receipt.json').write_text(json.dumps(receipt, indent=2))
+            publish_json(args.out / 'receipt.json', receipt)
         print('CHIA artifact admission passed' + ('; F2 receipt collected' if args.execute else ''))
     finally:
         ray.shutdown()

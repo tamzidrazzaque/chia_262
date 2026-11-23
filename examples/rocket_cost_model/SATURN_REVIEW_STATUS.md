@@ -32,16 +32,22 @@ Additional implementation and deployment:
   fresh AB/BA controls, thresholds, confirmation repeats, optional ref validation,
   measurement keys, and persisted evidence. The live CLI packages existing
   bundles; compiler rebuilding can be connected via its preparation callback.
-* The hardware pilot is executing its admitted manager setup path. The paired
-  controller waits for an exact candidate/worker/platform correctness receipt
-  before dispatch. Deployment does not yet establish a passing hardware result.
+* The Chia hardware pilot passed exact correctness and collection at
+  104,748,971,252 whole-boot cycles. The fresh pair also passed: role 2 measured
+  103,315,564,277 cycles and the int_stmt=8 candidate measured 104,572,551,932.
+  The candidate regressed about 1.22% and was not selected. This is test-input
+  screening, not a repeatability or generalization claim.
+* Pilot receipts publish atomically, failures publish a terminal record, and
+  the gate checks failures and a bounded deadline. Paired progress now has a
+  hash-verified feedback schema bridge, excluding held-out reference samples.
 
 Still pending, and not claimed as validated:
 
 * Connect the compiler preparation callback to an admitted compiler worker.
   A user-owned existing Docker image was verified to contain Python 3.10.19
   and Ray 2.54.0; the other user's visible workers are not used.
-* Complete the live end-to-end pilot and fresh paired confirmation.
+* Confirm improving candidates with fresh repetitions; the first candidate
+  regressed and correctly did not enter confirmation.
 * Expand validated bundles to train/ref inputs before train/ref optimization.
 * Validate cache reuse; current measurements deliberately use fresh controls.
 * Validate an authenticated Codex proposal call and end-to-end CHIA/F2 pilot.
@@ -52,4 +58,5 @@ private controller history from that receipt and the compiler manifest. A histor
 single measurement cannot replace fresh paired confirmation.
 
 The old watcher/proposer remain stopped. The replacement paired controller is
-live behind its exact pilot receipt gate, and has no new performance result yet.
+completed its first bounded paired campaign. Further compiler/model-driven
+iterations need the compiler and authenticated proposal-worker deployment.

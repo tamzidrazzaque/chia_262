@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 import time
 import tempfile
+import hashlib
 
 from examples.rocket_cost_model.vector_cost_model import BASE_COSTS, proposal as validate_proposal
 
@@ -61,8 +62,60 @@ def measured_history(state: dict) -> list[dict]:
         if not isinstance(changes, dict):
             continue
         validated = validate_proposal({'changes': changes, 'rationale': 'Measured history'})
-        history.append({'changes': validated['changes'], 'cycles': item['cycles']})
+        entry = {'changes': validated['changes'], 'cycles': item['cycles']}
+        if type(item.get('baseline_cycles')) is int and item['baseline_cycles'] > 0:
+            entry['baseline_cycles'] = item['baseline_cycles']
+        history.append(entry)
     return history
+
+
+def paired_feedback_state(root: Path, profiles: Path) -> dict:
+    """Translate hash-verified fresh pairs into the proposal history schema.
+
+    Cost edits must come from recorded proposals, never inferred from an ELF.
+    The result contains numeric comparisons only, without licensed outputs.
+    """
+    progress = read(root / 'progress.json')
+    by_bundle = {}
+    for item in progress['history']:
+        if item.get('status') != 'measured':
+            continue
+        recorded = item['proposal']
+        selected = recorded if 'changes' in recorded else read(profiles / (recorded['candidate_id'] + '.json'))
+        validate_proposal({key: selected[key] for key in ('changes', 'rationale')})
+        by_bundle[item['candidate']['bundle_sha256']] = selected
+    records = []
+    samples = progress['samples']
+    for offset in range(0, len(samples) - 1, 2):
+        receipts = []
+        for sample in samples[offset:offset + 2]:
+            path = Path(sample['receipt'])
+            if path.is_absolute() or '..' in path.parts:
+                raise ValueError('unsafe paired receipt path')
+            receipt = read(root / path)
+            checksum = hashlib.sha256(json.dumps(receipt, sort_keys=True).encode()).hexdigest()
+            if checksum != sample['receipt_sha256'] or receipt.get('status') != 'correct' or receipt.get('backend') != 'fpga':
+                raise ValueError('paired receipt is altered or incorrect')
+            if receipt.get('whole_boot_simulation_cycles') != sample['cycles']:
+                raise ValueError('paired sample cycles differ from receipt')
+            receipts.append(receipt)
+        roles = {r['identity']['role']: r for r in receipts}
+        if set(roles) != {'2-generic-vector', '3-saturn-aware'}:
+            raise ValueError('incomplete baseline/candidate pair')
+        baseline, candidate = roles['2-generic-vector'], roles['3-saturn-aware']
+        for field in ('worker_id', 'platform_sha256', 'input_id', 'phase'):
+            if baseline['identity'].get(field) != candidate['identity'].get(field):
+                raise ValueError('paired receipt controls differ')
+        if candidate['identity']['phase'] == 'holdout':
+            continue  # reference results never feed the proposal agent
+        selected = by_bundle.get(candidate['identity']['bundle_sha256'])
+        if selected is None:
+            continue
+        records.append({'candidate_id': selected['candidate_id'], 'status': 'complete',
+            'proposal': {key: selected[key] for key in ('changes', 'rationale')},
+            'cycles': candidate['whole_boot_simulation_cycles'],
+            'baseline_cycles': baseline['whole_boot_simulation_cycles']})
+    return {'baseline': {'cycles': records[-1]['baseline_cycles'] if records else None}, 'candidates': records}
 
 
 def codex_proposal(payload: dict, model: str | None = None) -> dict:
@@ -168,7 +221,12 @@ def _propose_locked(queue: Path, state: dict, memory: dict, max_pending: int,
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--queue", type=Path, required=True)
-    parser.add_argument("--state", type=Path, required=True)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--state", type=Path)
+    source.add_argument('--paired-campaign', type=Path,
+                        help='verified paired progress/receipt directory instead of legacy state')
+    parser.add_argument('--profiles-dir', type=Path,
+                        help='recorded cost proposals (defaults to queue) for paired history')
     parser.add_argument("--memory", type=Path, required=True,
                         help="private proposer state; never share the controller state file")
     parser.add_argument("--poll-seconds", type=float, default=30.0)
@@ -178,7 +236,8 @@ def main() -> None:
     parser.add_argument('--budget', type=int, default=12)
     args = parser.parse_args()
     while True:
-        state = read(args.state)
+        state = (paired_feedback_state(args.paired_campaign, args.profiles_dir or args.queue)
+                 if args.paired_campaign else read(args.state))
         memory = read(args.memory) if args.memory.exists() else {"feedback_proposals": []}
         propose(args.queue, state, memory, args.max_pending, model=args.model, budget=args.budget)
         args.memory.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
