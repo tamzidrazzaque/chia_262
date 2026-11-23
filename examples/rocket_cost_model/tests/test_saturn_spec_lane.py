@@ -133,7 +133,8 @@ def staged(incoming, tmp_path, monkeypatch):
     runtime = artifact / 'runtime.yaml'
     runtime.write_text(yaml.safe_dump({'run_farm': {}, 'metasimulation': {}, 'target_config': {}, 'workload': {}}))
     adapter = artifact / 'native-manager.py'
-    adapter.write_text("runtime='config_runtime_saturn_gate.yaml'\nhwdb='config_hwdb.yaml'\n")
+    adapter.write_text("runtime='config_runtime_saturn_gate.yaml'\nhwdb='config_hwdb.yaml'\n"
+                       "system_known_hosts='/home/ubuntu/.ssh/known_hosts'\n")
     platform = tmp_path / 'platform.json'
     site = {'chipyard_root': str(tmp_path / 'chipyard'), 'worker_id': 'unit-worker', 'worker_ip': '127.0.0.1',
             'ssh_key': '/unit/key', 'known_hosts': '/unit/known_hosts',

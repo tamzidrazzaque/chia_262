@@ -215,6 +215,8 @@ def run(config, out, budget, preflight_only=False, stop=None):
             queue.extend(queued_profiles(config['queue_directory'], signatures))
         state['pending_proposals'] = len(queue)
         payload = {'goal': 'Reduce Saturn ' + config.get('benchmark', '605.mcf_s') + ' cycles with bounded GCC vector costs',
+            'workload_context': config.get('proposal_context', {}),
+            'baseline_cycles': state['baseline'].get('cycles'),
             'allowed_fields': sorted(BASE_COSTS), 'cost_bounds': [1, 64],
             'measured_history': measured_history({'candidates': feedback}),
             'already_proposed': [json.loads(s) for s in sorted(signatures)]}
@@ -263,6 +265,8 @@ def run(config, out, budget, preflight_only=False, stop=None):
                     queue.extend(queued_profiles(config['queue_directory'], signatures))
                 if not queue:
                     payload = {'goal': 'Reduce Saturn ' + config.get('benchmark', '605.mcf_s') + ' cycles with bounded GCC vector costs',
+                        'workload_context': config.get('proposal_context', {}),
+                        'baseline_cycles': state['baseline'].get('cycles'),
                         'allowed_fields': sorted(BASE_COSTS), 'cost_bounds': [1, 64],
                         'measured_history': measured_history({'candidates': feedback}),
                         'already_proposed': [json.loads(s) for s in sorted(signatures)]}

@@ -137,6 +137,8 @@ def stage(snapshot, platform_path, output, phase, sample, scratch_mib=1024, diag
     for old, new in {
         "'config_runtime_saturn_gate.yaml'": repr(str((out / 'config_runtime.yaml').resolve())),
         "'config_hwdb.yaml'": repr(str((out / 'config_hwdb.yaml').resolve())),
+        "system_known_hosts='/home/ubuntu/.ssh/known_hosts'":
+            'system_known_hosts=' + repr(str(Path(site['known_hosts']).resolve())),
     }.items():
         if adapter.count(old) != 1:
             raise ValueError('accepted native adapter layout changed')
