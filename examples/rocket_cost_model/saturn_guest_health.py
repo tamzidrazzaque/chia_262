@@ -146,7 +146,7 @@ def campaign_snapshot(remote_run):
     return state
 
 
-def baseline_snapshot(directory, lane):
+def baseline_snapshot(directory, lane, diagnosis_progress=None):
     """Observe baseline qualification before an adaptive loop has started."""
     root, lane = Path(directory), Path(lane)
     state = json.loads((root / 'progress.json').read_text())
@@ -162,6 +162,17 @@ def baseline_snapshot(directory, lane):
             site = json.loads((lane / 'platform-lock.json').read_text())
             quiet = {'605.mcf_s': 3600, '644.nab_s': 1800}.get(plan['identity']['benchmark'], 900)
             state['guest_health'] = inspect(site, plan['name'], quiet)
+    if diagnosis_progress and Path(diagnosis_progress).is_file():
+        diagnostic = json.loads(Path(diagnosis_progress).read_text())
+        active = diagnostic.get('active_attempt')
+        if active and diagnostic.get('status') == 'running':
+            provenance = Path(diagnosis_progress).parent / active / 'provenance.json'
+            if provenance.is_file():
+                source = json.loads(provenance.read_text())
+                plan = json.loads((Path(source['source_stage']) / 'plan.json').read_text())
+                site = json.loads((lane / 'platform-lock.json').read_text())
+                diagnostic['guest_health'] = inspect(site, plan['name'])
+        state['diagnosis'] = diagnostic
     return state
 
 
@@ -171,10 +182,11 @@ def main():
     mode.add_argument('--campaign', type=Path)
     mode.add_argument('--baseline', type=Path)
     parser.add_argument('--lane', type=Path)
+    parser.add_argument('--diagnosis-progress', type=Path)
     args = parser.parse_args()
     if args.baseline and not args.lane:
         parser.error('--baseline requires --lane')
-    state = baseline_snapshot(args.baseline, args.lane) if args.baseline else campaign_snapshot(args.campaign)
+    state = baseline_snapshot(args.baseline, args.lane, args.diagnosis_progress) if args.baseline else campaign_snapshot(args.campaign)
     print('SATURN_STATUS:' + json.dumps(state))
 
 

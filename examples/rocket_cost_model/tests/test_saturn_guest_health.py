@@ -36,6 +36,9 @@ class GuestHealthTests(unittest.TestCase):
             with patch.object(h, 'inspect', return_value={'health': 'active'}) as inspect:
                 self.assertEqual(h.baseline_snapshot(baseline, lane)['guest_health']['health'], 'active')
                 inspect.assert_called_once_with({}, 'job', 1800)
+                diagnosis = root / 'diagnosis.json'
+                diagnosis.write_text('{"status":"complete","attempts":[],"active_attempt":null}')
+                self.assertEqual(h.baseline_snapshot(baseline, lane, diagnosis)['diagnosis']['status'], 'complete')
                 plan['identity']['role'] = '3-saturn-aware'
                 (stage / 'plan.json').write_text(json.dumps(plan))
                 with self.assertRaises(ValueError): h.baseline_snapshot(baseline, lane)

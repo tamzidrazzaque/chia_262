@@ -77,3 +77,10 @@ The installed official SPEC comparator independently rejected it using
 values differ; four exceed 1%, with a maximum relative difference of about
 7.68%. This is separate from the kernel panic and is not merely the stricter
 local validator rejecting an official pass. Its raw output remains private.
+
+MCF's completed manager records were recovered after its local controller
+ceased running. Archive, bundle, executable and receipt bindings were rechecked
+and paired feedback recomputed before restoring the result. Candidates 3.3016
+and 3.3017 regressed approximately 1.78% and 1.89%, respectively. Their hardware
+runs were not repeated. The resumed user-service controller retains these
+results and starts at 3.3018; its current model remains GPT-5.6 Sol/high.

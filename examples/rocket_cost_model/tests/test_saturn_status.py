@@ -43,6 +43,11 @@ class StatusTests(unittest.TestCase):
             with patch.object(s, 'campaign_status', return_value={
                     'status': 'running', 'guest_health': {'health': 'FAILED: guest kernel panic'}}):
                 self.assertIn('GUEST FAILED', s.summary('NAB', entry).splitlines()[0])
+            with patch.object(s.subprocess, 'run', return_value=subprocess.CompletedProcess(
+                    [], 0, 'ActiveState=inactive\nSubState=dead\nMainPID=0\n')):
+                text = s.summary('NAB', {**entry, 'service': 'saturn-fixture.service'}, local_only=True)
+                self.assertIn('CONTROLLER STOPPED', text.splitlines()[0])
+                self.assertIn('inactive/dead', text)
             self.assertEqual(before, {p: p.read_bytes() for p in root.rglob('*') if p.is_file()})
 
     def test_manager_reads_only_dispatched_campaign_and_tolerates_banner(self):

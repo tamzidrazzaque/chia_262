@@ -25,6 +25,14 @@ reports job-bound guest panics and quiet-output warnings, and displays collected
 samples before a pair completes. See `GUEST_HEALTH_INCIDENT.md` for the kernel
 panic investigation and panic watchdog recovery policy.
 
+The private monitor config can include a `service` unit name to observe the
+producer controller independently of recorded state. An inactive service is
+shown as `CONTROLLER STOPPED`. MCF's resumed controller is owned by a user
+systemd service, with its prior completed manager feedback verified and carried
+forward; it is independent of this terminal. The monitor never starts/stops
+that service. NAB's `hold_reason` explains the current diagnostic gate, and its
+manager configuration can specify `diagnosis_progress` for live replay status.
+
 Shared GCC preparation is serialized by its existing build lock and publishes
 immutable snapshots. FireMarshal commands share a manager-wide lock; FPGA
 execution remains parallel on independent physical-worker leases. Generated

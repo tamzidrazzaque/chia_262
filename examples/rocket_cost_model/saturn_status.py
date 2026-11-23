@@ -23,10 +23,12 @@ def campaign_status(config, remote_run, baseline=False):
                ('--baseline ' if baseline else '--campaign ') + shlex.quote(remote_run))
     if baseline:
         command += ' --lane ' + shlex.quote(config['manager_lane'])
+        if config.get('diagnosis_progress'):
+            command += ' --diagnosis-progress ' + shlex.quote(config['diagnosis_progress'])
     output = subprocess.run(['ssh', '-T', '-i', config['manager_key'],
         '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes',
         '-o', 'ConnectTimeout=10', config['manager_host'], command],
-        capture_output=True, text=True, check=True, timeout=35).stdout
+        capture_output=True, text=True, check=True, timeout=55).stdout
     records = [line.removeprefix('SATURN_STATUS:') for line in output.splitlines()
                if line.startswith('SATURN_STATUS:')]
     if len(records) != 1:
@@ -52,6 +54,12 @@ def summary(name, entry, local_only=False):
                 text += (f"\n  Baseline gate: {remote.get('status', '-')} | "
                          f"active role: {remote.get('active_role', '-')} | passed roles: {len(remote.get('roles', []))}")
                 text += '\n  Guest: ' + remote.get('guest_health', {}).get('health', 'preparing hardware task')
+                if remote.get('diagnosis'):
+                    diagnosis = remote['diagnosis']
+                    text += (f"\n  Boot comparison: {diagnosis.get('status')} | "
+                             f"attempt: {diagnosis.get('active_attempt') or '-'} | completed: {len(diagnosis.get('attempts', []))}")
+                    if diagnosis.get('guest_health'):
+                        text += '\n  Diagnostic guest: ' + diagnosis['guest_health']['health']
                 if remote.get('guest_health', {}).get('health', '').startswith('FAILED:'):
                     text = text.replace(f'{name}: ', f'{name}: GUEST FAILED | ', 1)
             except (OSError, ValueError, KeyError, subprocess.SubprocessError):
@@ -66,6 +74,17 @@ def summary(name, entry, local_only=False):
              f"duplicates skipped: {sum(r.get('status') == 'duplicate executable' for r in records)} | "
              f"queued: {state.get('pending_proposals', 0)} | "
              f"state updated {max(0, int(time.time() - path.stat().st_mtime))}s ago"]
+    if entry.get('service'):
+        try:
+            result = subprocess.run(['systemctl', '--user', 'show', '--property=ActiveState,SubState,MainPID',
+                '--', entry['service']], capture_output=True, text=True, check=True, timeout=5)
+            service = dict(line.split('=', 1) for line in result.stdout.splitlines() if '=' in line)
+            lines.append(f"  Controller service: {service.get('ActiveState', 'unknown')}/{service.get('SubState', '-')} "
+                         f"| PID: {service.get('MainPID', '-')}")
+            if service.get('ActiveState') != 'active':
+                lines[0] = lines[0].replace(f'{name}: ', f'{name}: CONTROLLER STOPPED | recorded ', 1)
+        except (OSError, ValueError, subprocess.SubprocessError):
+            lines.append('  Controller service observation unavailable.')
     if current.get('proposal', {}).get('changes'):
         lines.append('  Costs: ' + json.dumps(current['proposal']['changes'], sort_keys=True))
     measured = [r for r in records if r.get('cycles') and r.get('baseline_cycles')]
