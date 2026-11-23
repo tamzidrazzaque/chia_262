@@ -134,6 +134,33 @@ def choose_novel_proposal(generate, payload, signatures, rejected, attempts=3):
     raise ProposalExhausted(f'proposal agent exhausted {attempts} attempts without a novel valid profile')
 
 
+def wait_for_proposal(generate, payload, signatures, state, persist, stop,
+                      continuous, retry_seconds=300):
+    """Preserve evidence and wait for proposal/provider access without hardware replay."""
+    provider_errors = {'invalid_request', 'authentication_failed', 'rate_limit',
+                       'billing_error', 'server_error'}
+    while not stop.is_set():
+        state['proposal_rejections'] = []
+        try:
+            selected = choose_novel_proposal(generate, payload, signatures, state['proposal_rejections'])
+            state.pop('provider_error_type', None)
+            state.pop('proposal_failure', None)
+            return selected
+        except ProposalExhausted as exc:
+            if not continuous:
+                raise
+            state.update(status='waiting_for_novel_proposal', proposal_failure=str(exc))
+        except Exception as exc:
+            kind = getattr(exc, 'error_type', None)
+            if not continuous or kind not in provider_errors:
+                raise
+            state.update(status='waiting_for_model_access', provider_error_type=kind,
+                         proposal_failure=str(exc))
+        persist()
+        stop.wait(retry_seconds)
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', type=Path, required=True)
@@ -232,9 +259,9 @@ def run(config, out, budget, preflight_only=False, stop=None):
                 raise ValueError('proposal admission does not match current measured history')
             admitted = validate(admission['proposal'])
         else:
-            state['proposal_rejections'] = []
-            admitted = choose_novel_proposal(lambda p: await_task(suggest.chia_remote(p), 600),
-                payload, signatures, state['proposal_rejections'])
+            admitted = wait_for_proposal(lambda p: await_task(suggest.chia_remote(p), 600),
+                payload, signatures, state, lambda: publish_json(out / 'state.json', state),
+                stop, budget is None, config.get('proposal_retry_seconds', 300))
         if admitted is not None:
             signature = profile_signature(admitted['changes'])
             if signature in signatures:
@@ -270,17 +297,13 @@ def run(config, out, budget, preflight_only=False, stop=None):
                         'allowed_fields': sorted(BASE_COSTS), 'cost_bounds': [1, 64],
                         'measured_history': measured_history({'candidates': feedback}),
                         'already_proposed': [json.loads(s) for s in sorted(signatures)]}
-                    state['proposal_rejections'] = []
-                    try:
-                        selected = choose_novel_proposal(lambda p: await_task(suggest.chia_remote(p), 600),
-                            payload, signatures, state['proposal_rejections'])
-                    except ProposalExhausted as exc:
-                        if budget is not None:
-                            raise
-                        state.update(status='waiting_for_novel_proposal', proposal_failure=str(exc))
+                    selected = wait_for_proposal(lambda p: await_task(suggest.chia_remote(p), 600),
+                        payload, signatures, state, lambda: publish_json(out / 'state.json', state),
+                        stop, budget is None, config.get('proposal_retry_seconds', 300))
+                    if selected is None:
+                        state['status'] = 'drained'
                         publish_json(out / 'state.json', state)
-                        stop.wait(config.get('proposal_retry_seconds', 300))
-                        continue
+                        return
                     signature = profile_signature(selected['changes'])
                     if signature in signatures:
                         raise ValueError('feedback agent repeated effective cost profile')

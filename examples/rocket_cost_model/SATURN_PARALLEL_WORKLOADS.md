@@ -1,0 +1,37 @@
+# Parallel Saturn workloads
+
+MCF and NAB use the same `saturn_adaptive_loop.py`, CHIA compiler/proposer tasks,
+bundle transport, and `saturn_paired_campaign.py` measurement policy. They have
+separate physical F2 workers, manager lanes, Ray manager addresses, private
+queues, output directories and measured histories.
+
+Shared GCC preparation is serialized by its existing build lock and publishes
+immutable snapshots. FireMarshal commands share a manager-wide lock; FPGA
+execution remains parallel on independent physical-worker leases. Generated
+SPEC configs publish atomically to support concurrent benchmark readers.
+
+The second worker was checked idle, its SSH host key verified through AWS SSM,
+and the accepted SDK/image/driver pair staged. Previous SDK/runtime directories
+were preserved. Strict native-manager SSH uses the lane's verified known-hosts
+file. No new FPGA image, protected driver, or installed baseline compiler was
+rebuilt.
+
+NAB's unchanged-source scalar and stock-vector bundles passed local SPEC/QEMU
+and immutable intake checks. Its full ELF audit reports 3,569 static RVV
+instructions; the earlier screening regex reported 682 because it counted a
+narrower set of mnemonics. Static instruction counts do not establish dynamic
+coverage or speedup. CactuBSSN remains an additional locally screened candidate,
+requiring its own complete workload contract and hardware baseline gate.
+
+`saturn_workload_baselines.py` runs scalar then vector hardware pilots.
+`saturn_activate_workload.py` requires exact baseline bundle, workload, worker,
+platform and cycle evidence before starting the existing continuous runner.
+NAB receives only its own measured baseline/history. The deployment remains
+official test-input screening, with fresh paired controls and confirmation
+thresholds before selecting a candidate.
+
+The requested proposer is pinned to GPT-6.2 Sol/high. The current ChatGPT-based
+Codex login rejects that model and no API-key route is configured. Baseline
+qualification and queued profiles can proceed independently; continuous model
+generation records `waiting_for_model_access` and retries without silently
+switching models or repeating completed hardware measurements.

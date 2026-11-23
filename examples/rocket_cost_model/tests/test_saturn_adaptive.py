@@ -7,6 +7,7 @@ import subprocess
 import tarfile
 import tempfile
 import unittest
+import threading
 from unittest.mock import patch
 
 from examples.rocket_cost_model import saturn_adaptive_loop as loop
@@ -105,3 +106,19 @@ class AdaptiveTests(unittest.TestCase):
             raise RuntimeError('provider unavailable')
         with self.assertRaisesRegex(RuntimeError, 'provider unavailable'):
             loop.choose_novel_proposal(failed, {}, set(), [])
+
+    def test_continuous_provider_denial_is_visible_and_waits_without_hardware(self):
+        class UnsupportedModel(Exception):
+            error_type = 'invalid_request'
+        stop = threading.Event()
+        state = {}
+        observed = []
+        def generate(payload):
+            raise UnsupportedModel('requested model is unavailable')
+        def persist():
+            observed.append(dict(state))
+            stop.set()
+        result = loop.wait_for_proposal(generate, {}, set(), state, persist, stop, True)
+        self.assertIsNone(result)
+        self.assertEqual(observed[0]['status'], 'waiting_for_model_access')
+        self.assertEqual(observed[0]['provider_error_type'], 'invalid_request')
