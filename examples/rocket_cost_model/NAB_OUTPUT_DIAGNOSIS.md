@@ -30,7 +30,14 @@ permits no skipped differences. Other workloads retain exact comparison.
 Receipts record the validator policy and both output hashes. Licensed output,
 installed SPEC comparison sources and raw evidence remain private.
 
-Recovery revalidates the preserved completed run through the full collector;
-it must not rerun hardware or replace its original failed-attempt evidence.
-The continuous NAB loop can start only after the recovered vector receipt and
-the original scalar receipt satisfy the existing activation gate.
+Recovery revalidated the preserved completed run through the full collector,
+including image hashes, executable identity, VLEN probe, guest exit status,
+clean shutdown, task identity and output policy. Original failed-attempt
+evidence was preserved; no hardware rerun was needed. The recovered vector
+receipt reports 37,665,524,822 whole-boot cycles, versus the scalar pilot's
+36,937,795,127. These individual pilots are qualification evidence, not a
+paired performance conclusion.
+
+The recovered baseline gate passed and launched the same continuous NAB
+runner, with four queued profiles followed by feedback-based GPT-5.6 Sol/high
+proposals. The deployed suite passed 145 tests plus 22 subtests.
