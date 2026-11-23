@@ -40,6 +40,9 @@ class StatusTests(unittest.TestCase):
             self.assertIn('+10.000% reduction', text)
             with patch.object(s, 'campaign_status', side_effect=subprocess.TimeoutExpired('ssh', 20)):
                 self.assertIn('Manager status unavailable', s.summary('NAB', entry))
+            with patch.object(s, 'campaign_status', return_value={
+                    'status': 'running', 'guest_health': {'health': 'FAILED: guest kernel panic'}}):
+                self.assertIn('GUEST FAILED', s.summary('NAB', entry).splitlines()[0])
             self.assertEqual(before, {p: p.read_bytes() for p in root.rglob('*') if p.is_file()})
 
     def test_manager_reads_only_dispatched_campaign_and_tolerates_banner(self):
