@@ -55,7 +55,7 @@ def _members(artifact: SaturnBundle) -> dict[str, bytes]:
     executable = manifest.get('executable')
     if executable not in expected or expected[executable] != artifact.executable_sha256:
         raise ValueError('bundle transport executable changed')
-    if manifest.get('role') not in ('2-generic-vector', '3-saturn-aware'):
+    if manifest.get('role') not in ('1-scalar', '2-generic-vector', '3-saturn-aware'):
         raise ValueError('bundle transport requires vector baseline or candidate')
     return files
 

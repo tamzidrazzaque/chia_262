@@ -49,14 +49,14 @@ def main() -> None:
     # single candidate work directory can hold more than one role.  The
     # search lane measures the Saturn-aware role-3 payload.
     role = os.environ.get('SATURN_ROLE', '3-saturn-aware')
-    if role not in ('2-generic-vector', '3-saturn-aware'):
+    if role not in ('1-scalar', '2-generic-vector', '3-saturn-aware'):
         raise ValueError('unsupported measurement role')
     bundle = work / "bundle" / role
     manifest_sha = hashlib.sha256((bundle / "manifest.json").read_bytes()).hexdigest()
     local = os.environ.get('SATURN_MANAGER_LOCAL') == '1'
     host, key = ('local', '') if local else (env("SATURN_MANAGER_HOST"), env("SATURN_MANAGER_KEY"))
     root = env("SATURN_MANAGER_ROOT", "/home/ubuntu/cs262_compiler")
-    lane = f"{root}/saturn-spec-lane"
+    lane = env('SATURN_MANAGER_LANE', f"{root}/saturn-spec-lane")
     tag = "auto-" + candidate.replace(".", "-")
     incoming = f"{lane}/incoming/{tag}"
     verified = f"{lane}/verified/{tag}"

@@ -85,8 +85,10 @@ def main():
     from ray.util.scheduling_strategies import NodeAffinitySchedulingStrategy
     from examples.rocket_cost_model.saturn_chia_tasks import measure_artifact, select_worker, await_task
     repo = Path(__file__).resolve().parents[2]
-    ray.init(address=config['address'], runtime_env={'env_vars': {
-        'PYTHONPATH': str(repo), 'SATURN_TASK_ROOT': config['task_root']}})
+    environment = {'PYTHONPATH': str(repo), 'SATURN_TASK_ROOT': config['task_root']}
+    if config.get('manager_lane'):
+        environment['SATURN_MANAGER_LANE'] = config['manager_lane']
+    ray.init(address=config['address'], runtime_env={'env_vars': environment})
     try:
         node = select_worker(ray.nodes(), 'saturn_manager')
         options = {'scheduling_strategy': NodeAffinitySchedulingStrategy(node, soft=False)}

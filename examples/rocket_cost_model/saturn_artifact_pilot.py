@@ -15,6 +15,9 @@ def main():
     parser.add_argument('--task-root', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--execute', action='store_true')
+    parser.add_argument('--lane', type=Path, help='independent admitted manager lane')
+    parser.add_argument('--phase', choices=('baseline', 'search', 'confirmation'), default='search')
+    parser.add_argument('--sample', type=int, default=0)
     args = parser.parse_args()
     # Exclusive run directory is an attempt guard, including driver crashes.
     args.out.mkdir(mode=0o700, parents=True, exist_ok=False)
@@ -34,8 +37,10 @@ def execute(args):
     import ray
     from ray.util.scheduling_strategies import NodeAffinitySchedulingStrategy
     repo = Path(__file__).resolve().parents[2]
-    ray.init(address=args.address, runtime_env={'env_vars': {
-        'PYTHONPATH': str(repo), 'SATURN_TASK_ROOT': str(args.task_root.resolve())}})
+    environment = {'PYTHONPATH': str(repo), 'SATURN_TASK_ROOT': str(args.task_root.resolve())}
+    if getattr(args, 'lane', None):
+        environment['SATURN_MANAGER_LANE'] = str(args.lane.resolve())
+    ray.init(address=args.address, runtime_env={'env_vars': environment})
     try:
         node = select_worker(ray.nodes(), 'saturn_manager')
         options = {'scheduling_strategy': NodeAffinitySchedulingStrategy(node, soft=False)}
@@ -47,7 +52,7 @@ def execute(args):
                 'candidate': args.candidate, 'bundle_sha256': artifact.manifest_sha256,
                 'executable_sha256': artifact.executable_sha256, 'node_id': node})
             receipt = await_task(measure_artifact.options(**options).chia_remote(
-                args.candidate, artifact), 28800)
+                args.candidate, artifact, {'phase': args.phase, 'sample': args.sample}), 28800)
             publish_json(args.out / 'receipt.json', receipt)
         print('CHIA artifact admission passed' + ('; F2 receipt collected' if args.execute else ''))
     finally:

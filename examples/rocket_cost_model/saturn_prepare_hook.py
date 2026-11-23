@@ -39,6 +39,9 @@ def main() -> None:
     speckle = required("SATURN_SPECKLE")
     toolchain = required("SATURN_TOOLCHAIN")
     jobs = int(os.environ.get("SATURN_BUILD_JOBS", "8"))
+    benchmark = os.environ.get('SATURN_BENCHMARK', '605.mcf_s')
+    if benchmark not in ('605.mcf_s', '644.nab_s'):
+        raise ValueError('unsupported admitted adaptive workload')
     # Fail before the expensive GCC build if the child bundle producer cannot
     # import the repository modules it needs.
     preflight_env = os.environ.copy()
@@ -54,7 +57,7 @@ def main() -> None:
     common = [sys.executable, str(repo / "examples/rocket_cost_model/spec_vector_baseline.py"),
               "--spec-dir", str(spec), "--gcc-root", str(compiler["prefix"]),
               "--speckle", str(speckle), "--qemu", str(qemu), "--out", str(out),
-              "--role", "3-saturn-aware", "--benchmark", "605.mcf_s", "--size", "test",
+              "--role", "3-saturn-aware", "--benchmark", benchmark, "--size", "test",
               "--candidate-id", candidate_id[:32], "--candidate-manifest",
               str(Path(compiler["prefix"]) / "cost-model.json")]
     compiler_id = str(compiler["candidate_id"])[:32]
@@ -72,7 +75,7 @@ def main() -> None:
                     "--toolchain", str(compiler["prefix"]), "--readelf",
                     str(toolchain / "bin/riscv64-unknown-linux-gnu-readelf"), "--objdump",
                     str(toolchain / "bin/riscv64-unknown-linux-gnu-objdump"), "--benchmark",
-                    "605.mcf_s", "--size", "test", "--role", "3-saturn-aware",
+                    benchmark, "--size", "test", "--role", "3-saturn-aware",
                     "--candidate-id", compiler_id, "--candidate-manifest",
                     str(Path(compiler["prefix"]) / "cost-model.json")], check=True,
                    env=bundle_env)

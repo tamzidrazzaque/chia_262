@@ -15,6 +15,15 @@ from examples.rocket_cost_model.tests.test_saturn_chia_bridge import load_bridge
 
 
 class BundleTransportTests(unittest.TestCase):
+    def test_scalar_baseline_transports_without_changing_role(self):
+        path = self.bundle / 'manifest.json'
+        manifest = json.loads(path.read_text())
+        manifest['role'] = '1-scalar'
+        path.write_text(json.dumps(manifest))
+        scalar = pack(self.bundle)
+        destination = self.root / 'scalar-received'
+        unpack(scalar, destination)
+        self.assertEqual(json.loads((destination / 'manifest.json').read_text())['role'], '1-scalar')
     def setUp(self):
         self.scratch = tempfile.TemporaryDirectory()
         self.addCleanup(self.scratch.cleanup)

@@ -56,6 +56,8 @@ def measure(config, selected, artifact, directory, index=0, order_index=None):
     """Transfer hash-bound bytes to the existing manager and obtain paired data."""
     remote = config['remote_root'].rstrip('/') + '/' + uuid.uuid4().hex
     request = {key: config[key] for key in ('address', 'task_root', 'policy', 'baseline')}
+    if config.get('manager_lane'):
+        request['manager_lane'] = config['manager_lane']
     request['policy'] = {**config['policy'], 'order_offset': config.get('order_offset', 0) + (index if order_index is None else order_index),
                         'sample_offset': config.get('first_id', 100) * 1000 + index * 100}
     request.update(proposal=selected, artifact={
@@ -164,7 +166,7 @@ def run(config, out, budget, preflight_only=False, stop=None):
     # artifact/F2 tasks run on its separately admitted private Ray instance.
     environment = {**config['compiler_env'], 'PYTHONPATH': str(Path(__file__).resolve().parents[2])}
     for key, value in config['compiler_env'].items():
-        if key not in ('SATURN_BUILD_JOBS', 'SATURN_SHARED_COMPILER') and not Path(value).exists():
+        if key not in ('SATURN_BUILD_JOBS', 'SATURN_SHARED_COMPILER', 'SATURN_BENCHMARK') and not Path(value).exists():
             raise ValueError('missing configured compiler path: ' + key)
     ray.init(num_cpus=config.get('cpus', 8), resources={'riscv_build': 1, 'codex_creds': 1},
         include_dashboard=False, runtime_env={'env_vars': environment},
@@ -212,7 +214,7 @@ def run(config, out, budget, preflight_only=False, stop=None):
         if config.get('queue_directory'):
             queue.extend(queued_profiles(config['queue_directory'], signatures))
         state['pending_proposals'] = len(queue)
-        payload = {'goal': 'Reduce Saturn MCF cycles with bounded GCC vector costs',
+        payload = {'goal': 'Reduce Saturn ' + config.get('benchmark', '605.mcf_s') + ' cycles with bounded GCC vector costs',
             'allowed_fields': sorted(BASE_COSTS), 'cost_bounds': [1, 64],
             'measured_history': measured_history({'candidates': feedback}),
             'already_proposed': [json.loads(s) for s in sorted(signatures)]}
@@ -260,7 +262,7 @@ def run(config, out, budget, preflight_only=False, stop=None):
                 if not queue and config.get('queue_directory'):
                     queue.extend(queued_profiles(config['queue_directory'], signatures))
                 if not queue:
-                    payload = {'goal': 'Reduce Saturn MCF cycles with bounded GCC vector costs',
+                    payload = {'goal': 'Reduce Saturn ' + config.get('benchmark', '605.mcf_s') + ' cycles with bounded GCC vector costs',
                         'allowed_fields': sorted(BASE_COSTS), 'cost_bounds': [1, 64],
                         'measured_history': measured_history({'candidates': feedback}),
                         'already_proposed': [json.loads(s) for s in sorted(signatures)]}

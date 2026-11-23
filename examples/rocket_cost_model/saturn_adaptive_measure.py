@@ -20,6 +20,8 @@ def main():
     unpack(artifact, args.incoming / 'bundle')
     candidate = {**request['proposal'], 'bundles': {request['policy']['scope']: str(args.incoming / 'bundle')}}
     config = {key: request[key] for key in ('address', 'task_root', 'policy', 'baseline')}
+    if request.get('manager_lane'):
+        config['manager_lane'] = request['manager_lane']
     config['candidates'] = [candidate]
     publish_json(args.incoming / 'config.json', config)
     with (args.incoming / 'campaign.log').open('w') as log:
