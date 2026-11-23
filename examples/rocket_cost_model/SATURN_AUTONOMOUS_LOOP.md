@@ -1,5 +1,27 @@
 # Saturn autonomous search loop
 
+The integrated entry point is now `saturn_adaptive_loop.py`. A private config
+supplies the pinned compiler/SPEC paths, bounded seed profiles, measured prior
+feedback, manager transport and paired policy. The deployment is explicitly
+official SPEC test-input screening with four candidates; train/ref claims are
+outside this run.
+
+The loop schedules compiler and Codex proposal tasks through CHIA resource
+labels, validates real worker/model admission before building, transfers
+hash-bound bundles to the admitted Saturn manager, and runs fresh paired
+controls with alternating order and confirmation thresholds. The next seed
+build overlaps the current FPGA measurement. After seeds, new validated cost
+profiles come from measured feedback. Duplicate ELFs bypass hardware; failed
+infrastructure halts the run with private logs. Active work drains on signals.
+
+`saturn_adaptive_measure.py` connects the transferable bundle to the manager's
+CHIA/F2 campaign. The local compiler environment reuses Python/Ray from the
+owner's existing image and a shared locked GCC build root with immutable
+frontend snapshots. It does not replace the installed baseline toolchain.
+
+The following describes the earlier standalone components, retained for
+diagnostics and manual campaigns:
+
 The Saturn lane uses two private processes:
 
 * `saturn_search_loop.py` consumes proposal JSON files, builds and validates

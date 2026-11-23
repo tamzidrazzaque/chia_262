@@ -91,6 +91,15 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(state['status'], 'drained')
         self.assertEqual(self.calls, [])
 
+    def test_outer_order_and_repeat_offsets_are_preserved(self):
+        self.policy = Policy('worker', 'platform', {'agfi': 'fixture'}, 'runtime',
+            final_ref=False, min_improvement=.02, confirm_repeats=1,
+            order_offset=1, sample_offset=200)
+        state = run(self.root, [{'cost': 4}], self.policy, self.prepare, self.measure)
+        self.assertEqual(self.calls[0][0], '3-saturn-aware')
+        self.assertEqual(self.calls[1][0], '2-generic-vector')
+        self.assertEqual([s['request']['sample'] for s in state['samples']], [200, 201, 202, 203])
+
 
 if __name__ == '__main__':
     unittest.main()

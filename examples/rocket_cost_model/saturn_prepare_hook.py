@@ -32,7 +32,9 @@ def main() -> None:
     repo = Path(os.environ.get("SATURN_REPO", Path(__file__).resolve().parents[2])).resolve()
     spec = required("SATURN_SPEC_DIR")
     baseline = required("SATURN_BASELINE_PREFIX")
-    compiler_root = required("SATURN_COMPILER_ROOT") / candidate_id
+    compiler_root = required("SATURN_COMPILER_ROOT")
+    if os.environ.get('SATURN_SHARED_COMPILER') != '1':
+        compiler_root = compiler_root / candidate_id
     qemu = required("SATURN_QEMU")
     speckle = required("SATURN_SPECKLE")
     toolchain = required("SATURN_TOOLCHAIN")

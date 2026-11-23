@@ -124,6 +124,7 @@ def codex_proposal(payload: dict, model: str | None = None) -> dict:
     with tempfile.TemporaryDirectory(prefix='saturn-proposal-') as scratch:
         llm = CodexLLM(model=model, work_dir=scratch, sandbox='read-only',
             dangerously_bypass_approvals_and_sandbox=False, approval_policy='never',
+            extra_cli_args=['--disable', 'shell_tool', '--disable', 'unified_exec'],
             resume_session=False, ephemeral=True, retries=1,
             system_message='Propose GCC vector costs using only the supplied numeric evidence. '
                 'Do not use tools, read files, run commands, or access network services. '

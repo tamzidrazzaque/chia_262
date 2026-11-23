@@ -41,12 +41,16 @@ class Policy:
     confirm_repeats: int = 3
     min_improvement: float = 0.02
     final_ref: bool = True
+    order_offset: int = 0
+    sample_offset: int = 0
 
     def validate(self):
         if self.scope not in ('test', 'train') or not 1 <= self.confirm_repeats <= 5:
             raise ValueError('invalid search scope or confirmation count')
         if not 0 <= self.min_improvement <= 0.1 or not self.worker_id:
             raise ValueError('invalid threshold or physical worker')
+        if any(type(n) is not int or n < 0 for n in (self.order_offset, self.sample_offset)):
+            raise ValueError('invalid paired ordering/sample offset')
 
 
 def validate_receipt(receipt, artifact, request, policy):
@@ -123,7 +127,7 @@ def _run(root, proposals, policy, prepare, measure, stop):
         return artifact
 
     def sample(artifact, phase, order):
-        number = len(state['samples'])
+        number = policy.sample_offset + len(state['samples'])
         request = {'sample': number, 'phase': phase, 'scope': artifact['scope'],
                    'order': order, 'attempt_id': uuid.uuid4().hex}
         key = measurement_key(artifact['fingerprint'], policy.hardware,
@@ -178,10 +182,10 @@ def _run(root, proposals, policy, prepare, measure, stop):
                     record['status'] = 'duplicate executable'
                 else:
                     seen.add(candidate['executable_sha256'])
-                    improvement = pair(baseline, candidate, 'search', reverse=bool(index % 2))
+                    improvement = pair(baseline, candidate, 'search', reverse=bool((policy.order_offset + index) % 2))
                     record.update(status='measured', pilot_improvement=improvement)
                     if improvement >= policy.min_improvement:
-                        repeats = [pair(baseline, candidate, 'confirmation', reverse=bool((index + n + 1) % 2))
+                        repeats = [pair(baseline, candidate, 'confirmation', reverse=bool((policy.order_offset + index + n + 1) % 2))
                                    for n in range(policy.confirm_repeats)]
                         confirmed = statistics.median(repeats)
                         record.update(confirmation_improvements=repeats, confirmed_improvement=confirmed,
