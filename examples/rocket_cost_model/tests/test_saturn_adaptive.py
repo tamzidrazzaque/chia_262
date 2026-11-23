@@ -78,3 +78,30 @@ class AdaptiveTests(unittest.TestCase):
             loop.choose_novel_proposal(lambda _: self.proposal, {},
                 {loop.profile_signature({'int_stmt': 4})}, rejected)
         self.assertEqual(len(rejected), 3)
+
+    def test_queue_loads_distinct_pending_profiles_and_sees_later_files(self):
+        def write(name, changes):
+            (self.root / name).write_text(json.dumps({'changes': changes, 'rationale': 'fixture'}))
+        write('3.4.json', {'int_stmt': 4})
+        write('3.8.json', {'int_stmt': 8})
+        write('3.18.json', {'int_stmt': 8, 'scalar_int_stmt': 1})
+        signatures = {loop.profile_signature({'int_stmt': 4})}
+        self.assertEqual([p['changes'] for p in loop.queued_profiles(self.root, signatures)], [{'int_stmt': 8}])
+        self.assertEqual(loop.queued_profiles(self.root, signatures), [])
+        write('3.19.json', {'unalign_load': 8})
+        self.assertEqual([p['changes'] for p in loop.queued_profiles(self.root, signatures)], [{'unalign_load': 8}])
+
+    def test_model_parser_error_is_retried_but_provider_error_is_not(self):
+        calls = []
+        def generate(payload):
+            calls.append(payload)
+            if len(calls) == 1:
+                raise ValueError('malformed model JSON')
+            return {'changes': {'int_stmt': 12}, 'rationale': 'fixture'}
+        rejected = []
+        self.assertEqual(loop.choose_novel_proposal(generate, {}, set(), rejected)['changes'], {'int_stmt': 12})
+        self.assertEqual(len(rejected), 1)
+        def failed(payload):
+            raise RuntimeError('provider unavailable')
+        with self.assertRaisesRegex(RuntimeError, 'provider unavailable'):
+            loop.choose_novel_proposal(failed, {}, set(), [])

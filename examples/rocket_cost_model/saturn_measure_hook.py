@@ -108,6 +108,11 @@ $PY -m examples.rocket_cost_model.saturn_spec preflight --platform {shlex.quote(
 python {shlex.quote(stage + '/native-manager-staged.py')} runworkload
 COL=$($PY -c 'from pathlib import Path; import sys; hits=list(Path(sys.argv[1]).glob("*"+sys.argv[2]+"*/**/uartlog")); assert len(hits)==1, "ambiguous or missing run evidence"; print(hits[0].parent)' {shlex.quote(root + '/chipyard-saturn-19a07f6/sims/firesim/deploy/results-workload')} "$NAME")
 $PY -m examples.rocket_cost_model.saturn_spec collect --stage {shlex.quote(stage)} --image {shlex.quote(stage + '/image-receipt.json')} --completion {shlex.quote(stage + '/runworkload-completion.json')} --preflight {shlex.quote(stage + '/preflight.json')} --collected "$COL" --out {shlex.quote(stage + '/collection')}
+# Maintenance cannot discard an already valid measurement. Preserve any failure
+# for diagnosis; the next worker preflight still enforces available capacity.
+if ! $PY -m examples.rocket_cost_model.saturn_space --stage {shlex.quote(stage)} > {shlex.quote(stage + '/space-receipt.json')} 2> {shlex.quote(stage + '/space-maintenance.log')}; then
+  printf 'Completed image maintenance failed; inspect space-maintenance.log\\n' >&2
+fi
 """
     ssh(host, key, remote)
     marker = 'SATURN_RECEIPT_' + uuid.uuid4().hex

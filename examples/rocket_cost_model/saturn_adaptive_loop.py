@@ -20,6 +20,26 @@ import tempfile
 import signal
 import threading
 import hashlib
+import itertools
+
+
+class ProposalExhausted(ValueError):
+    """The bounded proposal attempt failed; no hardware work was dispatched."""
+
+
+def queued_profiles(directory, signatures):
+    """Load distinct unattempted cost profiles; keep the original files intact."""
+    result = []
+    paths = sorted(Path(directory).glob('*.json'), key=lambda p:
+        int(p.stem[2:]) if p.stem.startswith('3.') and p.stem[2:].isdigit() else 10**12)
+    for path in paths:
+        item = json.loads(path.read_text())
+        selected = validate({key: item[key] for key in ('changes', 'rationale')})
+        signature = profile_signature(selected['changes'])
+        if signature not in signatures:
+            signatures.add(signature)
+            result.append(selected)
+    return result
 
 from examples.rocket_cost_model.saturn_feedback_proposer import (
     publish_json, profile_signature, measured_history, codex_proposal)
@@ -32,11 +52,11 @@ def ssh(config, command, **kwargs):
         'bash --noprofile --norc -c ' + shlex.quote(command)], check=True, **kwargs)
 
 
-def measure(config, selected, artifact, directory, index=0):
+def measure(config, selected, artifact, directory, index=0, order_index=None):
     """Transfer hash-bound bytes to the existing manager and obtain paired data."""
     remote = config['remote_root'].rstrip('/') + '/' + uuid.uuid4().hex
     request = {key: config[key] for key in ('address', 'task_root', 'policy', 'baseline')}
-    request['policy'] = {**config['policy'], 'order_offset': config.get('order_offset', 0) + index,
+    request['policy'] = {**config['policy'], 'order_offset': config.get('order_offset', 0) + (index if order_index is None else order_index),
                         'sample_offset': config.get('first_id', 100) * 1000 + index * 100}
     request.update(proposal=selected, artifact={
         'archive_sha256': artifact.archive_sha256, 'manifest_sha256': artifact.manifest_sha256,
@@ -98,8 +118,9 @@ def choose_novel_proposal(generate, payload, signatures, rejected, attempts=3):
             'Return one untested effective cost profile. Do not repeat any already_proposed profile. '
             'Changing only explicitly specified default values does not make a profile new.',
             'rejected_proposals': list(rejected)}
-        value = generate(request)
+        value = None
         try:
+            value = generate(request)
             selected = validate(value)
             if profile_signature(selected['changes']) in signatures:
                 raise ValueError('repeated effective cost profile')
@@ -108,7 +129,7 @@ def choose_novel_proposal(generate, payload, signatures, rejected, attempts=3):
                              'proposal': value if isinstance(value, dict) else None})
             continue
         return selected
-    raise ValueError(f'proposal agent exhausted {attempts} attempts without a novel valid profile')
+    raise ProposalExhausted(f'proposal agent exhausted {attempts} attempts without a novel valid profile')
 
 
 def main():
@@ -118,8 +139,8 @@ def main():
     parser.add_argument('--preflight-only', action='store_true')
     args = parser.parse_args()
     config = json.loads(args.config.read_text())
-    budget = config.get('candidate_budget', 6)
-    if type(budget) is not int or not 1 <= budget <= 12:
+    budget = None if config.get('continuous') is True else config.get('candidate_budget', 6)
+    if budget is not None and (type(budget) is not int or not 1 <= budget <= 12):
         raise ValueError('candidate budget must be 1..12')
     if config['policy'].get('final_ref') or config['policy']['scope'] != 'test':
         raise ValueError('adaptive deployment currently requires explicit test screening with final_ref=false')
@@ -167,7 +188,9 @@ def run(config, out, budget, preflight_only=False, stop=None):
                 raise ValueError('missing installed SPEC harness/configuration')
         return evidence
 
-    state = {'status': 'preflight', 'budget': budget, 'candidates': [], 'incumbent': None,
+    state = {'status': 'preflight', 'budget': budget,
+             'mode': 'continuous' if budget is None else 'bounded',
+             'candidates': [], 'incumbent': None, 'measured_candidates': 0,
              'baseline': config.get('initial_feedback', {}).get('baseline', {})}
     publish_json(out / 'state.json', state)
     try:
@@ -186,12 +209,20 @@ def run(config, out, budget, preflight_only=False, stop=None):
         signatures.update(profile_signature(item['proposal']['changes']) for item in feedback
                           if item.get('proposal', {}).get('changes'))
         signatures.update(profile_signature(item) for item in config.get('prior_profiles', []))
+        if config.get('queue_directory'):
+            queue.extend(queued_profiles(config['queue_directory'], signatures))
+        state['pending_proposals'] = len(queue)
         payload = {'goal': 'Reduce Saturn MCF cycles with bounded GCC vector costs',
             'allowed_fields': sorted(BASE_COSTS), 'cost_bounds': [1, 64],
             'measured_history': measured_history({'candidates': feedback}),
             'already_proposed': [json.loads(s) for s in sorted(signatures)]}
         evidence_sha = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
-        if config.get('proposal_admission'):
+        if budget is None and queue:
+            # Drain authorized queued work even when the proposal service is
+            # unavailable. A new model call happens once this queue is empty.
+            admitted = None
+            state['proposal_worker_status'] = 'queued work first; generation follows queue drain'
+        elif config.get('proposal_admission'):
             admission = json.loads(Path(config['proposal_admission']).read_text())
             if admission.get('evidence_sha256') != evidence_sha or admission.get('status') != 'passed':
                 raise ValueError('proposal admission does not match current measured history')
@@ -200,39 +231,61 @@ def run(config, out, budget, preflight_only=False, stop=None):
             state['proposal_rejections'] = []
             admitted = choose_novel_proposal(lambda p: await_task(suggest.chia_remote(p), 600),
                 payload, signatures, state['proposal_rejections'])
-        signature = profile_signature(admitted['changes'])
-        if signature in signatures:
-            raise ValueError('preflight agent repeated an existing effective cost profile')
-        signatures.add(signature)
-        queue.append(admitted)
-        publish_json(out / 'admitted-proposal.json', {
-            'status': 'passed', 'evidence_sha256': evidence_sha, 'proposal': admitted})
+        if admitted is not None:
+            signature = profile_signature(admitted['changes'])
+            if signature in signatures:
+                raise ValueError('preflight agent repeated an existing effective cost profile')
+            signatures.add(signature)
+            queue.append(admitted)
+            publish_json(out / 'admitted-proposal.json', {
+                'status': 'passed', 'evidence_sha256': evidence_sha, 'proposal': admitted})
         if preflight_only:
             state['status'] = 'preflight_passed'
+            publish_json(out / 'state.json', state)
+            return
+        if stop.is_set():
+            state['status'] = 'drained'
             publish_json(out / 'state.json', state)
             return
         state['status'] = 'running'
         with ThreadPoolExecutor(max_workers=1) as producer:
             pending = None
-            for index in range(budget):
+            for index in itertools.count():
+                if budget is not None and index >= budget:
+                    break
                 if stop.is_set():
                     state['status'] = 'drained'
                     publish_json(out / 'state.json', state)
                     return
+                if not queue and config.get('queue_directory'):
+                    queue.extend(queued_profiles(config['queue_directory'], signatures))
                 if not queue:
                     payload = {'goal': 'Reduce Saturn MCF cycles with bounded GCC vector costs',
                         'allowed_fields': sorted(BASE_COSTS), 'cost_bounds': [1, 64],
                         'measured_history': measured_history({'candidates': feedback}),
                         'already_proposed': [json.loads(s) for s in sorted(signatures)]}
                     state['proposal_rejections'] = []
-                    selected = choose_novel_proposal(lambda p: await_task(suggest.chia_remote(p), 600),
-                        payload, signatures, state['proposal_rejections'])
+                    try:
+                        selected = choose_novel_proposal(lambda p: await_task(suggest.chia_remote(p), 600),
+                            payload, signatures, state['proposal_rejections'])
+                    except ProposalExhausted as exc:
+                        if budget is not None:
+                            raise
+                        state.update(status='waiting_for_novel_proposal', proposal_failure=str(exc))
+                        publish_json(out / 'state.json', state)
+                        stop.wait(config.get('proposal_retry_seconds', 300))
+                        continue
                     signature = profile_signature(selected['changes'])
                     if signature in signatures:
                         raise ValueError('feedback agent repeated effective cost profile')
                     signatures.add(signature)
                     queue.append(selected)
+                if stop.is_set():
+                    state['status'] = 'drained'
+                    publish_json(out / 'state.json', state)
+                    return
                 selected = queue.pop(0)
+                state.update(status='running', pending_proposals=len(queue))
                 candidate_id = '3.' + str(config.get('first_id', 100) + index)
                 selected = {'candidate_id': candidate_id, **selected}
                 directory = out / candidate_id
@@ -247,7 +300,7 @@ def run(config, out, budget, preflight_only=False, stop=None):
                     artifact = pending.result()
                     pending = None
                 # Prepare the next seed while F2 measures this candidate.
-                if queue and index + 1 < budget:
+                if not stop.is_set() and queue and (budget is None or index + 1 < budget):
                     next_id = '3.' + str(config.get('first_id', 100) + index + 1)
                     next_proposal = {'candidate_id': next_id, **queue[0]}
                     pending = producer.submit(lambda cid=next_id, p=next_proposal:
@@ -264,7 +317,8 @@ def run(config, out, budget, preflight_only=False, stop=None):
                 else:
                     record['status'] = 'measuring'
                     publish_json(out / 'state.json', state)
-                    result = measure(config, selected, artifact, directory, index)
+                    result = measure(config, selected, artifact, directory, index,
+                                     order_index=state['measured_candidates'])
                     paired = result['feedback']
                     feedback.extend(paired['candidates'])
                     record['paired_decision'] = result['history']
@@ -273,6 +327,7 @@ def run(config, out, budget, preflight_only=False, stop=None):
                         if state['incumbent'] is None or score > state['incumbent']['improvement']:
                             state['incumbent'] = {'proposal': selected, 'improvement': score}
                     if paired['candidates']:
+                        state['measured_candidates'] += 1
                         record.update(paired['candidates'][-1])
                         state['baseline'] = paired['baseline']
                     else:
