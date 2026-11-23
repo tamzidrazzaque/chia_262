@@ -51,3 +51,18 @@ elapsed and 102,146,786,282 whole-boot simulation cycles. This is the first
 valid role-3 pilot; compare it only with paired role-2 runs using the same
 timing scope, and do not treat the raw whole-boot difference as a final
 speedup claim yet.
+
+## Causal qualification (2026-11-23)
+
+The successful layout-matched run did **not** prove that filename or output-path
+drift caused the earlier kernel panic. It changed the generated image as well
+as the layout; no exact-image A/B replay isolated that variable. Layout matching
+remains necessary for paired workload controls, but is not a demonstrated fix
+for the boot fault.
+
+Reinspection of both retained failed UARTs against the accepted kernel shows
+EPC `0xffffffff8078cc5a`, two bytes into a 32-bit branch beginning at
+`0xffffffff8078cc58`. NAB's later failure has the same instruction-boundary
+pattern in a different function. This observation motivates controlled replay
+and tracing; it does not identify which component first diverged. See
+`BOOT_CAUSAL_AUDIT.md` for the current evidence and comparison protocol.

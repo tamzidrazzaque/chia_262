@@ -40,14 +40,17 @@ def summary(name, entry, local_only=False):
     path = root / 'state.json'
     if not path.is_file() and entry.get('activation'):
         activation = read(Path(entry['activation']) / 'activation.json')
-        text = (f"{name}: {activation['status']} | baseline role: "
+        text = (f"{name}: {'diagnosis_hold' if entry.get('hold_reason') else activation['status']} | baseline role: "
                 f"{activation.get('active_baseline_role', '-')}\n"
                 '  Candidate loop waits for both hardware baselines to pass.')
+        if entry.get('hold_reason'):
+            text += '\n  ' + entry['hold_reason']
         if not local_only and entry.get('manager_config'):
             try:
                 config = read(entry['manager_config'])
                 remote = campaign_status(config, str(Path(config['activation_gate']['progress']).parent), baseline=True)
-                text += f"\n  Baseline gate: {remote.get('status', '-')} | passed roles: {len(remote.get('roles', []))}"
+                text += (f"\n  Baseline gate: {remote.get('status', '-')} | "
+                         f"active role: {remote.get('active_role', '-')} | passed roles: {len(remote.get('roles', []))}")
                 text += '\n  Guest: ' + remote.get('guest_health', {}).get('health', 'preparing hardware task')
                 if remote.get('guest_health', {}).get('health', '').startswith('FAILED:'):
                     text = text.replace(f'{name}: ', f'{name}: GUEST FAILED | ', 1)

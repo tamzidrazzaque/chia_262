@@ -19,7 +19,7 @@ def ssh_args(site):
 
 
 @contextmanager
-def guard(directory, task):
+def guard(directory, task, *, diagnostic_audit=None, diagnostic_runtime=None):
     """Refuse stale images/preflight, then hold the worker lease for one task.
 
     Only an operator resuming after bundle delivery may invoke a staged adapter.
@@ -28,10 +28,16 @@ def guard(directory, task):
     if task not in ('infrasetup', 'runworkload'):
         raise ValueError('unsupported native manager task')
     out = Path(directory)
+    audit = Path(diagnostic_audit) if diagnostic_audit is not None else out
+    if (diagnostic_audit is None) != (diagnostic_runtime is None):
+        raise ValueError('diagnostic replay requires its own audit directory and runtime')
+    if diagnostic_audit is not None:
+        if audit.resolve() == out.resolve() or Path(diagnostic_runtime).resolve().parent != audit.resolve():
+            raise ValueError('diagnostic audit must be separate from the original stage')
     plan = verify_stage(out)
     site = verify_platform(plan['platform'])
     image = read_json(out / 'image-receipt.json')
-    preflight = read_json(out / 'preflight.json')
+    preflight = read_json(audit / 'preflight.json')
     if image.get('image_id') != plan['image_id'] or image.get('plan_sha256') != sha(out / 'plan.json') \
             or image.get('runtime_sha256') != plan['runtime_sha256']:
         raise ValueError('stale image receipt')
@@ -50,9 +56,9 @@ def guard(directory, task):
         source = (workdir / plan['name'] / workload[key]).resolve()
         if source != Path(image[field]).resolve() or sha(source) != image[field + '_sha256']:
             raise ValueError('installed workload refers to a stale image')
-    if task == 'runworkload' and read_json(out / 'infrasetup-completion.json').get('returncode') != 0:
+    if task == 'runworkload' and read_json(audit / 'infrasetup-completion.json').get('returncode') != 0:
         raise ValueError('successful same-stage infrastructure setup required')
-    if (out / (task + '.started.json')).exists():
+    if (audit / (task + '.started.json')).exists():
         raise ValueError('native task already attempted; prepare a fresh stage')
     ssh = ssh_args(site)
     lease = subprocess.Popen(ssh + ["flock -n /home/ubuntu/rocket-runtime.lock -c 'echo SATURN_SPEC_LEASE; cat >/dev/null'"],
@@ -76,8 +82,11 @@ def guard(directory, task):
                   'phase': plan['identity']['phase'], 'sample': plan['identity']['sample'],
                   'started_at': started, 'plan_sha256': sha(out / 'plan.json'),
                   'image_receipt_sha256': sha(out / 'image-receipt.json'),
-                  'preflight_sha256': sha(out / 'preflight.json')}
-        with (out / (task + '.started.json')).open('x') as stream:
+                  'preflight_sha256': sha(audit / 'preflight.json')}
+        if diagnostic_audit is not None:
+            record.update(diagnostic_replay=True, source_stage=str(out.resolve()),
+                          diagnostic_runtime_sha256=sha(diagnostic_runtime))
+        with (audit / (task + '.started.json')).open('x') as stream:
             stream.write(json.dumps(record, indent=2) + '\n')
         rc = 0
         try:
@@ -89,7 +98,7 @@ def guard(directory, task):
             if lease.poll() is not None:
                 rc = 1  # losing the lease invalidates a nominally successful manager run
             record.update(returncode=rc, finished_at=time.time())
-            with (out / (task + '-completion.json')).open('x') as stream:
+            with (audit / (task + '-completion.json')).open('x') as stream:
                 stream.write(json.dumps(record, indent=2) + '\n')
     finally:
         if lease.stdin:

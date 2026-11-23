@@ -12,6 +12,8 @@ from .output_validation import validate_output
 
 
 def validate_completion(plan, image, completion, preflight):
+    if completion.get('diagnostic_replay'):
+        raise ValueError('diagnostic replays cannot enter performance collection')
     expected = {'backend': 'fpga', 'task': 'runworkload', 'returncode': 0, 'image_id': plan['image_id'],
                 'worker_id': plan['identity']['worker_id'], 'worker_lease_held': True,
                 'agfi': AGFI, 'driver_sha256': DRIVER_SHA, 'vlen_bits': 256,

@@ -323,6 +323,21 @@ def test_native_guard_records_real_task_and_prevents_reuse(collected, staged, mo
     assert completed['returncode'] == exit_code and completed['worker_lease_held']
     with pytest.raises(ValueError, match='already attempted'):
         with execution.guard(out, 'runworkload'): pass
+    # An explicitly diagnostic replay keeps the consumed original records and
+    # uses fresh guarded audit records that can never be performance receipts.
+    original = (out / 'runworkload-completion.json').read_bytes()
+    audit = out.parent / 'diagnostic-audit'; audit.mkdir()
+    runtime = audit / 'runtime.yaml'; runtime.write_text('diagnostic runtime fixture\n')
+    write(audit / 'preflight.json', pf)
+    for task in ('infrasetup', 'runworkload'):
+        with execution.guard(out, task, diagnostic_audit=audit, diagnostic_runtime=runtime):
+            pass
+    completed = b.read_json(audit / 'runworkload-completion.json')
+    assert completed['diagnostic_replay'] is True
+    assert completed['diagnostic_runtime_sha256'] == b.sha(runtime)
+    assert (out / 'runworkload-completion.json').read_bytes() == original
+    with pytest.raises(ValueError, match='already attempted'):
+        with execution.guard(out, 'runworkload', diagnostic_audit=audit, diagnostic_runtime=runtime): pass
 
 
 def test_reject_stale_validated_invocation(incoming):
