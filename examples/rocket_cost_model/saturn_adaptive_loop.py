@@ -36,7 +36,7 @@ def measure(config, selected, artifact, directory, index=0):
     """Transfer hash-bound bytes to the existing manager and obtain paired data."""
     remote = config['remote_root'].rstrip('/') + '/' + uuid.uuid4().hex
     request = {key: config[key] for key in ('address', 'task_root', 'policy', 'baseline')}
-    request['policy'] = {**config['policy'], 'order_offset': index,
+    request['policy'] = {**config['policy'], 'order_offset': config.get('order_offset', 0) + index,
                         'sample_offset': config.get('first_id', 100) * 1000 + index * 100}
     request.update(proposal=selected, artifact={
         'archive_sha256': artifact.archive_sha256, 'manifest_sha256': artifact.manifest_sha256,
@@ -85,6 +85,30 @@ def validate_feedback(result, selected, artifact, config):
         if record.get('candidate_id') != selected['candidate_id'] or \
                 profile_signature(record['proposal']['changes']) != profile_signature(selected['changes']):
             raise ValueError('manager feedback cost profile mismatch')
+
+
+def choose_novel_proposal(generate, payload, signatures, rejected, attempts=3):
+    """Give bounded corrective feedback for duplicate/invalid model proposals.
+
+    Provider/worker failures still propagate immediately. A repeated profile
+    is a recoverable proposal rejection, never a hardware correctness result.
+    """
+    for attempt in range(attempts):
+        request = {**payload, 'proposal_requirements':
+            'Return one untested effective cost profile. Do not repeat any already_proposed profile. '
+            'Changing only explicitly specified default values does not make a profile new.',
+            'rejected_proposals': list(rejected)}
+        value = generate(request)
+        try:
+            selected = validate(value)
+            if profile_signature(selected['changes']) in signatures:
+                raise ValueError('repeated effective cost profile')
+        except (ValueError, KeyError, TypeError) as exc:
+            rejected.append({'attempt': attempt + 1, 'reason': str(exc),
+                             'proposal': value if isinstance(value, dict) else None})
+            continue
+        return selected
+    raise ValueError(f'proposal agent exhausted {attempts} attempts without a novel valid profile')
 
 
 def main():
@@ -161,6 +185,7 @@ def run(config, out, budget, preflight_only=False, stop=None):
         feedback = list(config.get('initial_feedback', {}).get('candidates', []))
         signatures.update(profile_signature(item['proposal']['changes']) for item in feedback
                           if item.get('proposal', {}).get('changes'))
+        signatures.update(profile_signature(item) for item in config.get('prior_profiles', []))
         payload = {'goal': 'Reduce Saturn MCF cycles with bounded GCC vector costs',
             'allowed_fields': sorted(BASE_COSTS), 'cost_bounds': [1, 64],
             'measured_history': measured_history({'candidates': feedback}),
@@ -172,7 +197,9 @@ def run(config, out, budget, preflight_only=False, stop=None):
                 raise ValueError('proposal admission does not match current measured history')
             admitted = validate(admission['proposal'])
         else:
-            admitted = validate(await_task(suggest.chia_remote(payload), 600))
+            state['proposal_rejections'] = []
+            admitted = choose_novel_proposal(lambda p: await_task(suggest.chia_remote(p), 600),
+                payload, signatures, state['proposal_rejections'])
         signature = profile_signature(admitted['changes'])
         if signature in signatures:
             raise ValueError('preflight agent repeated an existing effective cost profile')
@@ -197,7 +224,9 @@ def run(config, out, budget, preflight_only=False, stop=None):
                         'allowed_fields': sorted(BASE_COSTS), 'cost_bounds': [1, 64],
                         'measured_history': measured_history({'candidates': feedback}),
                         'already_proposed': [json.loads(s) for s in sorted(signatures)]}
-                    selected = validate(await_task(suggest.chia_remote(payload), 600))
+                    state['proposal_rejections'] = []
+                    selected = choose_novel_proposal(lambda p: await_task(suggest.chia_remote(p), 600),
+                        payload, signatures, state['proposal_rejections'])
                     signature = profile_signature(selected['changes'])
                     if signature in signatures:
                         raise ValueError('feedback agent repeated effective cost profile')

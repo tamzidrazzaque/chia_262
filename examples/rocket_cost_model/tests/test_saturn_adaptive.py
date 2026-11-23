@@ -59,3 +59,22 @@ class AdaptiveTests(unittest.TestCase):
         self.result['feedback']['candidates'][0]['proposal'] = {'changes': {'int_stmt': 8}}
         with self.assertRaisesRegex(ValueError, 'cost profile'):
             loop.validate_feedback(self.result, self.proposal, self.artifact, self.config)
+
+    def test_duplicate_proposal_receives_feedback_then_retries(self):
+        seen = []
+        def generate(payload):
+            seen.append(payload)
+            return {'changes': {'int_stmt': 4 if len(seen) == 1 else 12}, 'rationale': 'fixture'}
+        rejections = []
+        result = loop.choose_novel_proposal(generate, {},
+            {loop.profile_signature({'int_stmt': 4})}, rejections)
+        self.assertEqual(result['changes'], {'int_stmt': 12})
+        self.assertEqual(len(rejections), 1)
+        self.assertEqual(len(seen[1]['rejected_proposals']), 1)
+
+    def test_proposal_retries_remain_bounded(self):
+        rejected = []
+        with self.assertRaisesRegex(ValueError, 'exhausted 3 attempts'):
+            loop.choose_novel_proposal(lambda _: self.proposal, {},
+                {loop.profile_signature({'int_stmt': 4})}, rejected)
+        self.assertEqual(len(rejected), 3)
