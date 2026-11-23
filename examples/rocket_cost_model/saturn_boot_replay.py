@@ -20,19 +20,24 @@ from examples.rocket_cost_model.saturn_manager_contract import install_descripto
 from examples.rocket_cost_model.saturn_run_watchdog import DiagnosticEnd, GuestFailure, run as watch_run
 
 
-def diagnostic_runtime(original, start_pc, end_pc, suffix, trace=True):
+def diagnostic_runtime(original, start_pc, end_pc, suffix, trace=True, raw_trace=False):
     """Change tracing and the diagnostic cycle bound, preserving target settings."""
     result = copy.deepcopy(original)
     if trace:
         result['tracing'] = {'enable': True, 'output_format': 0, 'selector': 2,
                              'start': hex(start_pc), 'end': hex(end_pc)}
+    if raw_trace:
+        if not trace:
+            raise ValueError('raw trace requires tracing')
+        args = result['target_config'].get('plusarg_passthrough', '')
+        result['target_config']['plusarg_passthrough'] = (args + ' +trace-test-output').strip()
     # The accepted driver parses +max-cycles with atoi (32-bit). Do not pass a
     # large cycle bound; the explicitly diagnostic watchdog limits host time.
     result['workload']['suffix_tag'] = suffix
     return result
 
 
-def replay(stage, out, start_pc, end_pc, trace=True):
+def replay(stage, out, start_pc, end_pc, trace=True, raw_trace=False):
     """Use the accepted native adapter and full execution guard with a fresh audit."""
     stage, out = Path(stage).resolve(), Path(out).resolve()
     plan = verify_stage(stage)
@@ -45,7 +50,7 @@ def replay(stage, out, start_pc, end_pc, trace=True):
     original = yaml.safe_load((stage / 'config_runtime.yaml').read_text())
     runtime = out / 'config_runtime.yaml'
     runtime.write_text(yaml.safe_dump(diagnostic_runtime(original, start_pc, end_pc,
-        'boot-diagnostic-' + uuid.uuid4().hex[:12], trace), sort_keys=False))
+        'boot-diagnostic-' + uuid.uuid4().hex[:12], trace, raw_trace), sort_keys=False))
     # Preserve the hardware-tested adapter; project only private config paths.
     adapter = Path(site['artifacts']['native_manager_adapter']['path']).read_text()
     replacements = {
@@ -62,7 +67,7 @@ def replay(stage, out, start_pc, end_pc, trace=True):
     provenance = {'diagnostic_only': True, 'source_stage': str(stage),
         'source_plan_sha256': sha(stage / 'plan.json'), 'rootfs_sha256': image['rootfs_sha256'],
         'bootbinary_sha256': image['bootbinary_sha256'], 'runtime_sha256': sha(runtime),
-        'adapter_sha256': sha(native), 'tracing_enabled': trace, 'host_time_limit_seconds': 300,
+        'adapter_sha256': sha(native), 'tracing_enabled': trace, 'raw_trace': raw_trace, 'host_time_limit_seconds': 300,
         'trace_start_pc': hex(start_pc), 'trace_end_pc': hex(end_pc)}
     (out / 'provenance.json').write_text(json.dumps(provenance, indent=2) + '\n')
     codes = {}
@@ -118,8 +123,9 @@ def main():
     parser.add_argument('--trace-start-pc', type=lambda value: int(value, 0), required=True)
     parser.add_argument('--trace-end-pc', type=lambda value: int(value, 0), required=True)
     parser.add_argument('--no-trace', action='store_true', help='untraced control using identical image bytes')
+    parser.add_argument('--raw-trace', action='store_true', help='capture every 64-bit word in each trace beat')
     args = parser.parse_args()
-    print(json.dumps(replay(args.stage, args.out, args.trace_start_pc, args.trace_end_pc, not args.no_trace), indent=2))
+    print(json.dumps(replay(args.stage, args.out, args.trace_start_pc, args.trace_end_pc, not args.no_trace, args.raw_trace), indent=2))
 
 
 if __name__ == '__main__':

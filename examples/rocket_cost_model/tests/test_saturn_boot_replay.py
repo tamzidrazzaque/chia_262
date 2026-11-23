@@ -25,6 +25,11 @@ class BootReplayTests(unittest.TestCase):
         result['workload']['suffix_tag'] = 'old'
         self.assertEqual(result, original)
         self.assertEqual(diagnostic_runtime(original, 0x100, 0x120, 'new', trace=False)['tracing'], original['tracing'])
+        raw = diagnostic_runtime(original, 0x100, 0x120, 'new', raw_trace=True)
+        self.assertEqual(raw['target_config']['plusarg_passthrough'], '+trace-test-output')
+        self.assertEqual(original, saved)
+        with self.assertRaises(ValueError):
+            diagnostic_runtime(original, 0x100, 0x120, 'new', trace=False, raw_trace=True)
 
     def test_replay_can_never_enter_performance_collector(self):
         with self.assertRaisesRegex(ValueError, 'diagnostic replays'):
