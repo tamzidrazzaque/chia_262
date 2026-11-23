@@ -17,15 +17,13 @@ def read(path):
 
 def campaign_status(config, remote_run):
     """Read only the campaign dispatched by this candidate, with bounded SSH."""
-    progress = str(Path(remote_run) / 'campaign/progress.json')
-    script = ('import json; from pathlib import Path; p=Path(' + repr(progress) + '); '
-              'print("SATURN_STATUS:"+json.dumps(json.loads(p.read_text()) '
-              'if p.is_file() else {"status":"starting"}))')
-    command = 'python3 -c ' + shlex.quote(script)
+    command = ('cd ' + shlex.quote(config['manager_repo']) + ' && ' +
+               shlex.quote(config['manager_python']) +
+               ' -m examples.rocket_cost_model.saturn_guest_health --campaign ' + shlex.quote(remote_run))
     output = subprocess.run(['ssh', '-T', '-i', config['manager_key'],
         '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes',
         '-o', 'ConnectTimeout=10', config['manager_host'], command],
-        capture_output=True, text=True, check=True, timeout=20).stdout
+        capture_output=True, text=True, check=True, timeout=35).stdout
     records = [line.removeprefix('SATURN_STATUS:') for line in output.splitlines()
                if line.startswith('SATURN_STATUS:')]
     if len(records) != 1:
@@ -71,6 +69,10 @@ def summary(name, entry, local_only=False):
             lines.append(f"  Manager: {remote.get('status', 'unknown')} | "
                          f"active role: {active.get('artifact', {}).get('role', '-')} | "
                          f"completed samples: {len(remote.get('samples', []))}")
+            health = remote.get('guest_health', {})
+            lines.append('  Guest: ' + health.get('health', 'not observed'))
+            if health.get('uart_age_seconds') is not None:
+                lines.append(f"  UART last changed {int(health['uart_age_seconds'])}s ago")
         except (OSError, ValueError, KeyError, subprocess.SubprocessError):
             lines.append('  Manager status unavailable (read-only check failed).')
     return '\n'.join(lines)

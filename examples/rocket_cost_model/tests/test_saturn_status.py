@@ -36,10 +36,11 @@ class StatusTests(unittest.TestCase):
     def test_manager_reads_only_dispatched_campaign_and_tolerates_banner(self):
         response = subprocess.CompletedProcess([], 0, 'Agent pid 123\nSATURN_STATUS:{"status":"running"}\n')
         with patch.object(s.subprocess, 'run', return_value=response) as run:
-            result = s.campaign_status({'manager_key': '/private/key', 'manager_host': 'user@host'}, '/private/run')
+            result = s.campaign_status({'manager_key': '/private/key', 'manager_host': 'user@host',
+                'manager_repo': '/repo', 'manager_python': '/python'}, '/private/run')
         self.assertEqual(result['status'], 'running')
         self.assertIn('StrictHostKeyChecking=yes', run.call_args.args[0])
         command = run.call_args.args[0][-1]
-        self.assertIn('/private/run/campaign/progress.json', command)
-        self.assertIn('read_text()', command)
+        self.assertIn('--campaign /private/run', command)
+        self.assertIn('saturn_guest_health', command)
         self.assertNotIn('write_text', command)
