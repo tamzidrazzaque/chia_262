@@ -45,14 +45,17 @@ class WatchdogTests(unittest.TestCase):
                 (root / 'platform.json').write_text('{}')
                 (root / 'plan.json').write_text(json.dumps({'platform': str(root / 'platform.json'), 'name': 'job'}))
                 child = MagicMock(); child.poll.side_effect = [None, 0, 0]; child.wait.return_value = 0
-                with patch.object(w.subprocess, 'Popen', return_value=child), \
+                with patch.object(w.subprocess, 'Popen', return_value=child) as spawn, \
                      patch.object(w.time, 'sleep'), \
                      patch.object(w, 'inspect', return_value={'matching_driver_pids': [42], 'kernel_panic': panic, 'uart_age_seconds': 9999}), \
                      patch.object(w, 'stop_failed_guest') as stop:
                     if panic:
                         with self.assertRaisesRegex(RuntimeError, 'guest failed'):
-                            w.run(root, ['native-manager'])
+                            w.run(root, ['native-manager'], evidence_directory=root / 'diagnostic-evidence',
+                                  process_kwargs={'env': {'FIXTURE': '1'}})
                         stop.assert_called_once()
+                        self.assertEqual(stop.call_args.args[-1], root / 'diagnostic-evidence')
+                        spawn.assert_called_once_with(['native-manager'], env={'FIXTURE': '1'})
                     else:
                         w.run(root, ['native-manager'])
                         stop.assert_not_called()

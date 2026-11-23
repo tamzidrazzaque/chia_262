@@ -9,12 +9,16 @@ import time
 from examples.rocket_cost_model.saturn_guest_health import inspect, stop_failed_guest
 
 
-def run(stage, command, interval=30):
+class GuestFailure(RuntimeError):
+    """A matching driver produced conclusive fatal guest evidence."""
+
+
+def run(stage, command, interval=30, evidence_directory=None, process_kwargs=None):
     """Run one admitted adapter; fatal UART evidence cannot become a valid sample."""
     stage = Path(stage)
     plan = json.loads((stage / 'plan.json').read_text())
     site = json.loads(Path(plan['platform']).read_text())
-    child = subprocess.Popen(command)
+    child = subprocess.Popen(command, **(process_kwargs or {}))
     failed = False
     try:
         while child.poll() is None:
@@ -24,12 +28,12 @@ def run(stage, command, interval=30):
             except (OSError, ValueError, subprocess.SubprocessError):
                 continue  # a transient observer error must not kill a task
             if health.get('matching_driver_pids') and (health.get('kernel_panic') or health.get('simulation_failed')):
-                stop_failed_guest(site, plan['name'], stage / 'guest-failure-evidence')
+                stop_failed_guest(site, plan['name'], evidence_directory or stage / 'guest-failure-evidence')
                 failed = True
                 break
         rc = child.wait(timeout=180 if failed else None)
         if failed:
-            raise RuntimeError('guest failed; archived UART and terminated its exact driver')
+            raise GuestFailure('guest failed; archived UART and terminated its exact driver')
         if rc:
             raise subprocess.CalledProcessError(rc, command)
     finally:

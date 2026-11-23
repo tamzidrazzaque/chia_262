@@ -17,6 +17,7 @@ from examples.rocket_cost_model.saturn_spec.execution import guard, ssh_args
 from examples.rocket_cost_model.saturn_spec.platform import preflight, verify_platform
 from examples.rocket_cost_model.saturn_spec.staging import verify_stage
 from examples.rocket_cost_model.saturn_manager_contract import install_descriptor
+from examples.rocket_cost_model.saturn_run_watchdog import GuestFailure, run as watch_run
 
 
 def diagnostic_runtime(original, start_pc, end_pc, suffix, trace=True):
@@ -74,9 +75,13 @@ def replay(stage, out, start_pc, end_pc, trace=True):
                 with (out / (task + '.log')).open('w') as log:
                     command = [str(Path(site['chipyard_root']) / '.conda-env/bin/python'), str(native), task]
                     environment = {**os.environ, 'PYTHONPATH': str(Path(__file__).resolve().parents[2])}
-                    subprocess.run(command, check=True, stdout=log, stderr=subprocess.STDOUT, env=environment)
-        except subprocess.CalledProcessError as exc:
-            codes[task] = exc.returncode
+                    if task == 'runworkload':
+                        watch_run(stage, command, interval=1, evidence_directory=out / 'guest-failure-evidence',
+                                  process_kwargs={'stdout': log, 'stderr': subprocess.STDOUT, 'env': environment})
+                    else:
+                        subprocess.run(command, check=True, stdout=log, stderr=subprocess.STDOUT, env=environment)
+        except (subprocess.CalledProcessError, GuestFailure) as exc:
+            codes[task] = exc.returncode if isinstance(exc, subprocess.CalledProcessError) else 2
             if task == 'infrasetup':
                 raise
         else:
