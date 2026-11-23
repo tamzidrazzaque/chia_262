@@ -11,6 +11,15 @@ from examples.rocket_cost_model import saturn_status as s
 
 
 class StatusTests(unittest.TestCase):
+    def test_baseline_gate_visible_before_loop_exists(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'activation.json').write_text(json.dumps({
+                'status': 'waiting_for_baselines', 'active_baseline_role': '1-scalar'}))
+            text = s.summary('NAB', {'run': str(root / 'loop'), 'activation': str(root)})
+            self.assertIn('waiting_for_baselines', text)
+            self.assertIn('1-scalar', text)
+
     def test_local_snapshot_and_remote_failure_preserve_files(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)

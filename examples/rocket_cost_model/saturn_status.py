@@ -15,11 +15,14 @@ def read(path):
     return json.loads(Path(path).read_text())
 
 
-def campaign_status(config, remote_run):
+def campaign_status(config, remote_run, baseline=False):
     """Read only the campaign dispatched by this candidate, with bounded SSH."""
     command = ('cd ' + shlex.quote(config['manager_repo']) + ' && ' +
                shlex.quote(config['manager_python']) +
-               ' -m examples.rocket_cost_model.saturn_guest_health --campaign ' + shlex.quote(remote_run))
+               ' -m examples.rocket_cost_model.saturn_guest_health ' +
+               ('--baseline ' if baseline else '--campaign ') + shlex.quote(remote_run))
+    if baseline:
+        command += ' --lane ' + shlex.quote(config['manager_lane'])
     output = subprocess.run(['ssh', '-T', '-i', config['manager_key'],
         '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes',
         '-o', 'ConnectTimeout=10', config['manager_host'], command],
@@ -35,6 +38,20 @@ def summary(name, entry, local_only=False):
     """Return a snapshot without writing files, acquiring leases or dispatching work."""
     root = Path(entry['run'])
     path = root / 'state.json'
+    if not path.is_file() and entry.get('activation'):
+        activation = read(Path(entry['activation']) / 'activation.json')
+        text = (f"{name}: {activation['status']} | baseline role: "
+                f"{activation.get('active_baseline_role', '-')}\n"
+                '  Candidate loop waits for both hardware baselines to pass.')
+        if not local_only and entry.get('manager_config'):
+            try:
+                config = read(entry['manager_config'])
+                remote = campaign_status(config, str(Path(config['activation_gate']['progress']).parent), baseline=True)
+                text += f"\n  Baseline gate: {remote.get('status', '-')} | passed roles: {len(remote.get('roles', []))}"
+                text += '\n  Guest: ' + remote.get('guest_health', {}).get('health', 'preparing hardware task')
+            except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+                text += '\n  Baseline manager status unavailable.'
+        return text
     state = read(path)
     records = state.get('candidates', [])
     current = records[-1] if records else {}
@@ -73,6 +90,9 @@ def summary(name, entry, local_only=False):
             lines.append('  Guest: ' + health.get('health', 'not observed'))
             if health.get('uart_age_seconds') is not None:
                 lines.append(f"  UART last changed {int(health['uart_age_seconds'])}s ago")
+            if remote.get('samples'):
+                sample = remote['samples'][-1]
+                lines.append(f"  Last collected: {sample['role']} | {sample['cycles']:,} cycles (pair may be incomplete)")
         except (OSError, ValueError, KeyError, subprocess.SubprocessError):
             lines.append('  Manager status unavailable (read-only check failed).')
     return '\n'.join(lines)

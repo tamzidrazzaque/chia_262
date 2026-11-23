@@ -20,7 +20,10 @@ reads state and the active candidate's dispatched campaign; it never launches
 tasks, acquires worker leases, changes files or sends signals. Ctrl-C stops
 only the display. State age is time since the last state transition, not a
 heartbeat or proof that a long measurement is stalled. Recorded state alone
-does not establish that a runner process is alive.
+does not establish that a runner process is alive. The live check additionally
+reports job-bound guest panics and quiet-output warnings, and displays collected
+samples before a pair completes. See `GUEST_HEALTH_INCIDENT.md` for the kernel
+panic investigation and panic watchdog recovery policy.
 
 Shared GCC preparation is serialized by its existing build lock and publishes
 immutable snapshots. FireMarshal commands share a manager-wide lock; FPGA

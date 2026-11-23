@@ -54,7 +54,7 @@ def classify(snapshot, quiet_seconds=900):
     return 'driver active; no fatal UART evidence'
 
 
-def inspect(site, job):
+def inspect(site, job, quiet_seconds=900):
     """Read only the UART belonging to the current job's driver."""
     p = subprocess.run(['ssh', '-i', site['ssh_key'], '-o', 'BatchMode=yes',
         '-o', 'StrictHostKeyChecking=yes', '-o', 'UserKnownHostsFile=' + site['known_hosts'],
@@ -62,7 +62,7 @@ def inspect(site, job):
         'python3 -c ' + shlex.quote(WORKER_SNAPSHOT) + ' ' + shlex.quote(job)],
         capture_output=True, text=True, check=True, timeout=20)
     snapshot = json.loads(p.stdout)
-    return {**snapshot, 'health': classify(snapshot)}
+    return {**snapshot, 'health': classify(snapshot, quiet_seconds)}
 
 
 def stop_failed_guest(site, job, destination):
@@ -127,15 +127,41 @@ def campaign_snapshot(remote_run):
     site = json.loads((lane / 'platform-lock.json').read_text())
     if plan['identity']['bundle_sha256'] != active['artifact']['bundle_sha256']:
         raise ValueError('active guest belongs to another bundle')
-    state['guest_health'] = inspect(site, plan['name'])
+    quiet = {'605.mcf_s': 3600, '644.nab_s': 1800}.get(plan['identity']['benchmark'], 900)
+    state['guest_health'] = inspect(site, plan['name'], quiet)
+    return state
+
+
+def baseline_snapshot(directory, lane):
+    """Observe baseline qualification before an adaptive loop has started."""
+    root, lane = Path(directory), Path(lane)
+    state = json.loads((root / 'progress.json').read_text())
+    role = state.get('active_role')
+    dispatch = root / str(role) / 'dispatch.json'
+    if role and dispatch.is_file():
+        candidate = json.loads(dispatch.read_text())['candidate']
+        stage = lane / 'staging' / ('auto-' + candidate.replace('.', '-'))
+        if (stage / 'plan.json').is_file() and (stage / 'runworkload.started.json').is_file():
+            plan = json.loads((stage / 'plan.json').read_text())
+            if plan['identity']['role'] != role:
+                raise ValueError('baseline guest role differs')
+            site = json.loads((lane / 'platform-lock.json').read_text())
+            quiet = {'605.mcf_s': 3600, '644.nab_s': 1800}.get(plan['identity']['benchmark'], 900)
+            state['guest_health'] = inspect(site, plan['name'], quiet)
     return state
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--campaign', type=Path, required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument('--campaign', type=Path)
+    mode.add_argument('--baseline', type=Path)
+    parser.add_argument('--lane', type=Path)
     args = parser.parse_args()
-    print('SATURN_STATUS:' + json.dumps(campaign_snapshot(args.campaign)))
+    if args.baseline and not args.lane:
+        parser.error('--baseline requires --lane')
+    state = baseline_snapshot(args.baseline, args.lane) if args.baseline else campaign_snapshot(args.campaign)
+    print('SATURN_STATUS:' + json.dumps(state))
 
 
 if __name__ == '__main__':
