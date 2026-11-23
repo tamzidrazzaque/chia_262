@@ -35,3 +35,12 @@ Codex login rejects that model and no API-key route is configured. Baseline
 qualification and queued profiles can proceed independently; continuous model
 generation records `waiting_for_model_access` and retries without silently
 switching models or repeating completed hardware measurements.
+
+Deployment checkpoint (2026-11-22, Pacific): the second-worker NAB scalar
+baseline is running, with its vector baseline scheduled immediately afterward.
+The activation watcher is live and reports `waiting_for_baselines`; it will
+admit the continuous runner only after both exact baseline bundles pass. Four
+queued NAB profiles can then execute before model-generated proposals are
+needed. The resumed MCF runner reports `waiting_for_model_access`, preserving
+its completed measurements. Both runners use continuous mode without a fixed
+candidate count. The deployed regression suite passed 141 tests and 12 subtests.
