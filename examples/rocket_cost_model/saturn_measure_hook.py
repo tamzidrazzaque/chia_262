@@ -105,7 +105,7 @@ python {shlex.quote(stage + '/native-manager-staged.py')} infrasetup
 # Each task requires its own fresh preflight. Preserve the infrastructure check.
 mv {shlex.quote(stage + '/preflight.json')} {shlex.quote(stage + '/infrasetup-preflight.json')}
 $PY -m examples.rocket_cost_model.saturn_spec preflight --platform {shlex.quote(lane + '/platform-lock.json')} --out {shlex.quote(stage + '/preflight.json')}
-python {shlex.quote(stage + '/native-manager-staged.py')} runworkload
+$PY -m examples.rocket_cost_model.saturn_run_watchdog --stage {shlex.quote(stage)} -- python {shlex.quote(stage + '/native-manager-staged.py')} runworkload
 COL=$($PY -c 'from pathlib import Path; import sys; hits=list(Path(sys.argv[1]).glob("*"+sys.argv[2]+"*/**/uartlog")); assert len(hits)==1, "ambiguous or missing run evidence"; print(hits[0].parent)' {shlex.quote(root + '/chipyard-saturn-19a07f6/sims/firesim/deploy/results-workload')} "$NAME")
 $PY -m examples.rocket_cost_model.saturn_spec collect --stage {shlex.quote(stage)} --image {shlex.quote(stage + '/image-receipt.json')} --completion {shlex.quote(stage + '/runworkload-completion.json')} --preflight {shlex.quote(stage + '/preflight.json')} --collected "$COL" --out {shlex.quote(stage + '/collection')}
 # Maintenance cannot discard an already valid measurement. Preserve any failure

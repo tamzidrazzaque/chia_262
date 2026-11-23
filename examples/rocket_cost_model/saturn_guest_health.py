@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import shlex
 import subprocess
+import base64
+import hashlib
 
 
 WORKER_SNAPSHOT = r'''
@@ -61,6 +63,47 @@ def inspect(site, job):
         capture_output=True, text=True, check=True, timeout=20)
     snapshot = json.loads(p.stdout)
     return {**snapshot, 'health': classify(snapshot)}
+
+
+def stop_failed_guest(site, job, destination):
+    """Archive UART before stopping only the exact admitted job's failed driver.
+
+    Must be called by the controller for this stage, never by the status view.
+    A quiet UART alone cannot authorize termination.
+    """
+    script = WORKER_SNAPSHOT.rsplit('print(json.dumps(', 1)[0] + r'''
+import base64,hashlib,subprocess
+expected=sys.argv[2]
+if len(matched)!=1: raise RuntimeError('exactly one admitted driver required')
+if b'Kernel panic' not in data and b'*** FAILED ***' not in data:
+    raise RuntimeError('no conclusive fatal guest evidence')
+pid=matched[0]
+if hashlib.sha256((Path('/proc')/str(pid)/'exe').read_bytes()).hexdigest()!=expected:
+    raise RuntimeError('driver identity differs')
+print(json.dumps({'pid':pid,'job':job,'uart':base64.b64encode(uart.read_bytes()).decode()}),flush=True)
+'''
+    args = ['ssh', '-i', site['ssh_key'], '-o', 'BatchMode=yes',
+        '-o', 'StrictHostKeyChecking=yes', '-o', 'UserKnownHostsFile=' + site['known_hosts'],
+        '-o', 'ConnectTimeout=10', 'ubuntu@' + site['worker_ip']]
+    result = subprocess.run(args + ['sudo -n python3 -c ' + shlex.quote(script) + ' ' +
+        shlex.quote(job) + ' ' + site['artifacts']['driver']['sha256']],
+        capture_output=True, text=True, check=True, timeout=30)
+    evidence = json.loads(result.stdout)
+    dest = Path(destination)
+    dest.mkdir(mode=0o700, parents=True, exist_ok=False)
+    raw = base64.b64decode(evidence.pop('uart'), validate=True)
+    (dest / 'uartlog').write_bytes(raw)
+    evidence['uart_sha256'] = hashlib.sha256(raw).hexdigest()
+    (dest / 'failure.json').write_text(json.dumps(evidence, indent=2) + '\n')
+    # Revalidate process ownership and fatal evidence immediately before SIGTERM.
+    terminate = script[:script.index('print(json.dumps(')] + r'''
+if pid!=int(sys.argv[3]): raise RuntimeError('driver PID changed')
+subprocess.run(['sudo','-n','kill','-TERM',str(pid)],check=True)
+'''
+    subprocess.run(args + ['sudo -n python3 -c ' + shlex.quote(terminate) + ' ' + shlex.quote(job) +
+        ' ' + site['artifacts']['driver']['sha256'] + ' ' + str(evidence['pid'])],
+        capture_output=True, text=True, check=True, timeout=30)
+    return evidence
 
 
 def campaign_snapshot(remote_run):
