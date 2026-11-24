@@ -42,3 +42,30 @@ class GuestHealthTests(unittest.TestCase):
                 plan['identity']['role'] = '3-saturn-aware'
                 (stage / 'plan.json').write_text(json.dumps(plan))
                 with self.assertRaises(ValueError): h.baseline_snapshot(baseline, lane)
+
+    def test_campaign_observation_finds_uuid_stage_by_sample_identity(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory); run = root / 'run'; lane = root / 'lane'
+            (run / 'campaign').mkdir(parents=True)
+            stage = lane / 'staging/auto-3-3030-search-17-deadbeef'
+            identity_path = stage / 'overlay/root/saturn-spec/stage-identity.json'
+            identity_path.parent.mkdir(parents=True)
+            expected = {'role': '3-saturn-aware', 'bundle_sha256': 'bundle',
+                'sample': 17, 'phase': 'search', 'worker_id': 'worker',
+                'platform_sha256': 'platform'}
+            identity_path.write_text(json.dumps(expected))
+            (stage / 'plan.json').write_text(json.dumps({'name': 'job',
+                'identity': {**expected, 'benchmark': '644.nab_s'}}))
+            (stage / 'runworkload.started.json').write_text('{}')
+            (lane / 'platform-lock.json').parent.mkdir(parents=True, exist_ok=True)
+            (lane / 'platform-lock.json').write_text('{"site":"f2"}')
+            active = {'artifact': {'role': '3-saturn-aware', 'bundle_sha256': 'bundle'},
+                'request': {'sample': 17, 'phase': 'search', 'attempt_id': 'not-the-stage-name'}}
+            (run / 'campaign/progress.json').write_text(json.dumps({'status': 'running', 'active': active}))
+            request = {'manager_lane': str(lane), 'policy': {'worker_id': 'worker',
+                'platform_sha256': 'platform'}}
+            (run / 'request.json').write_text(json.dumps(request))
+            with patch.object(h, 'inspect', return_value={'health': 'active'}) as inspect:
+                result = h.campaign_snapshot(run)
+            self.assertEqual(result['guest_health']['health'], 'active')
+            inspect.assert_called_once_with({'site': 'f2'}, 'job', 1800)

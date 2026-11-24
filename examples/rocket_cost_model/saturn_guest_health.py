@@ -120,6 +120,32 @@ subprocess.run(['sudo','-n','kill','-TERM',str(pid)],check=True)
     return evidence
 
 
+def find_campaign_stage(lane, active, request):
+    """Find a retained stage by its sample identity, not its directory name."""
+    artifact = active.get('artifact', {})
+    sample = active.get('request', {})
+    policy = request.get('policy', {})
+    expected = {'role': artifact.get('role'), 'bundle_sha256': artifact.get('bundle_sha256'),
+        'sample': sample.get('sample'), 'phase': sample.get('phase'),
+        'worker_id': policy.get('worker_id'), 'platform_sha256': policy.get('platform_sha256')}
+    if any(value is None for value in expected.values()):
+        raise ValueError('active campaign identity is incomplete')
+    matches = []
+    for stage in (Path(lane) / 'staging').glob('auto-*'):
+        identity_path = stage / 'overlay/root/saturn-spec/stage-identity.json'
+        if not identity_path.is_file():
+            continue
+        try:
+            identity = json.loads(identity_path.read_text())
+        except (OSError, ValueError):
+            continue
+        if all(identity.get(key) == value for key, value in expected.items()):
+            matches.append(stage)
+    if len(matches) > 1:
+        raise ValueError('multiple manager stages match the active campaign sample')
+    return matches[0] if matches else None
+
+
 def campaign_snapshot(remote_run):
     """Resolve the campaign's exact attempt to its admitted worker and job."""
     root = Path(remote_run)
@@ -132,8 +158,10 @@ def campaign_snapshot(remote_run):
         return state
     request = json.loads((root / 'request.json').read_text())
     lane = Path(request.get('manager_lane', root.parent.parent))
-    attempt = str(int(active['request']['attempt_id'][:12], 16))
-    stage = lane / 'staging' / ('auto-3-' + attempt)
+    stage = find_campaign_stage(lane, active, request)
+    if stage is None:
+        state['guest_health'] = {'health': 'preparing hardware task'}
+        return state
     if not (stage / 'plan.json').is_file() or not (stage / 'runworkload.started.json').is_file():
         state['guest_health'] = {'health': 'preparing hardware task'}
         return state
