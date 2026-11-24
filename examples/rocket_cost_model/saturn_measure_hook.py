@@ -57,14 +57,18 @@ def main() -> None:
     host, key = ('local', '') if local else (env("SATURN_MANAGER_HOST"), env("SATURN_MANAGER_KEY"))
     root = env("SATURN_MANAGER_ROOT", "/home/ubuntu/cs262_compiler")
     lane = env('SATURN_MANAGER_LANE', f"{root}/saturn-spec-lane")
-    tag = "auto-" + candidate.replace(".", "-")
-    incoming = f"{lane}/incoming/{tag}"
-    verified = f"{lane}/verified/{tag}"
-    stage = f"{lane}/staging/{tag}"
     phase = os.environ.get('SATURN_PHASE', 'search')
     sample = os.environ.get('SATURN_SAMPLE', '0')
     if phase not in ('baseline', 'search', 'confirmation', 'holdout') or not sample.isdigit():
         raise ValueError('invalid paired measurement phase/sample')
+    # Keep every physical attempt in a distinct private stage. Failed stages
+    # are preserved for diagnosis, so a candidate-only name would prevent a
+    # retry (or a paired confirmation repeat) from reaching dispatch.
+    attempt = uuid.uuid4().hex[:12]
+    tag = f"auto-{candidate.replace('.', '-')}-{phase}-{sample}-{attempt}"
+    incoming = f"{lane}/incoming/{tag}"
+    verified = f"{lane}/verified/{tag}"
+    stage = f"{lane}/staging/{tag}"
     local_tar = work / "bundle.tar"
     with tarfile.open(local_tar, "w") as archive:
         archive.add(bundle, arcname="bundle")

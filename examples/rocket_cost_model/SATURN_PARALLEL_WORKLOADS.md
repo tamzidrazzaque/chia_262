@@ -44,6 +44,8 @@ before the guest workload marker. Each retry gets a new sample, image, and
 attempt identity; the failed boot is retained in the campaign's private
 `failed_attempts` record and is never scored. Other manager errors, workload
 crashes, wrong outputs, or invalid receipts stop the campaign without retry.
+Every physical attempt also receives a unique private FireMarshal stage name,
+so retained evidence cannot block retries or fresh confirmation repeats.
 Set `policy.boot_retries` from 0 through 3 to change this bound. A retry is a
 recovery from an intermittent boot failure, not evidence that an RTL or guest
 boot defect is fixed.
