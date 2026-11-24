@@ -49,7 +49,12 @@
      div32-occupancy=N  divider occupancy for 32-bit ops (default 34)
      div64-occupancy=N  divider occupancy for 64-bit ops (default 66)
      mul-latency=N      pipelined mul/mulhu latency (default 3)
-     u64-setup-extra=N  extra cycles of the 128/64 libcall setup (default 120)
+     u64-setup-extra=N  extra cycles of the 128/64 libcall setup (default 176;
+                        the whole u64 setup measures ~190 cycles on MegaBoomV3)
+     w64-guessed=1      let a guessed (non-FDO) profile supply E for 64-bit
+                        kinds (default 0: 64-bit kinds need FDO or a niter
+                        estimate, since the guessed E of an unknown-trip loop
+                        overstates reality, e.g. mcf spec_qsort 4.80 vs 2.03)
      min-trips=N        minimum expected executions per setup (default 2)
      kinds=u32,s32,u64,s64   which kinds to handle (default all)
      force=1            ignore profitability (testing only)
@@ -88,7 +93,8 @@ int plugin_is_GPL_compatible;
 static unsigned div32_occ = 34;
 static unsigned div64_occ = 66;
 static unsigned mul_lat = 3;
-static unsigned u64_setup_extra = 120;
+static unsigned u64_setup_extra = 176;  /* setup ~190 cycles on MegaBoomV3 RTL */
+static bool w64_guessed = false;  /* trust a guessed profile for 64-bit kinds */
 static double min_trips = 2;
 static bool force = false;
 static bool u32_inc = true;  /* u32 quotient: increment method (default) or d==1 mask */
@@ -473,6 +479,29 @@ static unsigned int run(function *fun) {
   s64t = long_long_integer_type_node;
   uintt = unsigned_type_node;
   u128t = unsigned_intTI_type_node;
+  /* loop_optimizer_init(LOOPS_NORMAL) creates preheader blocks.  Skip
+     functions with no division by an SSA name so they are left untouched,
+     and clean the CFG afterwards when nothing was rewritten.  */
+  {
+    bool any = false;
+    basic_block b;
+    FOR_EACH_BB_FN(b, fun) {
+      for (gimple_stmt_iterator gsi = gsi_start_bb(b); !any && !gsi_end_p(gsi);
+           gsi_next(&gsi)) {
+        gimple *st = gsi_stmt(gsi);
+        if (is_gimple_assign(st) &&
+            (gimple_assign_rhs_code(st) == TRUNC_DIV_EXPR ||
+             gimple_assign_rhs_code(st) == TRUNC_MOD_EXPR) &&
+            TREE_CODE(gimple_assign_rhs2(st)) == SSA_NAME)
+          any = true;
+      }
+      if (any)
+        break;
+    }
+    if (!any)
+      return 0;
+  }
+  unsigned long long rewritten_before = n_groups_rewritten;
   loop_optimizer_init(LOOPS_NORMAL);
   scev_initialize();
   const char *fname = function_name(fun);
@@ -579,7 +608,10 @@ static unsigned int run(function *fun) {
       execs = (stmt_f / pf).to_double();
       src = profile_status_for_fn(fun) == PROFILE_READ ? "profile(fdo)"
                                                        : "profile(guessed)";
-    } else {
+    }
+    bool w64 = g.kind == K_U64 || g.kind == K_S64;
+    bool fdo = prof_ok && profile_status_for_fn(fun) == PROFILE_READ;
+    if (!prof_ok || (w64 && !fdo && !w64_guessed)) {
       execs = 0;
       for (const cand &c : g.stmts) {
         double e = niter_execs(gimple_bb(c.stmt), g.loop);
@@ -624,7 +656,9 @@ static unsigned int run(function *fun) {
     } else if (optimize_loop_for_size_p(g.loop)) {
       go = false; why = "loop optimized for size";
     } else if (execs < 0) {
-      go = false; why = "no profile and no niter estimate";
+      go = false;
+      why = w64 && prof_ok ? "64-bit kind needs FDO or a niter estimate"
+                           : "no profile and no niter estimate";
     } else if (mx >= 0 && (double)(mx + 1) * g.stmts.size() < min_trips) {
       go = false; why = "max niter bound below min-trips";
     } else if (lmx >= 0 && (double)(lmx + 1) * g.stmts.size() < min_trips) {
@@ -671,7 +705,7 @@ static unsigned int run(function *fun) {
   scev_finalize();
   loop_optimizer_finalize();
   free_dominance_info(CDI_DOMINATORS);
-  return 0;
+  return n_groups_rewritten == rewritten_before ? TODO_cleanup_cfg : 0;
 }
 
 namespace {
@@ -708,6 +742,7 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *versio
     else if (!strcmp(k, "mul-latency")) mul_lat = atoi(v);
     else if (!strcmp(k, "u64-setup-extra")) u64_setup_extra = atoi(v);
     else if (!strcmp(k, "min-trips")) min_trips = atof(v);
+    else if (!strcmp(k, "w64-guessed")) w64_guessed = atoi(v) != 0;
     else if (!strcmp(k, "force")) force = atoi(v) != 0;
     else if (!strcmp(k, "verbose")) verbose = atoi(v);
     else if (!strcmp(k, "u32-quot")) u32_inc = strcmp(v, "mask") != 0;
