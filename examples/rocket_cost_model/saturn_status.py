@@ -110,6 +110,9 @@ def summary(name, entry, local_only=False):
             lines.append(f"  Manager: {remote.get('status', 'unknown')} | "
                          f"active role: {active.get('artifact', {}).get('role', '-')} | "
                          f"completed samples: {len(remote.get('samples', []))}")
+            retries = remote.get('failed_attempts', [])
+            if retries:
+                lines.append(f"  Verified early-boot retries: {len(retries)}")
             health = remote.get('guest_health', {})
             if health.get('health', '').startswith('FAILED:'):
                 lines[0] = lines[0].replace(f'{name}: ', f'{name}: GUEST FAILED | recorded loop ', 1)

@@ -105,7 +105,27 @@ python {shlex.quote(stage + '/native-manager-staged.py')} infrasetup
 # Each task requires its own fresh preflight. Preserve the infrastructure check.
 mv {shlex.quote(stage + '/preflight.json')} {shlex.quote(stage + '/infrasetup-preflight.json')}
 $PY -m examples.rocket_cost_model.saturn_spec preflight --platform {shlex.quote(lane + '/platform-lock.json')} --out {shlex.quote(stage + '/preflight.json')}
-$PY -m examples.rocket_cost_model.saturn_run_watchdog --stage {shlex.quote(stage)} -- python {shlex.quote(stage + '/native-manager-staged.py')} runworkload
+if $PY -m examples.rocket_cost_model.saturn_run_watchdog --stage {shlex.quote(stage)} -- python {shlex.quote(stage + '/native-manager-staged.py')} runworkload; then
+  RUN_RC=0
+else
+  RUN_RC=$?
+  UART=$($PY -c 'from pathlib import Path; import sys; hits=list(Path(sys.argv[1]).glob("*"+sys.argv[2]+"*/**/uartlog")); print(hits[0] if len(hits)==1 else "")' {shlex.quote(root + '/chipyard-saturn-19a07f6/sims/firesim/deploy/results-workload')} "$NAME")
+  if [ -n "$UART" ] && [ ! -e "$(dirname "$UART")/result" ] && grep -Fq 'Kernel panic - not syncing: Fatal exception in interrupt' "$UART" && ! grep -Fq 'SATURN_SPEC_JOB_EXIT=' "$UART"; then
+    $PY - {shlex.quote(stage + '/stage-identity.json')} "$UART" {shlex.quote(stage + '/retryable-boot-failure.json')} <<'PYFAIL'
+import hashlib, json, sys
+from pathlib import Path
+identity = json.loads(Path(sys.argv[1]).read_text())
+uart = Path(sys.argv[2])
+digest = hashlib.sha256(uart.read_bytes()).hexdigest()
+keys = ('worker_id', 'platform_sha256', 'bundle_sha256', 'input_id', 'role', 'sample', 'phase')
+record = {{'classification': 'early_kernel_panic_before_guest_job',
+          'identity': {{key: identity[key] for key in keys}}, 'uart_sha256': digest}}
+Path(sys.argv[3]).write_text(json.dumps(record, sort_keys=True) + '\\n')
+PYFAIL
+    exit 75
+  fi
+  exit "$RUN_RC"
+fi
 COL=$($PY -c 'from pathlib import Path; import sys; hits=list(Path(sys.argv[1]).glob("*"+sys.argv[2]+"*/**/uartlog")); assert len(hits)==1, "ambiguous or missing run evidence"; print(hits[0].parent)' {shlex.quote(root + '/chipyard-saturn-19a07f6/sims/firesim/deploy/results-workload')} "$NAME")
 $PY -m examples.rocket_cost_model.saturn_spec collect --stage {shlex.quote(stage)} --image {shlex.quote(stage + '/image-receipt.json')} --completion {shlex.quote(stage + '/runworkload-completion.json')} --preflight {shlex.quote(stage + '/preflight.json')} --collected "$COL" --out {shlex.quote(stage + '/collection')}
 # Maintenance cannot discard an already valid measurement. Preserve any failure
@@ -114,7 +134,28 @@ if ! $PY -m examples.rocket_cost_model.saturn_space --stage {shlex.quote(stage)}
   printf 'Completed image maintenance failed; inspect space-maintenance.log\\n' >&2
 fi
 """
-    ssh(host, key, remote)
+    try:
+        ssh(host, key, remote)
+    except subprocess.CalledProcessError:
+        marker = 'SATURN_RETRYABLE_BOOT_' + uuid.uuid4().hex
+        output = ssh(host, key, "printf '%s\\n' " + shlex.quote(marker) + "; if test -f " +
+                    shlex.quote(stage + '/retryable-boot-failure.json') + "; then cat " +
+                    shlex.quote(stage + '/retryable-boot-failure.json') + "; else printf '{}'; fi",
+                    capture=True)
+        if output.count(marker + '\n') == 1:
+            try:
+                failure = json.loads(output.split(marker + '\n', 1)[1])
+            except json.JSONDecodeError:
+                failure = None
+            expected = {'bundle_sha256': manifest_sha, 'role': role,
+                        'sample': int(sample), 'phase': phase}
+            identity = failure.get('identity', {}) if isinstance(failure, dict) else {}
+            if failure and failure.get('classification') == 'early_kernel_panic_before_guest_job' and \
+                    all(identity.get(key) == value for key, value in expected.items()):
+                (work / 'candidate-retryable-boot-failure.json').write_text(
+                    json.dumps(failure, indent=2) + '\n')
+                return
+        raise
     marker = 'SATURN_RECEIPT_' + uuid.uuid4().hex
     output = ssh(host, key, "printf '%s\\n' " + shlex.quote(marker) + "; cat "
                  + shlex.quote(stage + '/collection/result.json'), capture=True)

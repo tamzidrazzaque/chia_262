@@ -43,6 +43,7 @@ class Policy:
     final_ref: bool = True
     order_offset: int = 0
     sample_offset: int = 0
+    boot_retries: int = 2
 
     def validate(self):
         if self.scope not in ('test', 'train') or not 1 <= self.confirm_repeats <= 5:
@@ -51,6 +52,8 @@ class Policy:
             raise ValueError('invalid threshold or physical worker')
         if any(type(n) is not int or n < 0 for n in (self.order_offset, self.sample_offset)):
             raise ValueError('invalid paired ordering/sample offset')
+        if type(self.boot_retries) is not int or not 0 <= self.boot_retries <= 3:
+            raise ValueError('boot_retries must be an integer from 0 through 3')
 
 
 def validate_receipt(receipt, artifact, request, policy):
@@ -113,7 +116,8 @@ def _run(root, proposals, policy, prepare, measure, stop):
         return state
     state = {'campaign_sha256': identity, 'status': 'running', 'active': None,
              'scope': policy.scope, 'result_scope': 'screening' if policy.scope == 'test' else 'train optimization',
-             'history': [], 'samples': [], 'winner': None, 'paired_controls': True}
+             'history': [], 'samples': [], 'failed_attempts': [], 'attempt_count': 0,
+             'winner': None, 'paired_controls': True}
     save(state_path, state)
 
     def prepared(proposal, scope, directory):
@@ -127,17 +131,41 @@ def _run(root, proposals, policy, prepare, measure, stop):
         return artifact
 
     def sample(artifact, phase, order):
-        number = policy.sample_offset + len(state['samples'])
-        request = {'sample': number, 'phase': phase, 'scope': artifact['scope'],
-                   'order': order, 'attempt_id': uuid.uuid4().hex}
-        key = measurement_key(artifact['fingerprint'], policy.hardware,
-            policy.runtime_sha256, policy.worker_id, artifact['scope'] + ':' + artifact['input_id'], number)
-        request['measurement_key'] = key
-        directory = root / f'sample-{number:04d}'
-        directory.mkdir(mode=0o700)
-        state['active'] = {'request': request, 'artifact': artifact, 'directory': directory.name}
-        save(state_path, state)
-        receipt = measure(artifact, request, directory)
+        for retry_index in range(policy.boot_retries + 1):
+            number = policy.sample_offset + state['attempt_count']
+            state['attempt_count'] += 1
+            request = {'sample': number, 'phase': phase, 'scope': artifact['scope'],
+                       'order': order, 'attempt_id': uuid.uuid4().hex,
+                       'retry_index': retry_index}
+            key = measurement_key(artifact['fingerprint'], policy.hardware,
+                policy.runtime_sha256, policy.worker_id, artifact['scope'] + ':' + artifact['input_id'], number)
+            request['measurement_key'] = key
+            directory = root / f'sample-{number:04d}'
+            directory.mkdir(mode=0o700)
+            state['active'] = {'request': request, 'artifact': artifact, 'directory': directory.name}
+            save(state_path, state)
+            receipt = measure(artifact, request, directory)
+            if isinstance(receipt, dict) and receipt.get('status') == 'retryable_boot_failure':
+                identity = receipt.get('identity', {})
+                expected = {'worker_id': policy.worker_id,
+                    'platform_sha256': policy.platform_sha256,
+                    'bundle_sha256': artifact['bundle_sha256'],
+                    'input_id': artifact['input_id'], 'role': artifact['role'],
+                    'sample': number, 'phase': phase}
+                if receipt.get('classification') != 'early_kernel_panic_before_guest_job' or \
+                        any(identity.get(key) != value for key, value in expected.items()) or \
+                        not isinstance(receipt.get('uart_sha256'), str) or \
+                        len(receipt['uart_sha256']) != 64:
+                    raise ValueError('retryable boot failure evidence did not match the active sample')
+                state['failed_attempts'].append({'request': request,
+                    'role': artifact['role'], 'classification': receipt['classification'],
+                    'uart_sha256': receipt['uart_sha256']})
+                state['active'] = None
+                save(state_path, state)
+                if retry_index < policy.boot_retries:
+                    continue
+                raise RuntimeError(f'early boot panic persisted after {policy.boot_retries} fresh retries')
+            break
         cycles = validate_receipt(receipt, artifact, request, policy)
         save(directory / 'receipt.json', receipt)
         state['samples'].append({'measurement_key': key, 'request': request,

@@ -94,6 +94,18 @@ def measure_artifact(candidate: str, artifact: SaturnBundle, request: dict | Non
            str(work / 'unused-proposal.json'), {'SATURN_MANAGER_LOCAL': '1', 'SATURN_ROLE': metadata['role'],
                'SATURN_PHASE': (request or {}).get('phase', 'search'),
                'SATURN_SAMPLE': str((request or {}).get('sample', 0))})
+    retryable_path = work / 'candidate-retryable-boot-failure.json'
+    if retryable_path.is_file():
+        failure = json.loads(retryable_path.read_text())
+        expected = {'bundle_sha256': metadata['bundle_sha256'], 'role': metadata['role'],
+                    'sample': (request or {}).get('sample', 0),
+                    'phase': (request or {}).get('phase', 'search')}
+        identity = failure.get('identity', {})
+        if failure.get('classification') != 'early_kernel_panic_before_guest_job' or \
+                any(identity.get(key) != value for key, value in expected.items()):
+            raise ValueError('manager retry evidence does not match the transported artifact')
+        return {'status': 'retryable_boot_failure', 'classification': failure['classification'],
+                'identity': identity, 'uart_sha256': failure['uart_sha256']}
     receipt = json.loads((work / 'candidate-receipt.json').read_text())
     if receipt.get('executable_sha256') != metadata['executable_sha256'] or \
             receipt.get('identity', {}).get('bundle_sha256') != metadata['bundle_sha256'] or \

@@ -38,6 +38,16 @@ immutable snapshots. FireMarshal commands share a manager-wide lock; FPGA
 execution remains parallel on independent physical-worker leases. Generated
 SPEC configs publish atomically to support concurrent benchmark readers.
 
+Paired measurement policy allows two fresh retries (three attempts total) only
+when the manager returns UART evidence of the known early Linux interrupt panic
+before the guest workload marker. Each retry gets a new sample, image, and
+attempt identity; the failed boot is retained in the campaign's private
+`failed_attempts` record and is never scored. Other manager errors, workload
+crashes, wrong outputs, or invalid receipts stop the campaign without retry.
+Set `policy.boot_retries` from 0 through 3 to change this bound. A retry is a
+recovery from an intermittent boot failure, not evidence that an RTL or guest
+boot defect is fixed.
+
 The second worker was checked idle, its SSH host key verified through AWS SSM,
 and the accepted SDK/image/driver pair staged. Previous SDK/runtime directories
 were preserved. Strict native-manager SSH uses the lane's verified known-hosts
