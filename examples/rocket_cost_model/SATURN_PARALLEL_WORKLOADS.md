@@ -39,8 +39,10 @@ execution remains parallel on independent physical-worker leases. Generated
 SPEC configs publish atomically to support concurrent benchmark readers.
 
 Paired measurement policy allows two fresh retries (three attempts total) only
-when the manager returns UART evidence of the known early Linux interrupt panic
-before the guest workload marker. Each retry gets a new sample, image, and
+when the manager UART shows the known early Linux interrupt panic before the
+guest workload marker and result directory. This classification does not
+depend on FireSim's return code: the simulator can exit successfully after the
+guest has panicked. Each retry gets a new sample, image, and
 attempt identity; the failed boot is retained in the campaign's private
 `failed_attempts` record and is never scored. Other manager errors, workload
 crashes, wrong outputs, or invalid receipts stop the campaign without retry.

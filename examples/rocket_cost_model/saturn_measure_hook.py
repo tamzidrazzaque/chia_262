@@ -40,6 +40,25 @@ def ssh(host: str, key: str, command: str, capture: bool = False) -> str:
     return result.stdout if capture else ""
 
 
+def retryable_early_boot_failure(uart_path: Path, result_path: Path) -> dict | None:
+    """Recognize only the recorded pre-job interrupt panic, independent of RC.
+
+    FireSim can return zero after the simulator exits cleanly even when Linux
+    panicked before the workload created its result directory. Workload
+    failures that created a result directory or emitted the guest exit marker
+    are deliberately excluded.
+    """
+    if Path(result_path).exists():
+        return None
+    payload = Path(uart_path).read_bytes()
+    text = payload.decode(errors='replace')
+    if ('Kernel panic - not syncing: Fatal exception in interrupt' not in text or
+            'SATURN_SPEC_JOB_EXIT=' in text):
+        return None
+    return {'classification': 'early_kernel_panic_before_guest_job',
+            'uart_sha256': hashlib.sha256(payload).hexdigest()}
+
+
 def main() -> None:
     work = Path(env("SATURN_WORKDIR")).resolve()
     candidate = env("SATURN_CANDIDATE_ID")
@@ -113,23 +132,26 @@ if $PY -m examples.rocket_cost_model.saturn_run_watchdog --stage {shlex.quote(st
   RUN_RC=0
 else
   RUN_RC=$?
-  UART=$($PY -c 'from pathlib import Path; import sys; hits=list(Path(sys.argv[1]).glob("*"+sys.argv[2]+"*/**/uartlog")); print(hits[0] if len(hits)==1 else "")' {shlex.quote(root + '/chipyard-saturn-19a07f6/sims/firesim/deploy/results-workload')} "$NAME")
-  if [ -n "$UART" ] && [ ! -e "$(dirname "$UART")/result" ] && grep -Fq 'Kernel panic - not syncing: Fatal exception in interrupt' "$UART" && ! grep -Fq 'SATURN_SPEC_JOB_EXIT=' "$UART"; then
-    $PY - {shlex.quote(stage + '/stage-identity.json')} "$UART" {shlex.quote(stage + '/retryable-boot-failure.json')} <<'PYFAIL'
-import hashlib, json, sys
-from pathlib import Path
-identity = json.loads(Path(sys.argv[1]).read_text())
-uart = Path(sys.argv[2])
-digest = hashlib.sha256(uart.read_bytes()).hexdigest()
-keys = ('worker_id', 'platform_sha256', 'bundle_sha256', 'input_id', 'role', 'sample', 'phase')
-record = {{'classification': 'early_kernel_panic_before_guest_job',
-          'identity': {{key: identity[key] for key in keys}}, 'uart_sha256': digest}}
-Path(sys.argv[3]).write_text(json.dumps(record, sort_keys=True) + '\\n')
-PYFAIL
-    exit 75
-  fi
-  exit "$RUN_RC"
 fi
+# Classify from the guest evidence regardless of FireSim's return code: an
+# early Linux panic can still produce a clean simulator exit (returncode 0).
+UART=$($PY -c 'from pathlib import Path; import sys; hits=list(Path(sys.argv[1]).glob("*"+sys.argv[2]+"*/**/uartlog")); assert len(hits)<=1, "ambiguous run evidence"; print(hits[0] if hits else "")' {shlex.quote(root + '/chipyard-saturn-19a07f6/sims/firesim/deploy/results-workload')} "$NAME")
+if [ -n "$UART" ]; then
+  $PY - {shlex.quote(stage + '/stage-identity.json')} "$UART" "$(dirname "$UART")/result" {shlex.quote(stage + '/retryable-boot-failure.json')} <<'PYFAIL'
+import json, sys
+from pathlib import Path
+from examples.rocket_cost_model.saturn_measure_hook import retryable_early_boot_failure
+identity = json.loads(Path(sys.argv[1]).read_text())
+failure = retryable_early_boot_failure(Path(sys.argv[2]), Path(sys.argv[3]))
+if failure is None:
+    sys.exit(0)
+keys = ('worker_id', 'platform_sha256', 'bundle_sha256', 'input_id', 'role', 'sample', 'phase')
+record = {{**failure, 'identity': {{key: identity[key] for key in keys}}}}
+Path(sys.argv[4]).write_text(json.dumps(record, sort_keys=True) + '\\n')
+sys.exit(75)
+PYFAIL
+fi
+if [ "$RUN_RC" -ne 0 ]; then exit "$RUN_RC"; fi
 COL=$($PY -c 'from pathlib import Path; import sys; hits=list(Path(sys.argv[1]).glob("*"+sys.argv[2]+"*/**/uartlog")); assert len(hits)==1, "ambiguous or missing run evidence"; print(hits[0].parent)' {shlex.quote(root + '/chipyard-saturn-19a07f6/sims/firesim/deploy/results-workload')} "$NAME")
 $PY -m examples.rocket_cost_model.saturn_spec collect --stage {shlex.quote(stage)} --image {shlex.quote(stage + '/image-receipt.json')} --completion {shlex.quote(stage + '/runworkload-completion.json')} --preflight {shlex.quote(stage + '/preflight.json')} --collected "$COL" --out {shlex.quote(stage + '/collection')}
 # Maintenance cannot discard an already valid measurement. Preserve any failure

@@ -39,6 +39,35 @@ def test_transport_contract(tmp_path):
     assert json.loads((tmp_path / 'candidate-receipt.json').read_text()) == receipt
 
 
+def test_early_boot_panic_is_retryable_when_simulator_exits_cleanly(tmp_path):
+    uart = tmp_path / 'uartlog'
+    uart.write_text('Kernel panic - not syncing: Fatal exception in interrupt\n')
+    result = tmp_path / 'result'
+
+    failure = hook.retryable_early_boot_failure(uart, result)
+
+    assert failure == {
+        'classification': 'early_kernel_panic_before_guest_job',
+        'uart_sha256': hashlib.sha256(uart.read_bytes()).hexdigest(),
+    }
+
+
+def test_early_boot_classifier_rejects_workload_failures(tmp_path):
+    uart = tmp_path / 'uartlog'
+    result = tmp_path / 'result'
+    uart.write_text('Kernel panic - not syncing: Fatal exception in interrupt\n')
+    result.mkdir()
+    assert hook.retryable_early_boot_failure(uart, result) is None
+
+    result.rmdir()
+    uart.write_text('Kernel panic - not syncing: Fatal exception in interrupt\n'
+                    'SATURN_SPEC_JOB_EXIT=11 COLLECTION=1\n')
+    assert hook.retryable_early_boot_failure(uart, result) is None
+
+    uart.write_text('FireSim completed with another guest error\n')
+    assert hook.retryable_early_boot_failure(uart, result) is None
+
+
 def test_descriptor_uses_admitted_bytes(tmp_path):
     stage = tmp_path / 'stage'
     stage.mkdir()
