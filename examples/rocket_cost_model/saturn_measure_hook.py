@@ -59,6 +59,19 @@ def retryable_early_boot_failure(uart_path: Path, result_path: Path) -> dict | N
             'uart_sha256': hashlib.sha256(payload).hexdigest()}
 
 
+def retryable_failure_record(uart_path: Path, result_path: Path,
+                             identity_path: Path) -> dict | None:
+    """Bind the UART classification to the identity embedded in the image."""
+    failure = retryable_early_boot_failure(uart_path, result_path)
+    if failure is None:
+        return None
+    identity = json.loads(Path(identity_path).read_text())
+    keys = ('worker_id', 'platform_sha256', 'bundle_sha256', 'input_id', 'role', 'sample', 'phase')
+    if any(key not in identity for key in keys):
+        raise ValueError('guest stage identity is incomplete for boot-failure receipt')
+    return {**failure, 'identity': {key: identity[key] for key in keys}}
+
+
 def main() -> None:
     work = Path(env("SATURN_WORKDIR")).resolve()
     candidate = env("SATURN_CANDIDATE_ID")
@@ -137,16 +150,13 @@ fi
 # early Linux panic can still produce a clean simulator exit (returncode 0).
 UART=$($PY -c 'from pathlib import Path; import sys; hits=list(Path(sys.argv[1]).glob("*"+sys.argv[2]+"*/**/uartlog")); assert len(hits)<=1, "ambiguous run evidence"; print(hits[0] if hits else "")' {shlex.quote(root + '/chipyard-saturn-19a07f6/sims/firesim/deploy/results-workload')} "$NAME")
 if [ -n "$UART" ]; then
-  $PY - {shlex.quote(stage + '/stage-identity.json')} "$UART" "$(dirname "$UART")/result" {shlex.quote(stage + '/retryable-boot-failure.json')} <<'PYFAIL'
+  $PY - {shlex.quote(stage + '/overlay/root/saturn-spec/stage-identity.json')} "$UART" "$(dirname "$UART")/result" {shlex.quote(stage + '/retryable-boot-failure.json')} <<'PYFAIL'
 import json, sys
 from pathlib import Path
-from examples.rocket_cost_model.saturn_measure_hook import retryable_early_boot_failure
-identity = json.loads(Path(sys.argv[1]).read_text())
-failure = retryable_early_boot_failure(Path(sys.argv[2]), Path(sys.argv[3]))
-if failure is None:
+from examples.rocket_cost_model.saturn_measure_hook import retryable_failure_record
+record = retryable_failure_record(Path(sys.argv[2]), Path(sys.argv[3]), Path(sys.argv[1]))
+if record is None:
     sys.exit(0)
-keys = ('worker_id', 'platform_sha256', 'bundle_sha256', 'input_id', 'role', 'sample', 'phase')
-record = {{**failure, 'identity': {{key: identity[key] for key in keys}}}}
 Path(sys.argv[4]).write_text(json.dumps(record, sort_keys=True) + '\\n')
 sys.exit(75)
 PYFAIL

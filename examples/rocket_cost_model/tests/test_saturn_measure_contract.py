@@ -34,6 +34,8 @@ def test_transport_contract(tmp_path):
     assert 'test ! -e' in calls[0]
     assert '/staging/auto-3-99' not in calls[0].split('mkdir', 1)[1]
     assert '/collection' in calls[1]
+    assert '/overlay/root/saturn-spec/stage-identity.json' in calls[1]
+    assert 'retryable_failure_record' in calls[1]
     assert 'tail -n1' not in calls[1]
     assert calls[2].endswith('/collection/result.json')
     assert json.loads((tmp_path / 'candidate-receipt.json').read_text()) == receipt
@@ -66,6 +68,24 @@ def test_early_boot_classifier_rejects_workload_failures(tmp_path):
 
     uart.write_text('FireSim completed with another guest error\n')
     assert hook.retryable_early_boot_failure(uart, result) is None
+
+
+def test_retry_marker_binds_embedded_stage_identity(tmp_path):
+    uart = tmp_path / 'uartlog'
+    result = tmp_path / 'result'
+    identity_path = tmp_path / 'overlay/root/saturn-spec/stage-identity.json'
+    identity_path.parent.mkdir(parents=True)
+    identity = {'worker_id': 'worker', 'platform_sha256': 'p', 'bundle_sha256': 'b',
+                'input_id': '605-mcf-test', 'role': '2-generic-vector',
+                'sample': 17, 'phase': 'search'}
+    identity_path.write_text(json.dumps(identity))
+    uart.write_text('Kernel panic - not syncing: Fatal exception in interrupt\n')
+
+    record = hook.retryable_failure_record(uart, result, identity_path)
+
+    assert record['classification'] == 'early_kernel_panic_before_guest_job'
+    assert record['identity'] == identity
+    assert record['uart_sha256'] == hashlib.sha256(uart.read_bytes()).hexdigest()
 
 
 def test_descriptor_uses_admitted_bytes(tmp_path):
