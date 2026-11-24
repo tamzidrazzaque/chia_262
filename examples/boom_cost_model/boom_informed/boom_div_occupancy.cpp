@@ -8,8 +8,10 @@
    multiply-high sequence. It does not modify int_div.
 
    Handles 64-bit signed constant division and remainder whose multiplier
-   fits the simple mulh/shift/sign sequence. Other divisions are left
-   untouched.
+   fits the simple mulh/shift/sign sequence, including a negative divisor
+   (same magic as |d|, quotient negated). Unsigned division, precision
+   other than 64, powers of two, INT64_MIN, and multipliers that need the
+   extra addend are left untouched.
 */
 #include "gcc-plugin.h"
 #include "plugin-version.h"
@@ -63,11 +65,15 @@ static bool choose_multiplier(unsigned long long d, int n, int precision,
 
 static bool simple_signed_magic(long long divisor, unsigned long long *magic,
                                 int *post) {
-  if (divisor <= 1 || divisor == -1)
+  /* 0 is undefined.  +/-1 are not reciprocal multiplies.  divisor <= 1
+     used to reject every negative divisor and left the negate path dead. */
+  if (divisor == 0 || divisor == 1 || divisor == -1)
     return false;
   unsigned long long abs_d =
       divisor < 0 ? (unsigned long long)(-(unsigned long long)divisor)
                   : (unsigned long long)divisor;
+  /* Powers of two, including the magnitude of INT64_MIN (2^63).  The
+     multiplier proof does not apply, and signed / -2^63 is not a shift. */
   if (abs_d <= 1 || (abs_d & (abs_d - 1)) == 0)
     return false;
   unsigned long long ml;
