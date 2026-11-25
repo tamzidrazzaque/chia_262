@@ -16,6 +16,22 @@ def write(path, value):
     path.write_text(json.dumps(value, indent=2) + '\n')
 
 
+def riscv64_static_elf_fixture():
+    """Minimal ELF header for testing launcher admission, never executed."""
+    header = bytearray(64)
+    header[:7] = b'\x7fELF\x02\x01\x01'
+    header[16:18] = (2).to_bytes(2, 'little')
+    header[18:20] = (243).to_bytes(2, 'little')
+    header[20:24] = (1).to_bytes(4, 'little')
+    header[32:40] = (64).to_bytes(8, 'little')
+    header[52:54] = (64).to_bytes(2, 'little')
+    header[54:56] = (56).to_bytes(2, 'little')
+    header[56:58] = (1).to_bytes(2, 'little')
+    load_segment = bytearray(56)
+    load_segment[:4] = (1).to_bytes(4, 'little')  # PT_LOAD, no PT_INTERP
+    return bytes(header + load_segment)
+
+
 @pytest.fixture
 def incoming(tmp_path, monkeypatch):
     root = tmp_path / 'incoming'
@@ -451,3 +467,44 @@ def test_diagnostic_stage_is_core_enabled_and_not_performance(staged, tmp_path):
     with pytest.raises(ValueError, match='normal stages forbid'):
         s.stage(plan['snapshot'], plan['platform'], tmp_path / 'invalid', 'baseline', 0,
                 diagnostic_launcher=helper)
+
+
+def test_nab_repeat_is_explicit_diagnostic_and_preserves_bundle(staged, tmp_path, monkeypatch):
+    out, plan, site = staged
+    helper = tmp_path / 'launcher'
+    helper.write_bytes(riscv64_static_elf_fixture())
+    with pytest.raises(ValueError, match='frozen NAB workload'):
+        s.stage(plan['snapshot'], plan['platform'], tmp_path / 'wrong-benchmark', 'diagnostic', 0,
+                diagnostic_launcher=helper, diagnostic_kind='nab-repeat')
+    with pytest.raises(ValueError, match='forbidden for performance'):
+        s.stage(plan['snapshot'], plan['platform'], tmp_path / 'performance', 'search', 0,
+                diagnostic_launcher=helper, diagnostic_kind='nab-repeat')
+    verify = s.verify
+    def nab_manifest(*args):
+        return {**verify(*args), 'benchmark': '644.nab_s'}
+    monkeypatch.setattr(s, 'verify', nab_manifest)
+    diagnostic = tmp_path / 'repeat'
+    p = s.stage(plan['snapshot'], plan['platform'], diagnostic, 'diagnostic', 0,
+                diagnostic_launcher=helper, diagnostic_kind='nab-repeat')
+    assert p['identity']['protocol'] == 'diagnostic-nab-repeat-v1'
+    assert s.verify_stage(diagnostic)['image_id'] == p['image_id']
+    runner = (diagnostic / 'overlay/root/saturn-spec/run.sh').read_text()
+    assert '/root/saturn-spec/nab-repeat ' in runner
+    assert 'fault-capture' not in runner
+    assert 'core_pattern' not in runner
+    assert 'collection.status' in runner
+    assert s.files_hashes(diagnostic / 'overlay/root/saturn-spec/bundle') == s.files_hashes(
+        Path(plan['snapshot']) / 'bundle')
+    with pytest.raises(ValueError, match='diagnostic runs cannot enter performance'):
+        r.collect(diagnostic, None, None, None, None, None)
+
+
+def test_nab_repeat_rejects_host_elf(staged, tmp_path, monkeypatch):
+    _, plan, _ = staged
+    verify = s.verify
+    monkeypatch.setattr(s, 'verify', lambda *args: {**verify(*args), 'benchmark': '644.nab_s'})
+    helper = tmp_path / 'host-launcher'
+    helper.write_bytes(b'ELF x86-64 host executable')
+    with pytest.raises(ValueError, match='little-endian ELF64 RISC-V'):
+        s.stage(plan['snapshot'], plan['platform'], tmp_path / 'host-launcher-stage', 'diagnostic', 0,
+                diagnostic_launcher=helper, diagnostic_kind='nab-repeat')

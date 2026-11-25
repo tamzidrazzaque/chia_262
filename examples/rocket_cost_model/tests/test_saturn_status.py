@@ -11,6 +11,35 @@ from examples.rocket_cost_model import saturn_status as s
 
 
 class StatusTests(unittest.TestCase):
+    def test_detached_retry_campaign_is_shown_instead_of_stale_activation(self):
+        with TemporaryDirectory() as directory:
+            config_path = Path(directory) / 'manager.json'
+            config_path.write_text('{}')
+            entry = {'remote_campaign': '/private/retry', 'manager_config': str(config_path),
+                     'candidate_label': '3.5101', 'service': 'saturn-nab-resume.service'}
+            with patch.object(s, 'campaign_status', return_value={
+                    'status': 'running', 'paired_controls': True, 'samples': [],
+                    'active': {'request': {'sample': 5102000},
+                               'artifact': {'role': '3-saturn-aware'}},
+                    'guest_health': {'health': 'WARNING: quiet guest; forward progress unconfirmed',
+                                     'uart_age_seconds': 27000, 'matching_driver_pids': [123]}}) as remote, \
+                 patch.object(s.subprocess, 'run', return_value=subprocess.CompletedProcess(
+                     [], 0, 'ActiveState=active\nSubState=running\nMainPID=42\n')) as service:
+                text = s.summary('NAB', {**entry, 'activation': '/stale/activation'})
+        remote.assert_called_once()
+        service.assert_called_once()
+        self.assertIn('NAB: running | 3.5101 | sample 5102000', text)
+        self.assertIn('Resume controller: active/running | PID: 42', text)
+        self.assertIn('Matching FireSim drivers: 1', text)
+        self.assertIn('UART last changed 27000s ago', text)
+
+    def test_detached_retry_local_mode_does_not_query_manager(self):
+        entry = {'remote_campaign': '/private/retry', 'manager_config': '/private/config'}
+        with patch.object(s, 'campaign_status') as remote:
+            text = s.summary('NAB', entry, local_only=True)
+        remote.assert_not_called()
+        self.assertIn('Manager check skipped', text)
+
     def test_baseline_gate_visible_before_loop_exists(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)

@@ -84,3 +84,29 @@ and paired feedback recomputed before restoring the result. Candidates 3.3016
 and 3.3017 regressed approximately 1.78% and 1.89%, respectively. Their hardware
 runs were not repeated. The resumed user-service controller retains these
 results and starts at 3.3018; its current model remains GPT-5.6 Sol/high.
+
+## Completed exact-image comparisons and current hold
+
+With the corrected host-time bound, untraced A/B/A attempts reproduced the
+original kernel panic twice on failed image A; preserved image B reached the
+workload. Traced image A also reproduced the panic. The images were not rebuilt.
+This establishes an image-sensitive, repeatable trigger, not a filesystem or
+hardware root cause.
+
+A further raw-trace comparison reproduced A's panic. Its B control exhausted
+the diagnostic host budget without a boot conclusion. Raw trace beats contain
+sparse valid PC records and many zero records, while the captured PCs skip
+intervening instructions. Checking the full eight-word beats did not recover
+those missing instructions. The pinned F2 driver drains streams with 32-bit
+BAR4 reads, while the generated CPU-managed AXI interface is 512 bits and its
+queue reads are destructive. That is a concrete trace-transport concern to
+investigate; these traces do not yet establish the first divergent instruction
+or prove that transport caused the Linux or numerical failure.
+
+The bounded NAB output-repeat diagnostic has now run twice in one guest using
+the unchanged role-2 ELF. Both runs passed official output comparison, despite
+different executable mappings. This does not revisit the pre-workload kernel
+panic and does not explain its cause; see `NAB_OUTPUT_DIAGNOSIS.md` for the
+separate workload evidence. No RTL fix, cost-model candidate, or performance
+result follows from the repeat diagnostic. Further NAB hardware work remains
+held while the MCF campaign continues.

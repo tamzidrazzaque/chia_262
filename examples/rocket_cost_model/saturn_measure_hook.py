@@ -93,6 +93,11 @@ def main() -> None:
     sample = os.environ.get('SATURN_SAMPLE', '0')
     if phase not in ('baseline', 'search', 'confirmation', 'holdout') or not sample.isdigit():
         raise ValueError('invalid paired measurement phase/sample')
+    deadline = os.environ.get('SATURN_RUN_MAX_SECONDS')
+    watchdog_deadline_args = ''
+    if deadline is not None:
+        if not deadline.isdigit() or not 60 <= int(deadline) <= 3600:
+            raise ValueError('SATURN_RUN_MAX_SECONDS must be 60..3600')
     # Keep every physical attempt in a distinct private stage. Failed stages
     # are preserved for diagnosis, so a candidate-only name would prevent a
     # retry (or a paired confirmation repeat) from reaching dispatch.
@@ -101,6 +106,9 @@ def main() -> None:
     incoming = f"{lane}/incoming/{tag}"
     verified = f"{lane}/verified/{tag}"
     stage = f"{lane}/staging/{tag}"
+    if deadline is not None:
+        watchdog_deadline_args = ('--diagnostic-seconds ' + deadline +
+            ' --evidence-directory ' + shlex.quote(stage + '/guest-time-budget-evidence'))
     local_tar = work / "bundle.tar"
     with tarfile.open(local_tar, "w") as archive:
         archive.add(bundle, arcname="bundle")
@@ -141,7 +149,7 @@ python {shlex.quote(stage + '/native-manager-staged.py')} infrasetup
 # Each task requires its own fresh preflight. Preserve the infrastructure check.
 mv {shlex.quote(stage + '/preflight.json')} {shlex.quote(stage + '/infrasetup-preflight.json')}
 $PY -m examples.rocket_cost_model.saturn_spec preflight --platform {shlex.quote(lane + '/platform-lock.json')} --out {shlex.quote(stage + '/preflight.json')}
-if $PY -m examples.rocket_cost_model.saturn_run_watchdog --stage {shlex.quote(stage)} -- python {shlex.quote(stage + '/native-manager-staged.py')} runworkload; then
+if $PY -m examples.rocket_cost_model.saturn_run_watchdog --stage {shlex.quote(stage)} {watchdog_deadline_args} -- python {shlex.quote(stage + '/native-manager-staged.py')} runworkload; then
   RUN_RC=0
 else
   RUN_RC=$?

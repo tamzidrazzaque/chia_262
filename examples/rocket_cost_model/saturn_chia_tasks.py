@@ -90,10 +90,16 @@ def validate_artifact(artifact: SaturnBundle) -> dict:
 def measure_artifact(candidate: str, artifact: SaturnBundle, request: dict | None = None) -> dict:
     """Execute the admitted lane locally on the manager; return its receipt."""
     work, metadata = receive_artifact(artifact)
+    extra_environment = {'SATURN_MANAGER_LOCAL': '1', 'SATURN_ROLE': metadata['role'],
+        'SATURN_PHASE': (request or {}).get('phase', 'search'),
+        'SATURN_SAMPLE': str((request or {}).get('sample', 0))}
+    limit = (request or {}).get('max_guest_seconds')
+    if limit is not None:
+        if type(limit) is not int or not 60 <= limit <= 3600:
+            raise ValueError('invalid bounded guest runtime')
+        extra_environment['SATURN_RUN_MAX_SECONDS'] = str(limit)
     invoke('examples.rocket_cost_model.saturn_measure_hook', candidate, str(work),
-           str(work / 'unused-proposal.json'), {'SATURN_MANAGER_LOCAL': '1', 'SATURN_ROLE': metadata['role'],
-               'SATURN_PHASE': (request or {}).get('phase', 'search'),
-               'SATURN_SAMPLE': str((request or {}).get('sample', 0))})
+           str(work / 'unused-proposal.json'), extra_environment)
     retryable_path = work / 'candidate-retryable-boot-failure.json'
     if retryable_path.is_file():
         failure = json.loads(retryable_path.read_text())

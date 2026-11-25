@@ -60,12 +60,17 @@ def run(stage, command, interval=30, evidence_directory=None, process_kwargs=Non
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--stage', type=Path, required=True)
+    parser.add_argument('--diagnostic-seconds', type=float,
+                        help='stop this exact guest after a bounded diagnostic interval')
+    parser.add_argument('--evidence-directory', type=Path,
+                        help='private destination for UART captured at a diagnostic stop')
     parser.add_argument('command', nargs=argparse.REMAINDER)
     args = parser.parse_args()
     command = args.command[1:] if args.command[:1] == ['--'] else args.command
     if not command:
         parser.error('a native adapter command is required')
-    run(args.stage, command)
+    run(args.stage, command, evidence_directory=args.evidence_directory,
+        diagnostic_seconds=args.diagnostic_seconds)
 
 
 if __name__ == '__main__':

@@ -56,6 +56,26 @@ class AdaptiveTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     loop.validate_feedback(result, self.proposal, self.artifact, self.config)
 
+    def test_verified_candidate_guest_failure_is_a_terminal_feedback(self):
+        result = {**self.result, 'campaign_status': 'failed',
+            'failure': {'classification': 'candidate_guest_failed',
+                'role': '3-saturn-aware', 'job_status': '11', 'collection_status': '1',
+                'uart_sha256': 'a' * 64}}
+        loop.validate_feedback(result, self.proposal, self.artifact, self.config)
+
+    def test_candidate_failure_without_bound_guest_evidence_is_rejected(self):
+        result = {**self.result, 'campaign_status': 'failed',
+            'failure': {'classification': 'candidate_guest_failed',
+                'role': '3-saturn-aware', 'job_status': '11', 'collection_status': '1'}}
+        with self.assertRaisesRegex(ValueError, 'bound guest-failure evidence'):
+            loop.validate_feedback(result, self.proposal, self.artifact, self.config)
+
+    def test_baseline_boot_failure_requires_retry_evidence(self):
+        result = {**self.result, 'campaign_status': 'failed',
+            'failure': {'classification': 'baseline_boot_retries_exhausted',
+                'failed_role2_attempts': 3}}
+        loop.validate_feedback(result, self.proposal, self.artifact, self.config)
+
     def test_cost_changes_must_match_dispatched_candidate(self):
         self.result['feedback']['candidates'][0]['proposal'] = {'changes': {'int_stmt': 8}}
         with self.assertRaisesRegex(ValueError, 'cost profile'):

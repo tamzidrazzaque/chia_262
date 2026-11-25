@@ -38,6 +38,42 @@ def campaign_status(config, remote_run, baseline=False):
 
 def summary(name, entry, local_only=False):
     """Return a snapshot without writing files, acquiring leases or dispatching work."""
+    if entry.get('remote_campaign'):
+        if local_only:
+            return (f"{name}: remote campaign | active run " +
+                    entry.get('remote_campaign', 'unknown') +
+                    "\n  Manager check skipped (--local).")
+        try:
+            config = read(entry['manager_config'])
+            remote = campaign_status(config, entry['remote_campaign'])
+            active = remote.get('active') or {}
+            request = active.get('request', {})
+            artifact = active.get('artifact', {})
+            health = remote.get('guest_health', {})
+            label = entry.get('candidate_label', artifact.get('role', '-'))
+            lines = [f"{name}: {remote.get('status', 'unknown')} | {label} | "
+                     f"sample {request.get('sample', '-')}",
+                     f"  Collected samples: {len(remote.get('samples', []))} | "
+                     f"paired controls: {remote.get('paired_controls', 'unknown')}",
+                     "  Guest: " + health.get('health', 'not observed')]
+            if entry.get('service'):
+                result = subprocess.run(['systemctl', '--user', 'show',
+                    '--property=ActiveState,SubState,MainPID', '--', entry['service']],
+                    capture_output=True, text=True, check=True, timeout=5)
+                service = dict(line.split('=', 1) for line in result.stdout.splitlines() if '=' in line)
+                lines.append(f"  Resume controller: {service.get('ActiveState', 'unknown')}/"
+                             f"{service.get('SubState', '-')} | PID: {service.get('MainPID', '-')}")
+            if health.get('uart_age_seconds') is not None:
+                lines.append(f"  UART last changed {int(health['uart_age_seconds'])}s ago")
+            if health.get('matching_driver_pids'):
+                lines.append(f"  Matching FireSim drivers: {len(health['matching_driver_pids'])}")
+            if remote.get('failed_attempts'):
+                lines.append(f"  Verified early-boot retries: {len(remote['failed_attempts'])}")
+            if remote.get('failure'):
+                lines.append('  Campaign failure recorded; inspect private manager evidence.')
+            return '\n'.join(lines)
+        except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+            return f"{name}: remote campaign status unavailable (read-only check failed)."
     root = Path(entry['run'])
     path = root / 'state.json'
     if not path.is_file() and entry.get('activation'):

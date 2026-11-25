@@ -2,12 +2,13 @@
 
 import hashlib
 import json
-from pathlib import Path
 import shlex
 import shutil
+import struct
 import subprocess
 import tempfile
 import uuid
+from pathlib import Path
 
 import yaml
 
@@ -17,6 +18,28 @@ from .platform import verify_platform
 
 def files_hashes(root):
     return {name: sha(root / name) for name in sorted(regular_tree(root))}
+
+
+def verify_static_riscv64_elf(path):
+    """Reject host-built or dynamically linked helpers before guest staging."""
+    path = Path(path)
+    with path.open('rb') as stream:
+        header = stream.read(64)
+        if (len(header) != 64 or header[:4] != b'\x7fELF' or header[4] != 2
+                or header[5] != 1 or struct.unpack_from('<H', header, 18)[0] != 243):
+            raise ValueError('diagnostic launcher must be a little-endian ELF64 RISC-V binary')
+        if struct.unpack_from('<H', header, 16)[0] not in (2, 3):
+            raise ValueError('diagnostic launcher must be an executable ELF')
+        phoff = struct.unpack_from('<Q', header, 32)[0]
+        phentsize, phnum = struct.unpack_from('<HH', header, 54)
+        if not phoff or phentsize < 4 or not phnum or phoff + phentsize * phnum > path.stat().st_size:
+            raise ValueError('diagnostic launcher has an invalid program-header table')
+        stream.seek(phoff)
+        kinds = [struct.unpack('<I', stream.read(phentsize)[:4])[0] for _ in range(phnum)]
+    if 3 in kinds:
+        raise ValueError('diagnostic launcher must be statically linked for the guest')
+    if 1 not in kinds:
+        raise ValueError('diagnostic launcher has no loadable ELF segment')
 
 
 def runner(m, identity):
@@ -41,25 +64,40 @@ def runner(m, identity):
                   'mkdir -p ' + shlex.quote(root + '/result/outputs/' + str(Path(dest).parent))]
     lines += ['cd "$WORK"', 'sha256sum program > "$RESULT/executable.sha256"', 'set +e']
     if identity['phase'] == 'diagnostic':
-        lines[-1:] = ['umask 077', 'ulimit -c unlimited',
-            'echo /root/saturn-spec/result/core.%p > /proc/sys/kernel/core_pattern',
-            'cat /proc/sys/kernel/core_pattern > "$RESULT/core-pattern.txt"',
-            'cat /proc/self/limits > "$RESULT/limits.txt"',
-            'cat /proc/self/coredump_filter > "$RESULT/coredump-filter.txt"', 'set +e']
+        if identity.get('diagnostic_kind') == 'nab-repeat':
+            lines[-1:] = ['umask 077', 'mkdir -p "$RESULT/diagnostic"', 'set +e']
+        else:
+            lines[-1:] = ['umask 077', 'ulimit -c unlimited',
+                'echo /root/saturn-spec/result/core.%p > /proc/sys/kernel/core_pattern',
+                'cat /proc/sys/kernel/core_pattern > "$RESULT/core-pattern.txt"',
+                'cat /proc/self/limits > "$RESULT/limits.txt"',
+                'cat /proc/self/coredump_filter > "$RESULT/coredump-filter.txt"', 'set +e']
     stdin = shlex.quote(m['stdin']) if m['stdin'] is not None else '/dev/null'
     command = ['/bin/busybox', 'time', '-p', '-o', root + '/result/time.txt', *m['argv']]
-    if identity['phase'] == 'diagnostic':
+    if identity['phase'] == 'diagnostic' and identity.get('diagnostic_kind') == 'nab-repeat':
+        command = ['/root/saturn-spec/nab-repeat', root + '/result/diagnostic', *m['argv']]
+    elif identity['phase'] == 'diagnostic':
         command = [root + '/fault-capture', root + '/result', *m['argv']]
-    lines += [shlex.join(command) + ' < ' + stdin + ' > ' + shlex.quote(m['stdout']) + ' 2> ' + shlex.quote(m['stderr']),
+    stdout = root + '/result/launcher.stdout' if identity.get('diagnostic_kind') == 'nab-repeat' else m['stdout']
+    stderr = root + '/result/launcher.stderr' if identity.get('diagnostic_kind') == 'nab-repeat' else m['stderr']
+    lines += [shlex.join(command) + ' < ' + stdin + ' > ' + shlex.quote(stdout) + ' 2> ' + shlex.quote(stderr),
               'status=$?', "printf '%s\\n' \"$status\" > \"$RESULT/job.status\"", 'collect=0']
-    for dest in sorted({m['stdout'], m['stderr'], *m['expected_outputs']}):
-        lines += ['cp ' + shlex.quote(root + '/work/' + dest) + ' ' + shlex.quote(root + '/result/outputs/' + dest) + ' || collect=1']
+    if identity.get('diagnostic_kind') == 'nab-repeat':
+        lines += ['test "$status" -eq 0 || collect=1']
+    else:
+        for dest in sorted({m['stdout'], m['stderr'], *m['expected_outputs']}):
+            lines += ['cp ' + shlex.quote(root + '/work/' + dest) + ' ' + shlex.quote(root + '/result/outputs/' + dest) + ' || collect=1']
     lines += ["printf '%s\\n' \"$collect\" > \"$RESULT/collection.status\"",
               'printf "SATURN_SPEC_JOB_EXIT=%s COLLECTION=%s\\n" "$status" "$collect"', 'sync']
     return '\n'.join(lines) + '\n'
 
 
-def stage(snapshot, platform_path, output, phase, sample, scratch_mib=1024, diagnostic_launcher=None):
+def stage(snapshot, platform_path, output, phase, sample, scratch_mib=1024, diagnostic_launcher=None,
+          diagnostic_kind='fault-capture'):
+    if diagnostic_kind not in ('fault-capture', 'nab-repeat'):
+        raise ValueError('unsupported diagnostic launcher kind')
+    if diagnostic_kind != 'fault-capture' and phase != 'diagnostic':
+        raise ValueError('diagnostic kind forbidden for performance stages')
     site = verify_platform(platform_path)
     snapshot = Path(snapshot)
     if (snapshot / 'REJECTED').exists():
@@ -77,6 +115,10 @@ def stage(snapshot, platform_path, output, phase, sample, scratch_mib=1024, diag
         raise ValueError('diagnostic stage requires an explicit launcher, normal stages forbid it')
     if phase == 'diagnostic' and m['role'] != '2-generic-vector':
         raise ValueError('only frozen role 2 diagnostic authorized')
+    if diagnostic_kind == 'nab-repeat' and m['benchmark'] != '644.nab_s':
+        raise ValueError('NAB repeat requires the frozen NAB workload')
+    if diagnostic_kind == 'nab-repeat':
+        verify_static_riscv64_elf(diagnostic_launcher)
     bundle_root = snapshot / 'bundle'
     payload_bytes = sum((bundle_root / n).stat().st_size for n in m['files_sha256'])
     work_bytes = sum((bundle_root / n).stat().st_size for n in [m['executable'], *m['inputs'].values()])
@@ -93,7 +135,10 @@ def stage(snapshot, platform_path, output, phase, sample, scratch_mib=1024, diag
                 'rootfs_gib': rootfs_gib, 'scratch_mib': scratch_mib}
     if phase == 'diagnostic':
         identity['diagnostic_launcher_sha256'] = sha(Path(diagnostic_launcher))
-        identity['protocol'] = 'diagnostic-ptrace-core-v1'
+        identity['protocol'] = ('diagnostic-nab-repeat-v1' if diagnostic_kind == 'nab-repeat'
+                                else 'diagnostic-ptrace-core-v1')
+        if diagnostic_kind == 'nab-repeat':
+            identity['diagnostic_kind'] = diagnostic_kind
     # Runner bytes, base and platform identities are part of the stage identity.
     script = runner(m, identity)
     image_id = canonical({'identity': identity, 'runner_sha256': hashlib.sha256(script.encode()).hexdigest()})
@@ -107,8 +152,9 @@ def stage(snapshot, platform_path, output, phase, sample, scratch_mib=1024, diag
     shutil.copyfile(site['artifacts']['rvv_probe']['path'], overlay / 'rvv-probe')
     (overlay / 'rvv-probe').chmod(0o500)
     if phase == 'diagnostic':
-        shutil.copyfile(diagnostic_launcher, overlay / 'fault-capture')
-        (overlay / 'fault-capture').chmod(0o500)
+        launcher_name = 'nab-repeat' if diagnostic_kind == 'nab-repeat' else 'fault-capture'
+        shutil.copyfile(diagnostic_launcher, overlay / launcher_name)
+        (overlay / launcher_name).chmod(0o500)
     (overlay / 'run.sh').write_text(script)
     (overlay / 'stage-identity.json').write_text(json.dumps({'image_id': image_id, **identity}, sort_keys=True) + '\n')
     config = {'name': name, 'base': 'br-base.json', 'rootfs-size': str(rootfs_gib) + 'GiB', 'workdir': str(out.resolve()),
@@ -175,13 +221,22 @@ def verify_stage(directory):
     m = verify(out / 'overlay/root/saturn-spec/bundle', p['identity']['bundle_sha256'], site['readelf'], site['objdump'])
     expected = {'role': m['role'], 'benchmark': m['benchmark'], 'input_id': m['input_id'],
                 'worker_id': site['worker_id'], 'agfi': AGFI, 'driver_sha256': DRIVER_SHA,
-                'vlen_bits': 256, 'protocol': ('diagnostic-ptrace-core-v1' if p['identity']['phase'] == 'diagnostic'
+                'vlen_bits': 256, 'protocol': (('diagnostic-nab-repeat-v1' if p['identity'].get('diagnostic_kind') == 'nab-repeat'
+                                               else 'diagnostic-ptrace-core-v1') if p['identity']['phase'] == 'diagnostic'
                                              else 'busybox-time-posix-elapsed-v1')}
-    if p['identity']['phase'] == 'diagnostic' and sha(out / 'overlay/root/saturn-spec/fault-capture') != p['identity']['diagnostic_launcher_sha256']:
-        raise ValueError('diagnostic launcher changed')
+    if p['identity'].get('diagnostic_kind') == 'nab-repeat' and m['benchmark'] != '644.nab_s':
+        raise ValueError('NAB repeat requires the frozen NAB workload')
+    if p['identity'].get('diagnostic_kind') == 'nab-repeat':
+        verify_static_riscv64_elf(out / 'overlay/root/saturn-spec/nab-repeat')
+    if p['identity']['phase'] == 'diagnostic':
+        name = 'nab-repeat' if p['identity'].get('diagnostic_kind') == 'nab-repeat' else 'fault-capture'
+        if sha(out / 'overlay/root/saturn-spec' / name) != p['identity']['diagnostic_launcher_sha256']:
+            raise ValueError('diagnostic launcher changed')
     if any(p['identity'].get(k) != value for k, value in expected.items()) \
             or p['expected_bootbinary_sha256'] != site['artifacts']['base_bootbinary']['sha256'] \
             or p['name'] != 'saturn-spec-' + p['image_id'][:24]:
+        mismatches = {key: {'actual': p['identity'].get(key), 'expected': value}
+                      for key, value in expected.items() if p['identity'].get(key) != value}
         raise ValueError('stage role/platform/image binding differs')
     script = (out / 'overlay/root/saturn-spec/run.sh').read_text()
     if script != runner(m, p['identity']) or p['image_id'] != canonical({

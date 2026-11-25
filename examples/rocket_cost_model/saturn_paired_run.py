@@ -121,7 +121,13 @@ def main():
                 artifact = artifacts[prepared['bundle_sha256']]
             # Fresh attempt namespace is independent of compiler candidate IDs.
             attempt = '3.' + str(int(request['attempt_id'][:12], 16))
-            ref = measure_artifact.options(**options).chia_remote(attempt, artifact, request)
+            task_request = dict(request)
+            if config.get('max_guest_seconds') is not None:
+                limit = config['max_guest_seconds']
+                if type(limit) is not int or not 60 <= limit <= 3600:
+                    raise ValueError('max_guest_seconds must be an integer from 60 through 3600')
+                task_request['max_guest_seconds'] = limit
+            ref = measure_artifact.options(**options).chia_remote(attempt, artifact, task_request)
             return await_task(ref, config.get('task_alert_seconds', 28800))
 
         result = run(args.out, config['candidates'], policy, prepare, measure, stop)

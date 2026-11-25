@@ -12,6 +12,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import shlex
 import subprocess
 import tarfile
@@ -56,6 +57,11 @@ def measure(config, selected, artifact, directory, index=0, order_index=None):
     """Transfer hash-bound bytes to the existing manager and obtain paired data."""
     remote = config['remote_root'].rstrip('/') + '/' + uuid.uuid4().hex
     request = {key: config[key] for key in ('address', 'task_root', 'policy', 'baseline')}
+    if config.get('max_guest_seconds') is not None:
+        limit = config['max_guest_seconds']
+        if type(limit) is not int or not 60 <= limit <= 3600:
+            raise ValueError('max_guest_seconds must be an integer from 60 through 3600')
+        request['max_guest_seconds'] = limit
     if config.get('manager_lane'):
         request['manager_lane'] = config['manager_lane']
     request['policy'] = {**config['policy'], 'order_offset': config.get('order_offset', 0) + (index if order_index is None else order_index),
@@ -94,7 +100,7 @@ def measure(config, selected, artifact, directory, index=0, order_index=None):
 
 def validate_feedback(result, selected, artifact, config):
     """Bind the returned campaign to the submitted compiler and physical worker."""
-    if result.get('campaign_status') != 'complete' or result.get('proposal') != selected:
+    if result.get('campaign_status') not in ('complete', 'failed') or result.get('proposal') != selected:
         raise ValueError('manager campaign/proposal mismatch')
     expected = {'archive_sha256': artifact.archive_sha256, 'manifest_sha256': artifact.manifest_sha256,
                 'executable_sha256': artifact.executable_sha256}
@@ -103,6 +109,26 @@ def validate_feedback(result, selected, artifact, config):
     for field in ('worker_id', 'platform_sha256'):
         if result.get(field) != config['policy'][field]:
             raise ValueError('manager feedback physical target mismatch')
+    if result.get('campaign_status') == 'failed':
+        failure = result.get('failure', {})
+        classification = failure.get('classification')
+        if classification not in ('candidate_guest_failed',
+                                  'baseline_boot_retries_exhausted',
+                                  'unclassified_manager_failure'):
+            raise ValueError('manager failure classification is invalid')
+        if classification == 'candidate_guest_failed':
+            if (failure.get('role') != '3-saturn-aware' or
+                    not str(failure.get('job_status', '')).isdigit() or
+                    failure.get('job_status') == '0' or
+                    not str(failure.get('collection_status', '')).isdigit() or
+                    failure.get('collection_status') == '0' or
+                    not re.fullmatch(r'[0-9a-f]{64}', failure.get('uart_sha256', ''))):
+                raise ValueError('candidate failure lacks bound guest-failure evidence')
+        if classification == 'baseline_boot_retries_exhausted' and (
+                type(failure.get('failed_role2_attempts')) is not int or
+                failure['failed_role2_attempts'] < 1):
+            raise ValueError('baseline failure lacks retry evidence')
+        return
     for record in result.get('feedback', {}).get('candidates', []):
         if record.get('candidate_id') != selected['candidate_id'] or \
                 profile_signature(record['proposal']['changes']) != profile_signature(selected['changes']):
@@ -168,6 +194,10 @@ def main():
     parser.add_argument('--preflight-only', action='store_true')
     args = parser.parse_args()
     config = json.loads(args.config.read_text())
+    if config.get('max_guest_seconds') is not None and (
+            type(config['max_guest_seconds']) is not int or
+            not 60 <= config['max_guest_seconds'] <= 3600):
+        raise ValueError('max_guest_seconds must be an integer from 60 through 3600')
     budget = None if config.get('continuous') is True else config.get('candidate_budget', 6)
     if budget is not None and (type(budget) is not int or not 1 <= budget <= 12):
         raise ValueError('candidate budget must be 1..12')
@@ -200,7 +230,7 @@ def run(config, out, budget, preflight_only=False, stop=None):
         _temp_dir=tempfile.mkdtemp(prefix='saturn-adaptive-ray-'))
     @ChiaFunction(resources={'codex_creds': 1}, max_retries=0)
     def suggest(payload):
-        return codex_proposal(payload)
+        return codex_proposal(payload, config.get('proposal_model'))
 
     @ChiaFunction(resources={'riscv_build': 1}, max_retries=0)
     def admit_compiler():
@@ -221,6 +251,7 @@ def run(config, out, budget, preflight_only=False, stop=None):
              'mode': 'continuous' if budget is None else 'bounded',
              'candidates': [], 'incumbent': None, 'measured_candidates': 0,
              'baseline': config.get('initial_feedback', {}).get('baseline', {})}
+    rejected_guest_failures = 0
     publish_json(out / 'state.json', state)
     try:
         # Exercise imports, executables, SSH and authentication before compiling.
@@ -348,7 +379,30 @@ def run(config, out, budget, preflight_only=False, stop=None):
                     publish_json(out / 'state.json', state)
                     result = measure(config, selected, artifact, directory, index,
                                      order_index=state['measured_candidates'])
+                    if result.get('campaign_status') == 'failed':
+                        failure = result['failure']
+                        record['failure'] = failure
+                        if failure['classification'] == 'candidate_guest_failed':
+                            record['status'] = 'rejected_guest_failure'
+                            seen_elves.add(artifact.executable_sha256)
+                            rejected_guest_failures += 1
+                            publish_json(out / 'state.json', state)
+                            if rejected_guest_failures >= 2:
+                                state.update(status='blocked_repeated_guest_failures')
+                                publish_json(out / 'state.json', state)
+                                return
+                            continue
+                        if failure['classification'] == 'baseline_boot_retries_exhausted':
+                            record['status'] = 'blocked_baseline_boot_failure'
+                            state.update(status='blocked_baseline')
+                            publish_json(out / 'state.json', state)
+                            return
+                        record['status'] = 'manager_failure_requires_recovery'
+                        state.update(status='blocked')
+                        publish_json(out / 'state.json', state)
+                        return
                     paired = result['feedback']
+                    rejected_guest_failures = 0
                     feedback.extend(paired['candidates'])
                     record['paired_decision'] = result['history']
                     if result['winner']:
