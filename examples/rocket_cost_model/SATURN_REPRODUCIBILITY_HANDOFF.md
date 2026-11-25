@@ -100,8 +100,10 @@ instance.
    shutdown receipt. Update the sanitized results report after a pair completes;
    raw licensed outputs and manager logs stay private.
 
-At the latest checkpoint, MCF `3.3059` was preparing its role-2 control. NAB
-`3.5459` had collected its role-3 sample and was running the role-2 control;
-that pair remains incomplete. Do not infer a candidate result from either
-intermediate state. The sanitized report and permission-restricted private
-snapshot record the checkpoint.
+At the latest checkpoint, both controllers were blocked and both workers were
+idle by read-only preflight. MCF stopped when its role-2 early-boot panic
+receipt carried a refreshed platform hash that differed from the stale hash in
+the controller policy; no candidate result was produced. NAB exhausted three
+fresh role-2 boot attempts before dispatching its candidate. See the sanitized
+results report and the permission-restricted private checkpoint for the exact
+state. Do not infer a candidate result from either failure.
